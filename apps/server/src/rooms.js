@@ -110,7 +110,8 @@ export class Rooms {
       room.foundingId = user.id;
       room.modsGranted = 0;
     }
-    if (room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) {
+    // First people into a room get the keys; so does anyone walking into a room with no mods at all.
+    if ((room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) || this.modCount(room) === 0) {
       member.role = MOD;
       member.stageSince = now;
       room.modsGranted++;
@@ -180,12 +181,13 @@ export class Rooms {
 
   // Keep the room steerable when mods leave: promote the longest-serving speakers first,
   // and if nobody is on stage at all, hand the keys to whoever has been here longest.
-  ensureMods(room) {
+  ensureMods(room, exceptId = null) {
     const byStage = (a, b) => a.stageSince - b.stageSince;
     const speakers = [...room.members.values()].filter((m) => m.role === SPEAKER).sort(byStage);
     while (this.modCount(room) < L.MIN_STAGE_MODS && speakers.length) this.promote(room, speakers.shift(), 'succession');
     if (this.modCount(room) === 0) {
-      const oldest = [...room.members.values()].sort((a, b) => a.joinedAt - b.joinedAt)[0];
+      // Someone who just stepped down (or said no to the mic) isn't handed the keys straight back.
+      const oldest = [...room.members.values()].filter((m) => m.user.id !== exceptId && !m.declinedKeys).sort((a, b) => a.joinedAt - b.joinedAt)[0];
       if (oldest) {
         this.clearMemberTimers(room, oldest);
         this.promote(room, oldest, 'succession');
@@ -340,12 +342,13 @@ export class Rooms {
     const { room, member } = this.get(user);
     if (!room || member.role === LISTENER) return { error: ERRORS.BAD_REQUEST };
     const wasMod = member.role === MOD;
+    if (wasMod) member.declinedKeys = true; // don't auto-promote them again
     clearTimeout(member.promoteTimer);
     member.role = LISTENER;
     member.stageSince = null;
     member.promoteAt = null;
     this.system(room, `${user.name} moved to listeners`, 'stage');
-    if (wasMod) this.ensureMods(room);
+    if (wasMod) this.ensureMods(room, user.id);
     this.broadcast(room);
     return { ok: true };
   }

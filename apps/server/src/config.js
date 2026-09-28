@@ -8,10 +8,13 @@ const num = (name, fallback) => {
 // Every limit can be overridden by env (used by tests to shrink timers).
 export const config = {
   port: num('PORT', 8080),
-  allowedOrigins: (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean),
+  // The live site is always allowed; ALLOWED_ORIGINS adds more (localhost, previews, a custom domain).
+  allowedOrigins: [
+    ...new Set([
+      'https://wisp-peach-five.vercel.app',
+      ...(process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map((s) => s.trim()).filter(Boolean)
+    ])
+  ],
   limits: Object.fromEntries(Object.entries(LIMITS).map(([k, v]) => [k, num(k, v)])),
 
   // TURN (Cloudflare Realtime). Without these, clients get STUN only.

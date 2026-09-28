@@ -172,3 +172,16 @@ test('rtc signaling only reaches people in the same room', async () => {
   await sleep(100);
   assert.equal(b.log.filter(([e]) => e === 'rtc:offer').length, 1);
 });
+
+test('a mod who steps down alone is not handed the keys back; the next person in gets them', async () => {
+  const id = 'music-production';
+  const a = await srv.connect();
+  await a.emit('channel:join', { id });
+  assert.deepEqual(await a.emit('stage:stepDown'), { ok: true });
+  const s1 = await a.waitFor('channel:update', (s) => member(s, a.session.id)?.role === 'listener');
+  assert.ok(s1);
+  const b = await srv.connect();
+  const r = await b.emit('channel:join', { id });
+  assert.equal(member(r.snapshot, b.session.id).role, 'mod');
+  assert.equal(member(r.snapshot, a.session.id).role, 'listener');
+});
