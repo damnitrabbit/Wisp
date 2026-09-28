@@ -10,6 +10,8 @@ import { Pairs } from './pairs.js';
 import { getIceServers, reportRelayBytes, turnStatus } from './turn.js';
 
 const L = config.limits;
+const INSTANCE = Math.random().toString(36).slice(2, 8);
+const BOOTED = Date.now();
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,128}$/;
 // Events that are worthless after a delay are not buffered for reconnecting users.
 const NO_BUFFER = /^(rtc:|pairRtc:|pair:typing|channels:list|channel:update)/;
@@ -27,7 +29,7 @@ export function createWisp() {
     if (req.url === '/status') {
       // Aggregate numbers only. Nothing here identifies anyone.
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      return res.end(JSON.stringify({ online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus() }));
+      return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus() }));
     }
     res.writeHead(200, { 'content-type': 'text/plain' });
     res.end('wisp signaling. nothing to see here.');
