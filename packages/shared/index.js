@@ -16,7 +16,7 @@ export const LIMITS = Object.freeze({
   CHAT_MIN_INTERVAL_MS: 400,
   MSG_MAX: 500,
   ROOM_HISTORY: 200,
-  RECONNECT_GRACE_MS: 15_000, // how long a dropped socket keeps its seat
+  RECONNECT_GRACE_MS: 30_000, // how long a dropped socket keeps its seat
   STILL_LOOKING_MS: 30_000 // client shows the "still looking" state after this
 });
 

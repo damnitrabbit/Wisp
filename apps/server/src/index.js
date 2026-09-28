@@ -37,8 +37,8 @@ export function createWisp() {
 
   const io = new Server(httpServer, {
     cors: { origin: config.allowedOrigins, methods: ['GET', 'POST'] },
-    pingInterval: 10_000,
-    pingTimeout: 8_000,
+    pingInterval: 20_000,
+    pingTimeout: 20_000, // generous: phones and background tabs answer slowly
     maxHttpBufferSize: 64 * 1024
   });
 

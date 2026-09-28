@@ -33,7 +33,7 @@ export default function Shell({ children }) {
         pulse: true,
         sticky: true,
         tag: '[ RECONNECTING ]',
-        text: 'LOST THE SERVER. TRYING AGAIN… IF THE DROP LASTS MORE THAN 15 SECONDS, ROOMS AND CHATS START FRESH.'
+        text: 'LOST THE SERVER. TRYING AGAIN… IF THE DROP LASTS MORE THAN 30 SECONDS, ROOMS AND CHATS START FRESH.'
       });
     } else dismiss('reconnecting');
   }, [status]);

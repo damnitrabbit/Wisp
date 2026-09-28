@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import { useSyncExternalStore } from 'react';
 
 const SIGNAL_URL = process.env.NEXT_PUBLIC_SIGNAL_URL || 'http://localhost:8080';
-const OFFLINE_AFTER_MS = 15_000; // matches the server's reconnect grace
+const OFFLINE_AFTER_MS = 30_000; // matches the server's reconnect grace
 
 let socket = null;
 let lostTimer = null;
