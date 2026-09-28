@@ -1,0 +1,16 @@
+{
+  "name": "wisp",
+  "private": true,
+  "description": "Talk to strangers. Leave no trace.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:server": "npm run dev -w @wisp/server",
+    "test": "npm test -w @wisp/server"
+  }
+}
