@@ -225,6 +225,7 @@ export function createWisp() {
     on('hand:decline', ({ to }) => rooms.answerHand(user, to, false));
     on('stage:demote', ({ to }) => rooms.demote(user, to));
     on('stage:stepDown', () => rooms.stepDown(user));
+    on('stage:mute', ({ muted }) => rooms.setMuted(user, muted));
     on('channel:report', ({ to }) => rooms.report(user, to));
     on('chat:send', ({ text }) => rooms.chat(user, text));
     for (const e of ['rtc:offer', 'rtc:answer', 'rtc:ice']) on(e, (p) => (rooms.relay(user, e, p), { ok: true }));

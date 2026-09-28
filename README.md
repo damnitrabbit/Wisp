@@ -8,7 +8,7 @@ Anonymous, ephemeral voice rooms and 1:1 chat. No accounts, no logs, nothing sto
 
 ```
 apps/server      Node + Socket.io signaling server (Northflank)
-apps/web         Next.js site (Vercel)            ← coming next
+apps/web         Next.js site (Vercel)
 packages/shared  limits, channels, error codes used by both
 ```
 
@@ -28,7 +28,8 @@ packages/shared  limits, channels, error codes used by both
 
 ```bash
 npm install
-npm run dev:server     # http://localhost:8080
+npm run dev:server     # signaling on http://localhost:8080
+npm run dev:web        # site on http://localhost:3000
 npm test               # server tests
 ```
 
@@ -40,6 +41,11 @@ npm test               # server tests
 - Port `8080`, HTTP, public
 - Instances: **1** (state is in memory; more than one would split the rooms)
 - Env: see `apps/server/.env.example`
+
+**Site → Vercel** (free Hobby plan)
+- Import this repo, Root Directory `apps/web` (framework: Next.js, defaults are fine)
+- Env: `NEXT_PUBLIC_SIGNAL_URL` = the Northflank URL
+- Then add the Vercel URL to the server's `ALLOWED_ORIGINS`
 
 ---
 

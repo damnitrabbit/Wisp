@@ -44,6 +44,7 @@ export class Rooms {
         role: m.role,
         founding: room.foundingId === m.user.id,
         online: m.user.online,
+        muted: m.role !== LISTENER && Boolean(m.muted),
         joinedAt: m.joinedAt,
         stageSince: m.stageSince,
         promoteAt: m.role === SPEAKER ? m.promoteAt : null,
@@ -196,6 +197,7 @@ export class Rooms {
     const now = Date.now();
     this.clearMemberTimers(room, member);
     member.role = SPEAKER;
+    member.muted = false;
     member.stageSince = now;
     member.promoteAt = now + L.MOD_PROMOTION_MS;
     member.promoteTimer = setTimeout(() => {
@@ -321,6 +323,14 @@ export class Rooms {
     t.promoteTimer = null;
     this.hub.toUser(t.user, 'stage:demoted', { by: user.name });
     this.system(room, `${t.user.name} moved to listeners`, 'stage');
+    this.broadcast(room);
+    return { ok: true };
+  }
+
+  setMuted(user, muted) {
+    const { room, member } = this.get(user);
+    if (!room || member.role === LISTENER) return { error: ERRORS.BAD_REQUEST };
+    member.muted = Boolean(muted);
     this.broadcast(room);
     return { ok: true };
   }

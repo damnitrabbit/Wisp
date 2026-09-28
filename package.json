@@ -11,6 +11,8 @@
   },
   "scripts": {
     "dev:server": "npm run dev -w @wisp/server",
+    "dev:web": "npm run dev -w @wisp/web",
+    "build:web": "npm run build -w @wisp/web",
     "test": "npm test -w @wisp/server"
   }
 }
