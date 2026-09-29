@@ -16,6 +16,11 @@ export const metadata = {
   alternates: { canonical: '/' },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
   icons: { icon: '/icon.svg' },
+  // Search Console / Bing ownership, if you verify by meta tag instead of DNS.
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
+    other: process.env.NEXT_PUBLIC_BING_VERIFICATION ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION } : undefined
+  },
   openGraph: { type: 'website', siteName: SITE_NAME, title: `${SITE_NAME} · ${TAGLINE}`, description: DESCRIPTION, url: '/', locale: 'en_US' },
   twitter: { card: 'summary_large_image', title: `${SITE_NAME} · ${TAGLINE}`, description: DESCRIPTION }
 };

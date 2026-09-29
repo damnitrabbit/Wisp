@@ -236,7 +236,7 @@ function Boot({ onEnter }) {
         [ ENTER ]
       </button>
       <div className="foot">
-        <span>LEAVE NO TRACE · ANONYMOUS VOICE ROOMS + 1:1 CHAT WITH STRANGERS · 18+ ONLY</span>
+        <span>LEAVE NO TRACE · <Link href="/anonymous-voice-chat">ANONYMOUS VOICE ROOMS</Link> + <Link href="/talk-to-strangers">1:1 CHAT WITH STRANGERS</Link> · 18+ ONLY</span>
         <span>© 2026 N0TRACE · <span className="nc">Damn_It_Rabbit</span></span>
       </div>
     </div>
