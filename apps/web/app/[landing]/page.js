@@ -20,7 +20,9 @@ export async function generateMetadata({ params }) {
     title: p.title,
     description: p.description,
     alternates: { canonical: `/${p.slug}` },
-    openGraph: { title: `${p.title} · ${SITE_NAME}`, description: p.description, url: `/${p.slug}` }
+    // Setting openGraph here replaces the site-wide one, so the preview image has to be named again.
+    openGraph: { title: `${p.title} · ${SITE_NAME}`, description: p.description, url: `/${p.slug}`, images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'N0TRACE' }] },
+    twitter: { card: 'summary_large_image', images: ['/opengraph-image'] }
   };
 }
 
