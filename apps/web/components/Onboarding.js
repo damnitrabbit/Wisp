@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
 import TopBar from './TopBar';
 import Footer from './Footer';
@@ -10,10 +10,23 @@ import { onboarding } from '@/lib/wisp';
 export default function Onboarding({ next, onDone }) {
   const [step, setStep] = useState('boot'); // boot | age | under18 | slides | mode
   const [slide, setSlide] = useState(0);
+  const [restored, setRestored] = useState(false);
+
+  // Restore where this tab left off (e.g. after visiting /privacy and pressing Back).
+  // Layout effect so a client-side Back never flashes the boot screen first.
+  useLayoutEffect(() => {
+    const saved = onboarding.getStep();
+    if (saved) {
+      const needsAge = saved.step === 'slides' || saved.step === 'mode';
+      setStep(needsAge && !onboarding.ageOk() ? 'age' : saved.step);
+      setSlide(saved.slide);
+    } else if (onboarding.ageOk()) setStep('slides');
+    setRestored(true);
+  }, []);
 
   useEffect(() => {
-    if (onboarding.ageOk()) setStep('slides');
-  }, []);
+    if (restored) onboarding.setStep(step, slide);
+  }, [restored, step, slide]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

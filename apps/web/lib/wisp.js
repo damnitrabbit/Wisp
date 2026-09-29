@@ -47,7 +47,15 @@ export const onboarding = {
   done: () => ss.get('wisp.onboarded') === '1',
   finish: () => ss.set('wisp.onboarded', '1'),
   ageOk: () => ss.get('wisp.age') === '1',
-  confirmAge: () => ss.set('wisp.age', '1')
+  confirmAge: () => ss.set('wisp.age', '1'),
+  // Which onboarding screen this tab is on, so leaving and coming Back resumes it.
+  getStep: () => {
+    const [step, n] = (ss.get('wisp.obstep') || '').split(':');
+    if (!['boot', 'age', 'under18', 'slides', 'mode'].includes(step)) return null;
+    const slide = Number(n);
+    return { step, slide: slide >= 0 && slide <= 2 ? slide : 0 };
+  },
+  setStep: (step, slide) => ss.set('wisp.obstep', `${step}:${slide}`)
 };
 
 export const remember = {
