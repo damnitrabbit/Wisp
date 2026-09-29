@@ -17,8 +17,23 @@ export const LIMITS = Object.freeze({
   MSG_MAX: 500,
   ROOM_HISTORY: 200,
   RECONNECT_GRACE_MS: 30_000, // how long a dropped socket keeps its seat
-  STILL_LOOKING_MS: 30_000 // client shows the "still looking" state after this
+  STILL_LOOKING_MS: 30_000, // client shows the "still looking" state after this
+
+  // ECHOES: the wall of voice notes. Everything lives in server memory and is gone after the TTL.
+  ECHO_TTL_MS: 24 * 60 * 60 * 1000,
+  ECHO_MAX_SECONDS: 30,
+  ECHO_MAX_BYTES: 400_000, // ~30s of opus at 32 kbps is ~120 KB; this leaves room for Safari's AAC
+  ECHO_MAX_NOTES: 300, // oldest note drops off when the wall is full
+  ECHO_MAX_REPLIES: 10, // then the note shows as "heard"
+  ECHO_TEXT_MAX: 280,
+  ECHO_REPORT_HIDE: 3, // distinct reporters before a note or reply is taken down
+  ECHO_POST_COOLDOWN_MS: 3 * 60_000, // one new note per session every 3 minutes
+  ECHO_IP_POSTS: 10, // and at most this many per network (IP) in that window: carriers share IPs, spammers don't get a pass
+  ECHO_REPLY_COOLDOWN_MS: 15_000
 });
+
+export const ECHO_TAGS = Object.freeze(['confession', 'question', 'rant', 'advice']);
+export const ECHO_REACTIONS = Object.freeze(['felt', 'same', 'strength']);
 
 // Everything is anonymous: pseudonyms look like quiet_otter_42.
 export const PSEUDONYM_RE = /^[a-z]{3,10}_[a-z]{3,10}_\d{2}$/;

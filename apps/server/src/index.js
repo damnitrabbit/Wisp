@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { makeName, isValidName } from './names.js';
 import { Rooms } from './rooms.js';
 import { Pairs } from './pairs.js';
+import { Echoes } from './echoes.js';
 import { getIceServers, reportRelayBytes, turnStatus } from './turn.js';
 
 const L = config.limits;
@@ -29,7 +30,7 @@ export function createWisp() {
     if (req.url === '/status') {
       // Aggregate numbers only. Nothing here identifies anyone.
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus(), ipGuard: lastGuard }));
+      return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), echoes: echoes.count(), turn: turnStatus(), ipGuard: lastGuard }));
     }
     res.writeHead(200, { 'content-type': 'text/plain' });
     res.end('notrace signaling. nothing to see here.');
@@ -64,7 +65,7 @@ export function createWisp() {
     cors: { origin: config.allowedOrigins, methods: ['GET', 'POST'] },
     pingInterval: 20_000,
     pingTimeout: 20_000, // generous: phones and background tabs answer slowly
-    maxHttpBufferSize: 64 * 1024,
+    maxHttpBufferSize: 512 * 1024, // room for one ECHOES voice note (capped at ECHO_MAX_BYTES)
     allowRequest(req, done) {
       // Browsers always send Origin; refuse other websites. (Non-browser clients can fake it: the IP caps cover those.)
       const origin = req.headers.origin;
@@ -126,10 +127,12 @@ export function createWisp() {
       return { text: clean };
     },
     lobbyChanged,
+    echoesChanged,
   };
 
   const rooms = new Rooms(hub);
   const pairs = new Pairs(hub);
+  const echoes = new Echoes(hub);
 
   function onlineCount() {
     let n = 0;
@@ -138,7 +141,19 @@ export function createWisp() {
   }
 
   function lobbyPayload() {
-    return { channels: rooms.counts(), online: onlineCount(), waiting: pairs.waitingCount() };
+    return { channels: rooms.counts(), online: onlineCount(), waiting: pairs.waitingCount(), echoes: echoes.count() };
+  }
+
+  // The wall changed (new note, reply, reaction, removal): tell everyone, at most twice a second.
+  let echoesTimer = null;
+  function echoesChanged() {
+    lobbyChanged();
+    if (echoesTimer) return;
+    echoesTimer = setTimeout(() => {
+      echoesTimer = null;
+      io.emit('echoes:changed', { count: echoes.count() });
+    }, 500);
+    echoesTimer.unref?.();
   }
 
   let lobbyTimer = null;
@@ -214,6 +229,7 @@ export function createWisp() {
       names.add(user.name);
     }
     user.socket = socket;
+    user.ip = ipOf(socket.request); // null behind a proxy that hides it; echoes then key on the token
     user.online = true;
 
     socket.emit('session:ready', { ...sessionState(user, resumed), token });
@@ -296,6 +312,17 @@ export function createWisp() {
     on('pair:voiceEnd', () => pairs.voiceEnd(user));
     for (const e of ['pairRtc:offer', 'pairRtc:answer', 'pairRtc:ice']) on(e, ({ data }) => (pairs.relay(user, e, data), { ok: true }));
 
+    // ECHOES (the wall of voice notes)
+    on('echoes:list', () => echoes.list(user));
+    on('echoes:thread', (p) => echoes.thread(user, p));
+    on('echoes:audio', (p) => echoes.audio(user, p));
+    on('echoes:post', (p) => echoes.post(user, p));
+    on('echoes:reply', (p) => echoes.reply(user, p));
+    on('echoes:react', (p) => echoes.react(user, p));
+    on('echoes:report', (p) => echoes.report(user, p));
+    on('echoes:delete', (p) => echoes.remove(user, p));
+    on('echoes:deleteReply', (p) => echoes.removeReply(user, p));
+
     // explicit goodbye (closing the tab cleanly): no grace period
     on('session:end', () => {
       destroyUser(user);
@@ -325,11 +352,12 @@ export function createWisp() {
   return {
     io,
     httpServer,
-    state: { users, rooms, pairs },
+    state: { users, rooms, pairs, echoes },
     listen(port = config.port) {
       return new Promise((resolve) => httpServer.listen(port, () => resolve(httpServer.address().port)));
     },
     close() {
+      echoes.stop();
       return new Promise((resolve) => io.close(() => resolve()));
     }
   };
