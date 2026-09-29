@@ -11,6 +11,8 @@ export const config = {
   // The live site is always allowed; ALLOWED_ORIGINS adds more (localhost, previews, a custom domain).
   allowedOrigins: [
     ...new Set([
+      'https://notrace.chat',
+      'https://www.notrace.chat',
       'https://wisp-peach-five.vercel.app',
       ...(process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map((s) => s.trim()).filter(Boolean)
     ])

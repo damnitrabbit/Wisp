@@ -1,6 +1,6 @@
 import Legal, { S } from '@/components/Legal';
 
-export const metadata = { title: 'Privacy · wisp' };
+export const metadata = { title: 'Privacy' };
 
 export default function Privacy() {
   return (
@@ -33,7 +33,7 @@ export default function Privacy() {
         <p>THE SITE IS HOSTED ON VERCEL AND THE SERVER ON NORTHFLANK. TO SET UP VOICE CONNECTIONS, YOUR BROWSER CONTACTS PUBLIC STUN SERVERS RUN BY CLOUDFLARE AND GOOGLE. ALL OF THESE SEE YOUR IP ADDRESS, AND EACH HAS ITS OWN PRIVACY POLICY.</p>
       </S>
       <S h="AGE">
-        <p>WISP IS FOR PEOPLE 18 AND OVER.</p>
+        <p>NOTRACE IS FOR PEOPLE 18 AND OVER.</p>
       </S>
     </Legal>
   );

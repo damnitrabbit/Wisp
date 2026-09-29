@@ -1,8 +1,8 @@
-# wisp
+# N0TRACE
 
 Talk to strangers. Leave no trace.
 
-Anonymous, ephemeral voice rooms and 1:1 chat. No accounts, no logs, nothing stored. Built for $0.
+[notrace.chat](https://notrace.chat) · Anonymous, ephemeral voice rooms and 1:1 chat. No accounts, no logs, nothing stored. Built for $0.
 
 ## Layout
 
@@ -49,4 +49,4 @@ npm test               # server tests
 
 ---
 
-© 2026 wisp · dug up by Damn_It_Rabbit
+© 2026 N0TRACE · dug up by Damn_It_Rabbit

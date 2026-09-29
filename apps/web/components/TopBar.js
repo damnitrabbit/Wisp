@@ -11,9 +11,9 @@ export default function TopBar({ crumb, showOnline = true, back, onBack }) {
     <div className="topbar">
       <header>
         <div className="left">
-          <Link href="/" className="brand" aria-label="Wisp home">
+          <Link href="/" className="brand" aria-label="NoTrace home">
             <Rabbit />
-            <span className="word">WISP</span>
+            <span className="word">N0TRACE</span>
           </Link>
           {crumb && <span className="crumb">{crumb}</span>}
         </div>

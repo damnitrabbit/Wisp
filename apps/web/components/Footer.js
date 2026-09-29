@@ -15,13 +15,13 @@ export default function Footer() {
         </nav>
       </div>
       <div className="r">
-        <span>© 2026 WISP</span>
+        <span>© 2026 N0TRACE</span>
         <span>
           DUG UP BY <span className="nc" style={{ color: 'var(--fg)' }}>Damn_It_Rabbit</span>
         </span>
       </div>
       <span className="m">
-        © 2026 WISP · DUG UP BY <span className="nc" style={{ color: 'var(--fg)' }}>Damn_It_Rabbit</span> · 18+
+        © 2026 N0TRACE · DUG UP BY <span className="nc" style={{ color: 'var(--fg)' }}>Damn_It_Rabbit</span> · 18+
       </span>
     </footer>
   );

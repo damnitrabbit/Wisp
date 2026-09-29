@@ -11,7 +11,7 @@ export default function MicModals({ flow, where = 'room' }) {
           <span>ONE-TIME</span>
         </div>
         <h1>
-          WISP NEEDS YOUR MICROPHONE.<span className="cursor">_</span>
+          NOTRACE NEEDS YOUR MICROPHONE.<span className="cursor">_</span>
         </h1>
         <dl className="kv" style={{ gridTemplateColumns: '160px 1fr', rowGap: 12 }}>
           <dt>NEXT</dt>

@@ -24,7 +24,7 @@ export default function Legal({ title, blurb, other, children }) {
           <section id="contact">
             <h2>CONTACT</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <p>WISP IS BUILT AND RUN BY ONE PERSON WHO GOES BY <span className="nc" style={{ color: 'var(--fg)' }}>Damn_It_Rabbit</span>. THAT&apos;S THE ONLY NAME YOU&apos;LL SEE HERE.</p>
+              <p>NOTRACE IS BUILT AND RUN BY ONE PERSON WHO GOES BY <span className="nc" style={{ color: 'var(--fg)' }}>Damn_It_Rabbit</span>. THAT&apos;S THE ONLY NAME YOU&apos;LL SEE HERE.</p>
               <p className="mail">
                 WRITE TO <span className="nc">Damn_It_Rabbit</span>: <a className="nc" href={`mailto:${CONTACT_EMAIL}`} style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>{CONTACT_EMAIL}</a>
               </p>

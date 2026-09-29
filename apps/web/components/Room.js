@@ -59,7 +59,7 @@ export default function Room({ channel }) {
   }, [meId, join]);
 
   useEffect(() => {
-    document.title = `${channel.name} · wisp`;
+    document.title = `${channel.name} · NoTrace`;
     const offs = [
       on('channel:update', (s) => {
         if (s.id !== channel.id) return;

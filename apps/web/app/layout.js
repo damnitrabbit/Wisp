@@ -8,7 +8,7 @@ import { SITE_URL, SITE_NAME, TAGLINE, DESCRIPTION, KEYWORDS } from '@/lib/site'
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: `${SITE_NAME} · Talk to strangers anonymously. Voice rooms + random chat`, template: `%s · ${SITE_NAME}` },
+  title: { default: `${SITE_NAME} · Leave no trace. Talk to strangers anonymously`, template: `%s · ${SITE_NAME}` },
   description: DESCRIPTION,
   keywords: KEYWORDS,
   applicationName: SITE_NAME,

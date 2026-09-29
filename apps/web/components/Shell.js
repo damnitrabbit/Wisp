@@ -69,7 +69,7 @@ function Offline() {
       <main role="alert" className="center">
         <div aria-hidden="true"><Rabbit className="rabbit-xl" mode="sleep" /></div>
         <h1>LOST THE SIGNAL.<span className="cursor">_</span></h1>
-        <p>WE CAN&apos;T REACH THE WISP SERVER RIGHT NOW. IT MIGHT BE RESTARTING, OR YOUR CONNECTION DROPPED. WHEN IT COMES BACK, EVERY ROOM AND CHAT STARTS FRESH. NOTHING WAS SAVED, SO NOTHING WAS LOST.</p>
+        <p>WE CAN&apos;T REACH THE NOTRACE SERVER RIGHT NOW. IT MIGHT BE RESTARTING, OR YOUR CONNECTION DROPPED. WHEN IT COMES BACK, EVERY ROOM AND CHAT STARTS FRESH. NOTHING WAS SAVED, SO NOTHING WAS LOST.</p>
         <div className="retry">
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="dot pulse" />RETRYING IN 00:0{left}</span>
           <span>ATTEMPT {Math.max(1, attempt)}</span>

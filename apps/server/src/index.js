@@ -32,7 +32,7 @@ export function createWisp() {
       return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus() }));
     }
     res.writeHead(200, { 'content-type': 'text/plain' });
-    res.end('wisp signaling. nothing to see here.');
+    res.end('notrace signaling. nothing to see here.');
   });
 
   const io = new Server(httpServer, {

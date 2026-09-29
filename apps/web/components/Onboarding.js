@@ -48,7 +48,7 @@ export default function Onboarding({ next, onDone }) {
         <main className="main split">
           <div className="lead">
             <div className="eyebrow">[ 1/3 ] BEFORE YOU GO IN</div>
-            <h1 className="h-30">WISP IS AN ANONYMOUS PLACE FOR ADULTS. YOU&apos;LL TALK TO PEOPLE YOU DON&apos;T KNOW, UNDER NAMES THAT AREN&apos;T REAL.</h1>
+            <h1 className="h-30">NOTRACE IS AN ANONYMOUS PLACE FOR ADULTS. YOU&apos;LL TALK TO PEOPLE YOU DON&apos;T KNOW, UNDER NAMES THAT AREN&apos;T REAL.</h1>
             <p className="p-18">
               BE THE KIND OF STRANGER YOU&apos;D WANT TO MEET.<span className="cursor" style={{ color: 'var(--fg)' }}>_</span>
             </p>
@@ -82,7 +82,7 @@ export default function Onboarding({ next, onDone }) {
         <main className="main" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           <div className="eyebrow">[ 1/3 ] NOT FOR YOU YET</div>
           <h1 className="h-40" style={{ maxWidth: 820, fontSize: 'clamp(26px, 4vw, 40px)', lineHeight: 1.35 }}>
-            SORRY. WISP IS ONLY FOR PEOPLE 18 AND OLDER, SO YOU CAN&apos;T CONTINUE.
+            SORRY. NOTRACE IS ONLY FOR PEOPLE 18 AND OLDER, SO YOU CAN&apos;T CONTINUE.
           </h1>
           <p className="p-16" style={{ maxWidth: 680 }}>NOTHING WAS SAVED ABOUT YOU. YOU CAN CLOSE THIS TAB.</p>
         </main>
@@ -134,9 +134,9 @@ export default function Onboarding({ next, onDone }) {
         </div>
         <div className="modes">
           <ModeCard no="01" meta="25 THEMED ROOMS" title="VOICE ROOMS" onClick={() => onDone('/rooms')}
-            text={<>UP TO 10 PEOPLE. YOU JOIN AS A LISTENER.<br />RAISE YOUR HAND WHEN YOU WANT TO SPEAK.</>} />
+            text={<>UP TO 10 PEOPLE. YOU JOIN AS A LISTENER. <br />RAISE YOUR HAND WHEN YOU WANT TO SPEAK.</>} />
           <ModeCard no="02" meta="NO FILTERS" title="1:1 CHAT" onClick={() => onDone('/chat')}
-            text={<>ONE RANDOM STRANGER. TEXT FIRST.<br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
+            text={<>ONE RANDOM STRANGER. TEXT FIRST. <br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
         </div>
       </main>
       <Footer />
@@ -214,10 +214,10 @@ function Slide({ i }) {
 function Boot({ onEnter }) {
   return (
     <div className="boot">
-      <h1 className="sr">Wisp: talk to strangers anonymously in voice rooms or random 1:1 chat</h1>
-      <div className="wake"><Rabbit className="rabbit-xl" label="Wisp rabbit, waking up" /></div>
+      <h1 className="sr">NoTrace: talk to strangers anonymously in voice rooms or random 1:1 chat</h1>
+      <div className="wake"><Rabbit className="rabbit-xl" label="NoTrace rabbit, waking up" /></div>
       <div role="log" aria-label="Boot sequence" className="log">
-        <div className="ln dim" style={{ animationDelay: '1.4s' }}>WISP · WAKING UP FROM NOTHING</div>
+        <div className="ln dim" style={{ animationDelay: '1.4s' }}>N0TRACE · WAKING UP FROM NOTHING</div>
         {[
           ['ACCOUNTS', 'NONE', '1.9s'],
           ['HISTORY', 'NONE', '2.3s'],
@@ -236,8 +236,8 @@ function Boot({ onEnter }) {
         [ ENTER ]
       </button>
       <div className="foot">
-        <span>ANONYMOUS VOICE ROOMS + 1:1 CHAT WITH STRANGERS · 18+ ONLY</span>
-        <span>© 2026 WISP · <span className="nc">Damn_It_Rabbit</span></span>
+        <span>LEAVE NO TRACE · ANONYMOUS VOICE ROOMS + 1:1 CHAT WITH STRANGERS · 18+ ONLY</span>
+        <span>© 2026 N0TRACE · <span className="nc">Damn_It_Rabbit</span></span>
       </div>
     </div>
   );

@@ -18,11 +18,11 @@ export default function Lobby() {
       <main className="main lobby">
         <div className="lead">
           <div className="copy">
-            <p>WISP IS A PLACE TO TALK TO STRANGERS. NO ACCOUNTS. NO HISTORY. A NEW NAME EVERY TIME YOU JOIN.</p>
+            <p>NOTRACE IS A PLACE TO TALK TO STRANGERS. NO ACCOUNTS. NO HISTORY. A NEW NAME EVERY TIME YOU JOIN.</p>
             <p>WHEN YOU LEAVE, THE SERVER FORGETS YOU. THERE IS NOTHING TO DELETE, BECAUSE NOTHING WAS KEPT.</p>
           </div>
           <dl className="kv" style={{ gridTemplateColumns: '180px 1fr', rowGap: 20, fontSize: 14 }}>
-            <dt>ON WISP NOW</dt>
+            <dt>ON NOTRACE NOW</dt>
             <dd style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="dot" />
               {lobby.online ?? '—'} {lobby.online === 1 ? 'PERSON (YOU)' : 'PEOPLE'}
@@ -33,16 +33,16 @@ export default function Lobby() {
               <br />
               <span className="dim">{remember.on() ? 'KEPT ON THIS DEVICE.' : 'NEW EVERY TIME.'}</span>
             </dd>
-            <dt>STORAGE</dt>
-            <dd>NONE. MEMORY ONLY.</dd>
+            <dt>KEPT</dt>
+            <dd>NOTHING. MEMORY ONLY.</dd>
           </dl>
         </div>
         <div className="pick">
           <div className="eyebrow">CHOOSE HOW TO ENTER</div>
           <ModeCard href="/rooms" no="01" meta={`${live} ROOM${live === 1 ? '' : 'S'} LIVE`} title="VOICE ROOMS"
-            text={<>25 THEMED ROOMS. UP TO 10 PEOPLE EACH.<br />JOIN AS A LISTENER. RAISE YOUR HAND TO SPEAK.</>} />
+            text={<>25 THEMED ROOMS. UP TO 10 PEOPLE EACH. <br />JOIN AS A LISTENER. RAISE YOUR HAND TO SPEAK.</>} />
           <ModeCard href="/chat" no="02" meta={lobby.waiting ? `${lobby.waiting} WAITING` : 'NO FILTERS'} title="1:1 CHAT"
-            text={<>ONE RANDOM STRANGER. TEXT FIRST.<br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
+            text={<>ONE RANDOM STRANGER. TEXT FIRST. <br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
         </div>
       </main>
       <Footer />

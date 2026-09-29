@@ -58,7 +58,7 @@ export default function Chat() {
   // ---------- server events ----------
 
   useEffect(() => {
-    document.title = '1:1 · wisp';
+    document.title = '1:1 chat · NoTrace';
     const offs = [
       on('pair:waiting', () => {
         setPhase('searching');

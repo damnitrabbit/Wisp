@@ -25,7 +25,7 @@ function Mouth({ animate = true }) {
   );
 }
 
-export default function Rabbit({ className = 'rabbit-sm', mode = 'awake', label = 'Wisp rabbit' }) {
+export default function Rabbit({ className = 'rabbit-sm', mode = 'awake', label = 'NoTrace rabbit' }) {
   if (mode === 'sleep') {
     return (
       <svg className={className} viewBox="0 0 24 18" shapeRendering="crispEdges" role="img" aria-label="Sleeping rabbit">

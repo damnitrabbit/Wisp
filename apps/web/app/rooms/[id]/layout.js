@@ -10,7 +10,7 @@ export async function generateMetadata({ params }) {
   if (!c) return { title: 'Room not found', robots: { index: false } };
   return {
     title: `${c.name} · anonymous voice chat room`,
-    description: `${c.blurb} An anonymous voice chat room for up to 10 strangers on Wisp. No sign-up, nothing recorded.`,
+    description: `${c.blurb} An anonymous voice chat room for up to 10 strangers on NoTrace. No sign-up, nothing recorded.`,
     alternates: { canonical: `/rooms/${c.id}` }
   };
 }

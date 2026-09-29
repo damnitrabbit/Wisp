@@ -1,6 +1,6 @@
 import Legal, { S } from '@/components/Legal';
 
-export const metadata = { title: 'Terms · wisp' };
+export const metadata = { title: 'Terms' };
 
 const DONT = [
   'HARASS, THREATEN OR BULLY ANYONE.',
@@ -13,12 +13,12 @@ const DONT = [
 
 export default function Terms() {
   return (
-    <Legal title="TERMS" blurb="THE RULES FOR USING WISP. SHORT ON PURPOSE." other="PRIVACY">
+    <Legal title="TERMS" blurb="THE RULES FOR USING NOTRACE. SHORT ON PURPOSE." other="PRIVACY">
       <S h="THE SHORT VERSION">
         <p className="big">BE 18 OR OLDER. TREAT STRANGERS LIKE PEOPLE. IF YOU DON&apos;T, THE ROOM AND THE REPORT BUTTON WILL SORT IT OUT.</p>
       </S>
-      <S h="01 WHO CAN USE WISP">
-        <p>YOU MUST BE AT LEAST 18. BY CONFIRMING THE AGE CHECK YOU&apos;RE TELLING US YOU ARE. IF YOU AREN&apos;T, DON&apos;T USE WISP.</p>
+      <S h="01 WHO CAN USE NOTRACE">
+        <p>YOU MUST BE AT LEAST 18. BY CONFIRMING THE AGE CHECK YOU&apos;RE TELLING US YOU ARE. IF YOU AREN&apos;T, DON&apos;T USE NOTRACE.</p>
       </S>
       <S h="02 DON'T">
         <dl className="rules">
@@ -32,10 +32,10 @@ export default function Terms() {
         <p>WHAT YOU SAY IS YOURS, AND YOU&apos;RE RESPONSIBLE FOR IT. WE DON&apos;T STORE IT. REMEMBER THAT THE PERSON ON THE OTHER SIDE IS A STRANGER. DON&apos;T SHARE ANYTHING YOU WOULDN&apos;T WANT REPEATED.</p>
       </S>
       <S h="05 NO GUARANTEES">
-        <p>WISP IS PROVIDED AS IS. IT MAY GO DOWN, CHANGE OR STOP. WE&apos;RE NOT RESPONSIBLE FOR WHAT OTHER PEOPLE SAY OR DO ON IT.</p>
+        <p>NOTRACE IS PROVIDED AS IS. IT MAY GO DOWN, CHANGE OR STOP. WE&apos;RE NOT RESPONSIBLE FOR WHAT OTHER PEOPLE SAY OR DO ON IT.</p>
       </S>
       <S h="06 CHANGES">
-        <p>IF THESE TERMS CHANGE, THE DATE AT THE TOP CHANGES TOO. USING WISP AFTER THAT MEANS YOU ACCEPT THE NEW VERSION.</p>
+        <p>IF THESE TERMS CHANGE, THE DATE AT THE TOP CHANGES TOO. USING NOTRACE AFTER THAT MEANS YOU ACCEPT THE NEW VERSION.</p>
       </S>
       <S h="07 GOVERNING LAW">
         <p>THESE TERMS ARE GOVERNED BY THE LAWS OF INDIA.</p>
