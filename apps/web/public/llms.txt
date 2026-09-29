@@ -1,0 +1,50 @@
+# NoTrace (N0TRACE)
+
+> NoTrace is a free, anonymous way to talk to strangers online: random 1:1 chat that starts as text and can switch to voice if both people agree, plus 25 themed voice chat rooms for up to 10 people. There is no video, no sign-up, no account and no database; nothing about users or their conversations is stored. Tagline: "Leave no trace." Adults only (18+). Website: https://notrace.chat
+
+## What it is
+
+- An Omegle alternative for people who want voice or text, not video. Omegle shut down in 2023; NoTrace keeps the "talk to someone you'll never meet" idea with safer defaults.
+- Two modes: random 1:1 chat (text first, voice only with mutual consent) and anonymous voice rooms (up to 10 people each).
+- Every visitor gets a random name such as quiet_otter_42. There are no profiles, friends lists or message history.
+- Works in any modern browser on desktop and mobile. Nothing to install.
+- Free. No paid tiers, no ads.
+
+## How it differs from video-chat alternatives (OmeTV, Emerald Chat, OpenTalk and similar)
+
+- No video, by design: text and voice only.
+- No account or login of any kind.
+- Nothing is stored: rooms, chats and reports live only in server memory and disappear when a room empties or a chat ends. No cookies, no analytics.
+- Voice audio travels directly between people's devices (WebRTC), not through NoTrace's servers, and is never recorded.
+- Rooms are moderated by their own members rather than by staff (see below).
+
+## How voice rooms work
+
+- 25 themed rooms, e.g. Late Night Confessions, Heartbreak Hotel, Rant Room, Debate Arena, Deep Questions, Just Vent, Support Circle, Study Hall, Language Exchange.
+- Everyone joins as a listener with their microphone off.
+- The first two people in an empty room become its moderators ("mods"). Anyone who stays on stage for 2 minutes 30 seconds also becomes a mod.
+- Listeners raise a hand to ask to speak; a mod brings them on stage or declines. Unanswered hands expire after 30 seconds. Mods can also invite listeners up.
+- Mods can move ordinary speakers back to listeners, but cannot remove other mods.
+- Anyone can report anyone. When enough different people in the room report someone (up to 5 in a busy room, fewer in small rooms, never fewer than 2), that person is removed automatically, mods included. Each person can report someone once per room.
+
+## How 1:1 chat works
+
+- Matching is first come, first served: you are paired with whoever has waited longest, and never instantly rematched with someone you just skipped.
+- Chats start as text (up to 500 characters per message). Either person can ask to switch to voice; voice starts only if the other person accepts. Text keeps working during the call.
+- Skip at any time to meet someone new. Reporting ends the chat immediately; three reports from different people remove someone from matchmaking for 24 hours.
+
+## Pages
+
+- [Home](https://notrace.chat/): start here; age confirmation, then choose 1:1 chat or voice rooms
+- [Voice rooms](https://notrace.chat/rooms): the list of all 25 rooms, busiest first
+- [1:1 chat](https://notrace.chat/chat): random stranger chat
+- [Omegle alternative](https://notrace.chat/omegle-alternative): how NoTrace compares to Omegle
+- [Talk to strangers](https://notrace.chat/talk-to-strangers)
+- [Anonymous voice chat](https://notrace.chat/anonymous-voice-chat)
+- [Random chat](https://notrace.chat/random-chat)
+- [Privacy](https://notrace.chat/privacy): what exists while you are connected, and what is never collected
+- [Terms](https://notrace.chat/terms): rules, including 18+ only
+
+## About
+
+NoTrace is built and run independently by one person under the name Damn_It_Rabbit. Contact: damnitrabbit.build@gmail.com
