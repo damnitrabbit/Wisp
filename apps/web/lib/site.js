@@ -1,7 +1,5 @@
-// Where the site lives. On Vercel the production URL is provided automatically at build time.
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000');
+// The one address search engines and link previews should use.
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL ? 'https://notrace.chat' : 'http://localhost:3000');
 
 export const SITE_NAME = 'NoTrace';
 export const TAGLINE = 'Leave no trace.';
