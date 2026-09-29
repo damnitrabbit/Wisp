@@ -436,6 +436,7 @@ h1, h2, p, dl, dd, ol { margin: 0; }
   .session .kv { grid-template-columns: 90px 1fr; row-gap: 6px; font-size: 11px; padding-bottom: 12px; }
   .m-chatbtns { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
   .m-chatbtns .btn { height: 44px; font-size: 11px; padding: 0 6px; }
+  .m-chatbtns.live { grid-template-columns: 1fr 1fr; }
   .convo { border-left: 0; padding: 0 var(--pad); gap: 12px; }
   .thread { font-size: 13px; }
   .line { grid-template-columns: 1fr; gap: 2px; }

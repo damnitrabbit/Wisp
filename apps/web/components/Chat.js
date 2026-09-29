@@ -379,12 +379,11 @@ function ChatView({ pair, me, msgs, typing, away, voice, call, muted, draft, onD
             <dt>MODE</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className={`dot ${live ? 'pulse' : ''}`} />{live ? 'TEXT + VOICE' : 'TEXT'}</dd>
             <dt className="opt">KEPT</dt><dd className="opt">NOTHING</dd>
           </dl>
-          <div className="m-chatbtns">
+          {/* During a call, END CALL lives only in the call panel below (next to MUTE). */}
+          <div className={`m-chatbtns${live ? ' live' : ''}`}>
             <button type="button" className="btn" onClick={onSkip}>SKIP</button>
             <button type="button" className="btn dim" onClick={onReport}>REPORT</button>
-            {live ? (
-              <button type="button" className="btn solid" onClick={onEndCall}>END CALL</button>
-            ) : voice === 'asked' ? (
+            {live ? null : voice === 'asked' ? (
               <button type="button" className="btn dash" disabled>ASKED…</button>
             ) : (
               <button type="button" className="btn" onClick={onAskVoice}>VOICE</button>
