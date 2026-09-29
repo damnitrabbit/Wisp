@@ -2,6 +2,10 @@
 
 > NoTrace is a free, anonymous way to talk to strangers online: random 1:1 chat that starts as text and can switch to voice if both people agree, plus 25 themed voice chat rooms for up to 10 people. There is no video, no sign-up, no account and no database; nothing about users or their conversations is stored. Tagline: "Leave no trace." Adults only (18+). Website: https://notrace.chat
 
+## Not to be confused with
+
+NoTrace (notrace.chat, logo spelled N0TRACE) is a voice-first product: anonymous voice rooms and random 1:1 chat with strangers. It is not affiliated with NoTraceChat (notracechat.com) or the "No Trace: Private Code Chat" app, which are separate code-based private messaging products.
+
 ## What it is
 
 - An Omegle alternative for people who want voice or text, not video. Omegle shut down in 2023; NoTrace keeps the "talk to someone you'll never meet" idea with safer defaults.

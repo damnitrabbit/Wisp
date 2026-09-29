@@ -4,11 +4,11 @@ import '@fontsource/ibm-plex-mono/latin-400.css';
 import '@fontsource/ibm-plex-mono/latin-500.css';
 import './globals.css';
 import Shell from '@/components/Shell';
-import { SITE_URL, SITE_NAME, TAGLINE, DESCRIPTION, KEYWORDS } from '@/lib/site';
+import { SITE_URL, SITE_NAME, TITLE, ALT_NAMES, DESCRIPTION, KEYWORDS } from '@/lib/site';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: `${SITE_NAME} · Talk to strangers`, template: `%s · ${SITE_NAME}` },
+  title: { default: TITLE, template: `%s · ${SITE_NAME}` },
   description: DESCRIPTION,
   keywords: KEYWORDS,
   applicationName: SITE_NAME,
@@ -21,21 +21,26 @@ export const metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,
     other: process.env.NEXT_PUBLIC_BING_VERIFICATION ? { 'msvalidate.01': process.env.NEXT_PUBLIC_BING_VERIFICATION } : undefined
   },
-  openGraph: { type: 'website', siteName: SITE_NAME, title: `${SITE_NAME} · ${TAGLINE}`, description: DESCRIPTION, url: '/', locale: 'en_US' },
-  twitter: { card: 'summary_large_image', title: `${SITE_NAME} · ${TAGLINE}`, description: DESCRIPTION }
+  openGraph: { type: 'website', siteName: SITE_NAME, title: TITLE, description: DESCRIPTION, url: '/', locale: 'en_US' },
+  twitter: { card: 'summary_large_image', title: TITLE, description: DESCRIPTION }
 };
 
-const jsonLd = {
+// WebSite is what Google reads for the site name shown above results; alternateName covers N0TRACE.
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, alternateName: ALT_NAMES, url: `${SITE_URL}/` },
+  {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: SITE_NAME,
+  alternateName: ALT_NAMES,
   url: SITE_URL,
   description: DESCRIPTION,
   applicationCategory: 'CommunicationApplication',
   operatingSystem: 'Any (web browser)',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   creator: { '@type': 'Person', name: 'Damn_It_Rabbit' }
-};
+  }
+];
 
 export const viewport = {
   themeColor: '#000000',
