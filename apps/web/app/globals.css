@@ -125,6 +125,8 @@ h1, h2, p, dl, dd, ol { margin: 0; }
 .ctl:hover { border-color: var(--fg); color: var(--fg); }
 .ctl.hi { color: var(--fg); border-color: var(--fg-3); }
 .ctl.solid { background: var(--fg); color: #000; border-color: var(--fg); }
+.ctl.done { display: inline-flex; align-items: center; border-style: dashed; border-color: var(--fg-4); color: var(--fg-3); cursor: default; }
+.ctl.done:hover { border-color: var(--fg-4); color: var(--fg-3); }
 
 /* ---------- label/value ---------- */
 .kv { display: grid; grid-template-columns: 140px 1fr; row-gap: 16px; font-size: 13px; line-height: 1.5; }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import TopBar from './TopBar';
 import Modal from './Modal';
 import MicModals from './MicModals';
+import ReportConfirm from './ReportConfirm';
 import { emit, on, bus, toast, syncClock, useWisp } from '@/lib/wisp';
 import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
 import { useMesh } from '@/lib/mesh';
@@ -27,6 +28,8 @@ export default function Room({ channel }) {
   const [tab, setTab] = useState('stage');
   const [sheet, setSheet] = useState(null); // member id for the mobile action sheet
   const [draft, setDraft] = useState('');
+  const [reported, setReported] = useState(() => new Set());
+  const [confirming, setConfirming] = useState(null); // member we're about to report
   const mic = useMicFlow();
   const left = useRef(false);
   const asking = useRef(false);
@@ -51,6 +54,7 @@ export default function Room({ channel }) {
     syncClock(r.snapshot.serverNow);
     setSnap(r.snapshot);
     setFeed(r.history ?? []);
+    setReported(new Set(r.reported ?? []));
   }, [channel, router]);
 
   useEffect(() => {
@@ -165,10 +169,19 @@ export default function Room({ channel }) {
     if (r.ok) toast({ kind: 'solid', tag: '[ ON STAGE ]', text: 'THE ROOM CAN HEAR YOU NOW. STAY 2:30 AND YOU BECOME A MOD.' });
   };
 
-  const report = async (m) => {
+  const report = (m) => {
     setSheet(null);
+    if (!reported.has(m.id)) setConfirming(m);
+  };
+  const confirmReport = async () => {
+    const m = confirming;
+    setConfirming(null);
+    if (!m || reported.has(m.id)) return;
+    setReported((s) => new Set(s).add(m.id));
     const r = await emit('channel:report', { to: m.id });
-    if (r.ok) toast({ tag: '[ REPORTED ]', text: <>THANKS. IF ENOUGH PEOPLE HERE REPORT <span className="nc">{m.name}</span>, THEY&apos;RE REMOVED AUTOMATICALLY.</> });
+    if (r.ok && !r.already) {
+      toast({ key: `rep-${m.id}`, tag: '[ REPORTED ]', text: <>THANKS. IF ENOUGH PEOPLE HERE REPORT <span className="nc">{m.name}</span>, THEY&apos;RE REMOVED AUTOMATICALLY.</> });
+    }
   };
   const act = (event, m) => {
     setSheet(null);
@@ -188,7 +201,7 @@ export default function Room({ channel }) {
   // keyboard: M mic, H hand, Y/N on an invite
   useEffect(() => {
     const onKey = (e) => {
-      if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || mic.modal) return;
+      if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || mic.modal || confirming || sheet) return;
       const k = e.key.toLowerCase();
       if (invite) {
         if (k === 'y') answerInvite(true);
@@ -313,6 +326,7 @@ export default function Room({ channel }) {
             now={now}
             onAct={act}
             onReport={report}
+            reported={reported}
             onMore={setSheet}
           />
         </div>
@@ -343,6 +357,7 @@ export default function Room({ channel }) {
         <InviteModal invite={invite} now={now} onAnswer={answerInvite} />
       )}
       <MicModals flow={mic} where="room" />
+      {confirming && <ReportConfirm name={confirming.name} onConfirm={confirmReport} onCancel={() => setConfirming(null)} />}
       {sheetMember && (
         <Modal label={`Actions for ${sheetMember.name}`} onEscape={() => setSheet(null)}>
           <div className="head"><span className="nc" style={{ color: 'var(--fg)', fontSize: 16 }}>{sheetMember.name}</span><span>{sheetMember.role.toUpperCase()}</span></div>
@@ -353,7 +368,11 @@ export default function Room({ channel }) {
             {meMod && sheetMember.role === 'speaker' && (
               <button type="button" className="btn tall" onClick={() => act('stage:demote', sheetMember)}>[ ↓ ] MOVE TO LISTENERS</button>
             )}
-            <button type="button" className="btn tall" onClick={() => report(sheetMember)}>[ ! ] REPORT</button>
+            {reported.has(sheetMember.id) ? (
+              <button type="button" className="btn tall dash" disabled>REPORTED</button>
+            ) : (
+              <button type="button" className="btn tall" onClick={() => report(sheetMember)}>[ ! ] REPORT</button>
+            )}
             <button type="button" className="btn tall dim" onClick={() => setSheet(null)}>CLOSE</button>
           </div>
         </Modal>
@@ -363,7 +382,13 @@ export default function Room({ channel }) {
   );
 }
 
-function People({ speakers, listeners, me, meMod, alone, hands, speaking, now, onAct, onReport, onMore }) {
+function People({ speakers, listeners, me, meMod, alone, hands, speaking, now, onAct, onReport, reported, onMore }) {
+  const reportBtn = (m) =>
+    reported.has(m.id) ? (
+      <span className="ctl wide done" aria-label={`You reported ${m.name}`}>REPORTED</span>
+    ) : (
+      <button type="button" className="ctl wide" aria-label={`Report ${m.name}`} onClick={() => onReport(m)}>[ ! ]</button>
+    );
   return (
     <>
       <section aria-label="On stage" className="sec">
@@ -418,7 +443,7 @@ function People({ speakers, listeners, me, meMod, alone, hands, speaking, now, o
                   {!you && meMod && s.role === 'mod' && <span className="wide fixed-note dim3">CAN&apos;T BE MOVED</span>}
                   {!you && (
                     <>
-                      <button type="button" className="ctl wide" aria-label={`Report ${s.name}`} onClick={() => onReport(s)}>[ ! ]</button>
+                      {reportBtn(s)}
                       <button type="button" className="ctl narrow" aria-label={`More for ${s.name}`} onClick={() => onMore(s.id)}>···</button>
                     </>
                   )}
@@ -463,7 +488,7 @@ function People({ speakers, listeners, me, meMod, alone, hands, speaking, now, o
                   )}
                   {!you && (
                     <>
-                      <button type="button" className="ctl wide" aria-label={`Report ${l.name}`} onClick={() => onReport(l)}>[ ! ]</button>
+                      {reportBtn(l)}
                       {!(meMod && l.handUp) && <button type="button" className="ctl narrow" aria-label={`More for ${l.name}`} onClick={() => onMore(l.id)}>···</button>}
                     </>
                   )}

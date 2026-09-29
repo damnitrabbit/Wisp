@@ -6,6 +6,7 @@ import Footer from './Footer';
 import Rabbit from './Rabbit';
 import Modal from './Modal';
 import MicModals from './MicModals';
+import ReportConfirm from './ReportConfirm';
 import { emit, on, bus, toast, syncClock, useWisp } from '@/lib/wisp';
 import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
 import { usePairCall } from '@/lib/call';
@@ -28,12 +29,14 @@ export default function Chat() {
   const [away, setAway] = useState(false);
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState('');
+  const [confirmReport, setConfirmReport] = useState(false);
   const mic = useMicFlow();
   const escAt = useRef(0);
   const typingTimer = useRef(null);
   const sentTyping = useRef(0);
 
   const resetChat = () => {
+    setConfirmReport(false);
     setPair(null);
     setMsgs([]);
     setVoice('off');
@@ -166,6 +169,7 @@ export default function Chat() {
     setSince(Date.now());
   };
   const report = async () => {
+    setConfirmReport(false);
     await emit('pair:report');
     resetChat();
     setPhase('searching');
@@ -221,7 +225,7 @@ export default function Chat() {
   // keys: Esc Esc skip, S skip, V voice, M mute, E end call
   useEffect(() => {
     const onKey = (e) => {
-      if (phase !== 'chat' || mic.modal || incoming) return;
+      if (phase !== 'chat' || mic.modal || incoming || confirmReport) return;
       const inInput = e.target.tagName === 'INPUT';
       if (e.key === 'Escape') {
         if (Date.now() - escAt.current < 1500) {
@@ -264,7 +268,7 @@ export default function Chat() {
       onDraft={onDraft}
       onSend={sendMsg}
       onSkip={skip}
-      onReport={report}
+      onReport={() => setConfirmReport(true)}
       onAskVoice={askVoice}
       onEndCall={endCall}
       onMute={() => setMuted((m) => !m)}
@@ -272,6 +276,7 @@ export default function Chat() {
         <>
           {incoming && voice === 'incoming' && <VoiceConsent from={incoming} onAnswer={answerVoice} />}
           <MicModals flow={mic} where="call" />
+          {confirmReport && pair && <ReportConfirm name={pair.partner.name} where="chat" onConfirm={report} onCancel={() => setConfirmReport(false)} />}
         </>
       }
     />

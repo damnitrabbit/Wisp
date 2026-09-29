@@ -5,7 +5,7 @@ export default function Modal({ label, children, onEscape }) {
   const ref = useRef(null);
   useEffect(() => {
     const prev = document.activeElement;
-    ref.current?.querySelector('button, a, input')?.focus();
+    (ref.current?.querySelector('[data-autofocus]') ?? ref.current?.querySelector('button, a, input'))?.focus();
     const onKey = (e) => {
       if (e.key === 'Escape' && onEscape) onEscape();
       if (e.key === 'Tab' && ref.current) {

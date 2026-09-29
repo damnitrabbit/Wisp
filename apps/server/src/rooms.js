@@ -78,7 +78,7 @@ export class Rooms {
     if (!channel) return { error: ERRORS.NOT_FOUND };
     if (user.roomId === channelId) {
       const room = this.rooms.get(channelId);
-      return { snapshot: this.snapshot(room), history: room.messages };
+      return { snapshot: this.snapshot(room), history: room.messages, reported: this.reportedBy(room, user) };
     }
     let room = this.rooms.get(channelId);
     if (room?.banned.has(user.id)) return { error: ERRORS.REMOVED };
@@ -122,7 +122,12 @@ export class Rooms {
 
     this.system(room, `${user.name} joined`, 'join');
     this.broadcast(room);
-    return { snapshot: this.snapshot(room), history: room.messages };
+    return { snapshot: this.snapshot(room), history: room.messages, reported: this.reportedBy(room, user) };
+  }
+
+  // Who this person has already reported here, so their buttons show REPORTED after a reload.
+  reportedBy(room, user) {
+    return [...room.reports].filter(([, set]) => set.has(user.id)).map(([id]) => id);
   }
 
   leave(user, reason = 'left') {
@@ -362,6 +367,8 @@ export class Rooms {
     if (!t || t.user.id === user.id) return { error: ERRORS.BAD_REQUEST };
     let set = room.reports.get(t.user.id);
     if (!set) room.reports.set(t.user.id, (set = new Set()));
+    // One report per person, per target, for as long as the room lives.
+    if (set.has(user.id)) return { ok: true, already: true };
     set.add(user.id);
     if (set.size >= reportThreshold(room.members.size)) {
       room.banned.add(t.user.id);

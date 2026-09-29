@@ -185,3 +185,17 @@ test('a mod who steps down alone is not handed the keys back; the next person in
   assert.equal(member(r.snapshot, b.session.id).role, 'mod');
   assert.equal(member(r.snapshot, a.session.id).role, 'listener');
 });
+
+test('reporting the same person twice only counts once', async () => {
+  const id = freshRoom();
+  const [a, , c] = await fill(id, 3);
+  assert.deepEqual(await a.emit('channel:report', { to: c.session.id }), { ok: true });
+  assert.deepEqual(await a.emit('channel:report', { to: c.session.id }), { ok: true, already: true });
+  assert.deepEqual(await a.emit('channel:report', { to: c.session.id }), { ok: true, already: true });
+  // threshold for 3 people is 2 distinct reporters; one person spamming must not remove anyone
+  await sleep(100);
+  assert.equal(c.saw('channel:youWereKicked'), false);
+  // rejoining (e.g. after a reload) tells the client who it already reported
+  const again = await a.emit('channel:join', { id });
+  assert.deepEqual(again.reported, [c.session.id]);
+});
