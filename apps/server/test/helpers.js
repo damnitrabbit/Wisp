@@ -6,7 +6,9 @@ Object.assign(process.env, {
   HAND_COOLDOWN_MS: '300',
   VOICE_REQUEST_EXPIRY_MS: '300',
   RECONNECT_GRACE_MS: '400',
-  CHAT_MIN_INTERVAL_MS: '50'
+  CHAT_MIN_INTERVAL_MS: '50',
+  PER_IP_OPEN: '10000',
+  PER_IP_PER_MIN: '10000'
 });
 
 const { createWisp } = await import('../src/index.js');

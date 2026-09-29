@@ -29,17 +29,68 @@ export function createWisp() {
     if (req.url === '/status') {
       // Aggregate numbers only. Nothing here identifies anyone.
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus() }));
+      return res.end(JSON.stringify({ instance: INSTANCE, upSeconds: Math.round((Date.now() - BOOTED) / 1000), online: onlineCount(), rooms: rooms.rooms.size, waiting: pairs.waitingCount(), turn: turnStatus(), ipGuard: lastGuard }));
     }
     res.writeHead(200, { 'content-type': 'text/plain' });
     res.end('notrace signaling. nothing to see here.');
   });
 
+  // Abuse guard, per IP: how many sockets are open, and how many were opened in the last minute.
+  // Generous on purpose: mobile carriers put many real people behind one IP. Counts live in memory only.
+  const PER_IP_OPEN = Number(process.env.PER_IP_OPEN) || 24;
+  const PER_IP_PER_MIN = Number(process.env.PER_IP_PER_MIN) || 40;
+  const ipOpen = new Map(); // ip -> open sockets
+  const ipRecent = new Map(); // ip -> timestamps of recent connects
+  // Behind a proxy, the visitor's IP only exists in x-forwarded-for. Without it every visitor would share the
+  // proxy's address, so in production the guard stays off rather than locking everyone out.
+  const TRUST_SOCKET_IP = process.env.NODE_ENV !== 'production';
+  let lastGuard = 'off';
+  const ipOf = (req) => {
+    const fwd = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+    if (fwd) return fwd;
+    return TRUST_SOCKET_IP ? req.socket.remoteAddress || null : null;
+  };
+  const sweep = setInterval(() => {
+    const cutoff = Date.now() - 60_000;
+    for (const [ip, ts] of ipRecent) {
+      const keep = ts.filter((t) => t > cutoff);
+      if (keep.length) ipRecent.set(ip, keep);
+      else ipRecent.delete(ip);
+    }
+  }, 60_000);
+  sweep.unref?.();
+
   const io = new Server(httpServer, {
     cors: { origin: config.allowedOrigins, methods: ['GET', 'POST'] },
     pingInterval: 20_000,
     pingTimeout: 20_000, // generous: phones and background tabs answer slowly
-    maxHttpBufferSize: 64 * 1024
+    maxHttpBufferSize: 64 * 1024,
+    allowRequest(req, done) {
+      // Browsers always send Origin; refuse other websites. (Non-browser clients can fake it: the IP caps cover those.)
+      const origin = req.headers.origin;
+      if (origin && !config.allowedOrigins.includes(origin)) return done('origin not allowed', false);
+      const ip = ipOf(req);
+      lastGuard = ip ? 'on' : 'off';
+      if (!ip) return done(null, true);
+      if ((ipOpen.get(ip) || 0) >= PER_IP_OPEN) return done('too many connections', false);
+      const now = Date.now();
+      const recent = (ipRecent.get(ip) || []).filter((t) => t > now - 60_000);
+      if (recent.length >= PER_IP_PER_MIN) return done('slow down', false);
+      recent.push(now);
+      ipRecent.set(ip, recent);
+      done(null, true);
+    }
+  });
+
+  io.on('connection', (socket) => {
+    const ip = ipOf(socket.request);
+    if (!ip) return;
+    ipOpen.set(ip, (ipOpen.get(ip) || 0) + 1);
+    socket.on('disconnect', () => {
+      const n = (ipOpen.get(ip) || 1) - 1;
+      if (n > 0) ipOpen.set(ip, n);
+      else ipOpen.delete(ip);
+    });
   });
 
   // ---------- hub: the small API that rooms and pairs use ----------
