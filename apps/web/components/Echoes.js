@@ -1,15 +1,14 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LIMITS, ECHO_TAGS, ECHO_REACTIONS } from '@wisp/shared';
+import { LIMITS, ECHO_TAGS } from '@wisp/shared';
 import TopBar from './TopBar';
 import Footer from './Footer';
 import ReportConfirm from './ReportConfirm';
 import { emit, on, toast, useWisp } from '@/lib/wisp';
 import { useNow } from '@/lib/time';
-import { heard, mine, newTicket, timeLeft, secs, useRecorder, usePlayer } from '@/lib/echoes';
+import { heard, seen, mine, newTicket, timeLeft, secs, useRecorder, usePlayer } from '@/lib/echoes';
 
 const TAG_LABEL = { confession: 'CONFESSION', question: 'QUESTION', rant: 'RANT', advice: 'NEED ADVICE' };
-const REACTION_LABEL = { felt: 'FELT THIS', same: 'SAME', strength: 'SENDING STRENGTH' };
 const MAX_S = LIMITS.ECHO_MAX_SECONDS;
 
 const ERROR_COPY = {
@@ -25,9 +24,18 @@ const ERROR_COPY = {
 const secsOrMins = (ms = 0) => (ms > 60_000 ? `${Math.ceil(ms / 60_000)} MIN` : `${Math.ceil(ms / 1000)}S`);
 const errText = (r) => (ERROR_COPY[r?.error] ?? (() => 'SOMETHING WENT WRONG. TRY AGAIN.'))(r);
 
-// Order for one viewer: notes you haven't heard, then notes nobody has answered yet, then newest.
-function order(notes, heardIds, mineIds) {
-  const rank = (n) => (!heardIds.has(n.id) && !mineIds.has(n.id) ? 0 : n.replyCount === 0 && !n.listenOnly ? 1 : 2);
+// Each note has one state per viewer, kept in this browser:
+//   NEW     on the wall for the first time since your last visit
+//   HEARD   you played it
+//   (none)  you saw it and moved on
+//   YOURS   you posted it
+// Order: new, then not-yet-heard ones nobody has answered, then everything else, newest first.
+function order(notes, seenIds, heardIds, mineIds) {
+  const rank = (n) => {
+    if (mineIds.has(n.id) || heardIds.has(n.id)) return 2;
+    if (!seenIds.has(n.id)) return 0;
+    return n.replyCount === 0 && !n.listenOnly ? 1 : 2;
+  };
   return [...notes].sort((a, b) => rank(a) - rank(b) || b.createdAt - a.createdAt);
 }
 
@@ -36,6 +44,10 @@ export default function Echoes() {
   const [notes, setNotes] = useState(null);
   const [skew, setSkew] = useState(0);
   const [heardMap, setHeardMap] = useState({});
+  // What counted as "seen" when this visit started. NEW badges come from this snapshot, so they
+  // don't vanish under you while you're reading; storage is updated for your next visit.
+  const [seenSnap, setSeenSnap] = useState(null);
+  const seenRef = useRef(null);
   const [mineMap, setMineMap] = useState({});
   const [orderIds, setOrderIds] = useState([]);
   const [open, setOpen] = useState(null);
@@ -69,9 +81,17 @@ export default function Echoes() {
     const m = mine.all();
     setHeardMap(h);
     setMineMap(m);
+    // Taken once per visit: the refresh button re-sorts, but doesn't clear what's NEW on your screen.
+    let snap = seenRef.current;
+    if (!snap) {
+      snap = new Set([...Object.keys(seen.all()), ...Object.keys(h)]);
+      seenRef.current = snap;
+      setSeenSnap(snap);
+    }
+    seen.addMany(r.notes);
     // Keep the order steady while someone is listening; new notes go on top, the rest re-sort on demand.
     setOrderIds((prev) => {
-      const sorted = order(r.notes, new Set(Object.keys(h)), new Set(Object.keys(m))).map((n) => n.id);
+      const sorted = order(r.notes, snap, new Set(Object.keys(h)), new Set(Object.keys(m))).map((n) => n.id);
       if (reorder || prev.length === 0) return sorted;
       const known = new Set(prev);
       const fresh = sorted.filter((id) => !known.has(id));
@@ -99,7 +119,9 @@ export default function Echoes() {
 
   const byId = useMemo(() => new Map((notes ?? []).map((n) => [n.id, n])), [notes]);
   const list = orderIds.map((id) => byId.get(id)).filter(Boolean);
-  const newCount = list.filter((n) => !heardMap[n.id] && !mineMap[n.id]).length;
+  const badge = (n) => (mineMap[n.id] ? 'yours' : heardMap[n.id] ? 'heard' : seenSnap && !seenSnap.has(n.id) ? 'new' : null);
+  const isNew = (n) => badge(n) === 'new';
+  const newCount = list.filter(isNew).length;
 
   const playNote = async (n) => {
     const started = await player.toggle(n.id, () => emit('echoes:audio', { id: n.id }, 15000));
@@ -118,11 +140,6 @@ export default function Echoes() {
     setOpen(id);
     setThread(null);
     loadThread(id);
-  };
-
-  const react = async (n, reaction) => {
-    const r = await emit('echoes:react', { id: n.id, reaction });
-    if (r?.ok) setNotes((all) => all.map((x) => (x.id === n.id ? r.note : x)));
   };
 
   const confirmReport = async () => {
@@ -168,7 +185,7 @@ export default function Echoes() {
             SAY IT OUT LOUD. NOBODY KNOWS IT&apos;S YOU.<span className="cursor">_</span>
           </h1>
           <p className="p-16">
-            LEAVE A VOICE NOTE ON THE WALL. STRANGERS CAN LISTEN, REACT AND, IF YOU LET THEM, ANSWER. SAY IT, THEN LEAVE. EVERYTHING FADES IN 24 HOURS.
+            LEAVE A VOICE NOTE ON THE WALL. STRANGERS CAN LISTEN AND, IF YOU LET THEM, ANSWER BY VOICE OR TEXT. SAY IT, THEN LEAVE. EVERYTHING FADES IN 24 HOURS.
           </p>
           <dl className="kv" style={{ gridTemplateColumns: '150px 1fr' }}>
             <dt>YOUR NAME</dt>
@@ -205,14 +222,13 @@ export default function Echoes() {
               key={n.id}
               n={n}
               now={now}
-              isNew={!heardMap[n.id] && !mineMap[n.id]}
+              badge={badge(n)}
               mineInfo={mineMap[n.id]}
               open={open === n.id}
               thread={open === n.id ? thread : null}
               player={player}
               onPlay={() => playNote(n)}
               onToggle={() => toggleThread(n.id)}
-              onReact={(r) => react(n, r)}
               onReport={(replyId) => setReporting(replyId ? { id: n.id, replyId } : { id: n.id })}
               onRemove={() => removeNote(n)}
               onRemoveReply={(replyId) => removeReply(n.id, replyId)}
@@ -355,7 +371,7 @@ function Recorder({ onPosted }) {
             <legend>WHAT DO YOU WANT BACK?</legend>
             <div className="ec-chips">
               <button type="button" className={`ec-chip tall ${listenOnly === true ? 'on' : ''}`} aria-pressed={listenOnly === true} onClick={() => setListenOnly(true)}>
-                JUST LISTEN<span>REACTIONS ONLY</span>
+                JUST LISTEN<span>NO REPLIES</span>
               </button>
               <button type="button" className={`ec-chip tall ${listenOnly === false ? 'on' : ''}`} aria-pressed={listenOnly === false} onClick={() => setListenOnly(false)}>
                 OPEN TO REPLIES<span>VOICE OR TEXT, UP TO {LIMITS.ECHO_MAX_REPLIES}</span>
@@ -378,7 +394,7 @@ function Recorder({ onPosted }) {
 
 // ---------- one note on the wall ----------
 
-function Note({ n, now, isNew, mineInfo, open, thread, player, onPlay, onToggle, onReact, onReport, onRemove, onRemoveReply, onReplied }) {
+function Note({ n, now, badge, mineInfo, open, thread, player, onPlay, onToggle, onReport, onRemove, onRemoveReply, onReplied }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const age = Math.max(0, Math.min(1, (now - n.createdAt) / (n.expiresAt - n.createdAt)));
   const opacity = 1 - age * 0.55; // fades as the day passes
@@ -387,10 +403,11 @@ function Note({ n, now, isNew, mineInfo, open, thread, player, onPlay, onToggle,
   const repliesLabel = n.listenOnly ? 'JUST LISTENING' : n.replyCount === 0 ? 'NO REPLIES YET' : `${n.replyCount} ${n.replyCount === 1 ? 'REPLY' : 'REPLIES'}`;
 
   return (
-    <article className={`ec-note ${isNew ? 'new' : ''} ${open ? 'open' : ''}`} style={{ opacity }} aria-label={`${TAG_LABEL[n.tag]} note`}>
+    <article className={`ec-note ${badge === 'new' ? 'new' : ''} ${open ? 'open' : ''}`} style={{ opacity }} aria-label={`${TAG_LABEL[n.tag]} note`}>
       <div className="ec-top">
-        {isNew && <span className="tagbox ec-new">NEW</span>}
-        {mineInfo && <span className="ec-mine">YOURS</span>}
+        {badge === 'new' && <span className="tagbox ec-new">NEW</span>}
+        {badge === 'heard' && <span className="ec-heard">HEARD</span>}
+        {badge === 'yours' && <span className="ec-mine">YOURS</span>}
         <span>{TAG_LABEL[n.tag]}</span>
         <span className="grow" />
         <span className="dim3">{timeLeft(n.expiresAt - now)}</span>
@@ -405,13 +422,6 @@ function Note({ n, now, isNew, mineInfo, open, thread, player, onPlay, onToggle,
       </div>
 
       <div className="ec-actions">
-        {ECHO_REACTIONS.map((r) => (
-          <button key={r} type="button" className={`ctl ${n.myReaction === r ? 'on' : ''}`} aria-pressed={n.myReaction === r} onClick={() => onReact(r)}>
-            {REACTION_LABEL[r]}
-            {n.reactions[r] > 0 && <span className="ec-count">{n.reactions[r]}</span>}
-          </button>
-        ))}
-        <span className="grow" />
         <button type="button" className={`ctl ${open ? 'on' : ''}`} onClick={onToggle} aria-expanded={open}>
           {repliesLabel}
           {unseenReplies > 0 && <span className="ec-count hot">{unseenReplies} NEW</span>}
@@ -452,7 +462,7 @@ function Thread({ n, thread, isMine, player, onReport, onRemoveReply, onReplied 
   return (
     <div className="ec-thread">
       {replies.length === 0 && (
-        <p className="dim3">{n.listenOnly ? 'THEY JUST WANTED TO BE HEARD. A REACTION IS ENOUGH.' : 'NOBODY HAS ANSWERED YET.'}</p>
+        <p className="dim3">{n.listenOnly ? 'THEY JUST WANTED TO BE HEARD. LISTENING IS ENOUGH.' : 'NOBODY HAS ANSWERED YET.'}</p>
       )}
       {replies.map((r) => {
         const key = `${n.id}:${r.id}`;

@@ -33,7 +33,6 @@ export const LIMITS = Object.freeze({
 });
 
 export const ECHO_TAGS = Object.freeze(['confession', 'question', 'rant', 'advice']);
-export const ECHO_REACTIONS = Object.freeze(['felt', 'same', 'strength']);
 
 // Everything is anonymous: pseudonyms look like quiet_otter_42.
 export const PSEUDONYM_RE = /^[a-z]{3,10}_[a-z]{3,10}_\d{2}$/;

@@ -560,6 +560,7 @@ a.inline:hover { text-decoration-color: var(--fg); }
 .ec-note.open { border-color: var(--fg-2); opacity: 1 !important; }
 .ec-top { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--fg-2); letter-spacing: 0.08em; }
 .ec-new { font-size: 10px; padding: 2px 6px; }
+.ec-heard { font-size: 10px; padding: 1px 6px; border: 1px solid var(--rule); color: var(--fg-3); }
 .ec-mine { font-size: 10px; padding: 1px 6px; border: 1px solid var(--fg-3); color: var(--fg); }
 .ec-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ctl.on { border-color: var(--fg); color: var(--fg); }

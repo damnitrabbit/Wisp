@@ -144,7 +144,7 @@ export function createWisp() {
     return { channels: rooms.counts(), online: onlineCount(), waiting: pairs.waitingCount(), echoes: echoes.count() };
   }
 
-  // The wall changed (new note, reply, reaction, removal): tell everyone, at most twice a second.
+  // The wall changed (new note, reply, removal): tell everyone, at most twice a second.
   let echoesTimer = null;
   function echoesChanged() {
     lobbyChanged();
@@ -318,7 +318,6 @@ export function createWisp() {
     on('echoes:audio', (p) => echoes.audio(user, p));
     on('echoes:post', (p) => echoes.post(user, p));
     on('echoes:reply', (p) => echoes.reply(user, p));
-    on('echoes:react', (p) => echoes.react(user, p));
     on('echoes:report', (p) => echoes.report(user, p));
     on('echoes:delete', (p) => echoes.remove(user, p));
     on('echoes:deleteReply', (p) => echoes.removeReply(user, p));

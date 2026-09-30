@@ -1,6 +1,7 @@
 'use client';
 // ECHOES, browser side. Two small lists live in this browser's localStorage and never leave it:
-//   heard: notes you've already played, so new ones can come first for you
+//   seen:  notes that were on the wall when you last looked, so only newer ones are marked NEW
+//   heard: notes you've already played
 //   mine:  notes you posted, with the secret ticket that lets you delete them or their replies
 // Both drop entries once the note has expired. Clearing your browser data forgets them.
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -32,6 +33,18 @@ export const heard = {
     const o = heard.all();
     o[id] = { exp };
     write(HEARD, o);
+  }
+};
+
+// Notes that were on the wall when you last looked. NEW means "posted since you last looked",
+// so a note you scrolled past and ignored stops calling for attention on your next visit.
+const SEEN = 'wisp.echoes.seen';
+export const seen = {
+  all: () => fresh(read(SEEN)),
+  addMany(notes) {
+    const o = seen.all();
+    for (const n of notes) o[n.id] = { exp: n.expiresAt };
+    write(SEEN, o);
   }
 };
 

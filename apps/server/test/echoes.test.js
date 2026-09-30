@@ -113,37 +113,15 @@ test('replies by voice or text build a thread, capped at ten', async () => {
   }
 });
 
-test('a "just listen" note takes reactions but no replies', async () => {
+test('a "just listen" note can be played but not answered', async () => {
   const s = await startServer();
   try {
     const a = await s.connect();
     const { id } = await a.emit('echoes:post', note({ listenOnly: true }));
     const b = await s.connect();
     assert.equal((await b.emit('echoes:reply', { id, text: 'advice!' })).error, 'not_allowed');
-    const r = await b.emit('echoes:react', { id, reaction: 'felt' });
-    assert.equal(r.note.reactions.felt, 1);
-    assert.equal(r.note.listenOnly, true);
-  } finally {
-    await s.stop();
-  }
-});
-
-test('one reaction per person; picking it again takes it back', async () => {
-  const s = await startServer();
-  try {
-    const a = await s.connect();
-    const { id } = await a.emit('echoes:post', note());
-    const b = await s.connect();
-    const c = await s.connect();
-    await b.emit('echoes:react', { id, reaction: 'felt' });
-    await c.emit('echoes:react', { id, reaction: 'felt' });
-    let r = await b.emit('echoes:react', { id, reaction: 'same' });
-    assert.deepEqual(r.note.reactions, { felt: 1, same: 1, strength: 0 });
-    assert.equal(r.note.myReaction, 'same');
-    r = await b.emit('echoes:react', { id, reaction: 'same' });
-    assert.deepEqual(r.note.reactions, { felt: 1, same: 0, strength: 0 });
-    assert.equal(r.note.myReaction, null);
-    assert.equal((await b.emit('echoes:react', { id, reaction: 'dislike' })).error, 'bad_request');
+    assert.equal((await b.emit('echoes:thread', { id })).note.listenOnly, true);
+    assert.ok((await b.emit('echoes:audio', { id })).audio);
   } finally {
     await s.stop();
   }

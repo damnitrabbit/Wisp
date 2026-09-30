@@ -1,12 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { ECHO_TAGS, ECHO_REACTIONS, ERRORS } from '@wisp/shared';
+import { ECHO_TAGS, ERRORS } from '@wisp/shared';
 import { config } from './config.js';
 
 const L = config.limits;
 const TICKET_RE = /^[A-Za-z0-9_-]{16,128}$/;
 const MIME_RE = /^audio\/[a-z0-9.+-]{1,30}(;\s?codecs=[a-z0-9.,"' -]{1,40})?$/i;
 
-// ECHOES: a public wall of short voice notes that strangers can listen to, react to and answer.
+// ECHOES: a public wall of short voice notes that strangers can listen to and answer by voice or text.
 // Everything here lives in this process's memory only. Notes (and their replies) are deleted
 // 24 hours after they were posted, when enough people report them, when their poster deletes
 // them, or when the server restarts. Nothing is ever written to disk.
@@ -23,7 +23,7 @@ export class Echoes {
 
   // Who counts as "one person" depends on what's at stake:
   // - reports key on the network (IP) when we have it, so nobody can take a note down by opening three tabs;
-  // - cooldowns and reactions key on the session, because mobile carriers put many strangers behind one IP.
+  // - cooldowns key on the session, because mobile carriers put many strangers behind one IP.
   //   A per-IP cap on posts (below) keeps one network from flooding the wall.
   key(user) {
     return user.ip || user.token;
@@ -58,14 +58,7 @@ export class Echoes {
   // ---------- reading ----------
 
   view(note, user) {
-    const k = this.session(user);
     const rk = this.key(user);
-    const reactions = Object.fromEntries(ECHO_REACTIONS.map((r) => [r, 0]));
-    let myReaction = null;
-    for (const [who, r] of note.reactions) {
-      reactions[r]++;
-      if (who === k) myReaction = r;
-    }
     return {
       id: note.id,
       tag: note.tag,
@@ -74,8 +67,6 @@ export class Echoes {
       duration: note.duration,
       listenOnly: note.listenOnly,
       replyCount: note.replies.length,
-      reactions,
-      myReaction,
       reported: note.reports.has(rk)
     };
   }
@@ -143,7 +134,7 @@ export class Echoes {
     return wait > 0 ? { error: ERRORS.COOLDOWN, retryInMs: wait } : null;
   }
 
-  // listenOnly: the poster just wants to be heard. People can react, but nobody can reply.
+  // listenOnly: the poster just wants to be heard. People can listen, but nobody can reply.
   post(user, { audio, mime, duration, tag, ticket, listenOnly = false } = {}) {
     if (!ECHO_TAGS.includes(tag)) return { error: ERRORS.BAD_REQUEST };
     if (typeof ticket !== 'string' || !TICKET_RE.test(ticket)) return { error: ERRORS.BAD_REQUEST };
@@ -167,7 +158,6 @@ export class Echoes {
       ticket,
       listenOnly: listenOnly === true,
       replies: [],
-      reactions: new Map(), // person key -> reaction
       reports: new Set()
     };
     this.notes.set(note.id, note);
@@ -203,18 +193,6 @@ export class Echoes {
     this.lastReply.set(this.session(user), r.createdAt);
     this.hub.echoesChanged();
     return { ok: true, id: r.id };
-  }
-
-  // One reaction per person per note. Picking the same one again takes it back.
-  react(user, { id, reaction } = {}) {
-    const note = this.live(id);
-    if (!note) return { error: ERRORS.NOT_FOUND };
-    if (!ECHO_REACTIONS.includes(reaction)) return { error: ERRORS.BAD_REQUEST };
-    const k = this.session(user);
-    if (note.reactions.get(k) === reaction) note.reactions.delete(k);
-    else note.reactions.set(k, reaction);
-    this.hub.echoesChanged();
-    return { ok: true, note: this.view(note, user) };
   }
 
   // Anyone can report a note or a reply, once. Enough distinct reports take it down for everyone.
