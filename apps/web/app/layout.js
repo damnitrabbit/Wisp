@@ -5,6 +5,7 @@ import '@fontsource/ibm-plex-mono/latin-500.css';
 import './globals.css';
 import Shell from '@/components/Shell';
 import { SITE_URL, SITE_NAME, TITLE, ALT_NAMES, DESCRIPTION, KEYWORDS } from '@/lib/site';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -55,6 +56,7 @@ export default function RootLayout({ children }) {
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Shell>{children}</Shell>
+        <Analytics />
       </body>
     </html>
   );
