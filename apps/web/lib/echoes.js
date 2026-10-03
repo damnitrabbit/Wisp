@@ -6,7 +6,7 @@
 // Both drop entries once the note has expired. Clearing your browser data forgets them.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LIMITS } from '@wisp/shared';
-import { emit, getState, connect } from '@/lib/wisp';
+import { emit, getState, connect, on as onSocket, useWisp } from '@/lib/wisp';
 
 // ---------- limits (mirrors apps/server/src/echoes.js) ----------
 export const NOTE_MAX = LIMITS.ECHO_NOTE_TEXT_MAX ?? 400; // a written echo / unsent letter
@@ -296,3 +296,33 @@ export async function takeDown(id) {
   return r;
 }
 export const isMine = (id) => Boolean(mine.all()[id]);
+
+// ---------- live wall: the list, kept fresh as notes come and go ----------
+export function useEchoList() {
+  const status = useWisp((s) => s.status);
+  const [notes, setNotes] = useState(null);
+  const [skew, setSkew] = useState(0);
+  const load = useCallback(async () => {
+    const r = await listEchoes();
+    if (!r?.ok) return;
+    setSkew(r.now - Date.now());
+    setNotes(r.notes);
+  }, []);
+  useEffect(() => {
+    if (status === 'online') load();
+  }, [status, load]);
+  useEffect(() => {
+    let t = null;
+    const off = onSocket('echoes:changed', () => {
+      clearTimeout(t);
+      t = setTimeout(load, 300);
+    });
+    const tick = setInterval(load, 60_000); // fades and "left" labels move on even when nothing changes
+    return () => {
+      off();
+      clearTimeout(t);
+      clearInterval(tick);
+    };
+  }, [load]);
+  return { notes, skew, reload: load };
+}

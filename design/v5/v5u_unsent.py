@@ -120,13 +120,14 @@ const heard = this.state.heard ?? this.props.heard ?? true;
 return {
 isHeard: heard, notHeard: !heard, heardCount: heard ? 7 : 6, heartFill: heard ? '#B8352A' : 'none',
 heardHint: heard ? 'whoever wrote it will know it reached someone' : 'tap once you have read it',
-tapHeard: () => this.setState({ heard: !heard })
+tapHeard: () => this.setState({ heard: !heard }),
+letterTo: 'grandpa', letterText: "I'm sorry I didn't pick up. I didn't know it was the last time you'd call. I still have your last voicemail. I play it when the house is too quiet.", fadesShort: '16H', cardH: 384
 };
 }"""
 U_PROPS = '"heard":{"editor":"boolean","default":true}'
 
 def fades(fs, dot):
-    return (f'<span style="display:flex;align-items:center;gap:8px"><span style="width:{dot}px;height:{dot}px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN 16H</span>')
+    return (f'<span style="display:flex;align-items:center;gap:8px"><span style="width:{dot}px;height:{dot}px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN {{{{fadesShort}}}}</span>')
 
 def open_letter(phone=False):
     if phone:
@@ -136,13 +137,13 @@ def open_letter(phone=False):
     inner = (f'{dogear(32 if not phone else 26)}'
              f'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-right:{18 if not phone else 14}px;{TYPE};font-size:{tf}px;letter-spacing:.14em;color:{PENCIL}">'
              f'{unsent_tag(10 if not phone else 9)}{fades(tf, 7 if not phone else 6)}</div>'
-             f'<div style="{HAND};font-size:{hdr}px;line-height:1.2;color:{PENCIL};margin-top:{18 if not phone else 14}px">to grandpa,</div>'
-             f'<div style="{SERIF};font-size:{fs}px;color:{INK};margin-top:6px;{ruled(lh)}">{LETTER_LONG}</div>'
+             f'<div style="{HAND};font-size:{hdr}px;line-height:1.2;color:{PENCIL};margin-top:{18 if not phone else 14}px">to {{{{letterTo}}}},</div>'
+             f'<div style="{SERIF};font-size:{fs}px;color:{INK};margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;{ruled(lh)}">{{{{letterText}}}}</div>'
              f'<div style="position:absolute;left:{P}px;right:{P}px;bottom:{28 if not phone else 20}px;border-top:1px dashed {RULE};padding-top:{16 if not phone else 14}px;display:flex;justify-content:space-between;align-items:center;gap:12px">'
              f'{heard_btn(26 if not phone else 23)}<span style="{TYPE};font-size:{10.5 if not phone else 9}px;letter-spacing:.12em;line-height:1.6;color:{PENCIL};text-transform:uppercase;text-align:right;max-width:{260 if not phone else 150}px">{{{{heardHint}}}}</span></div>'
              f'{stamp(56, 228, 34) if not phone else stamp(22, 262, 26, "1.3s")}')
     tp = tape(W / 2 - 55, -14, 110, 28, rot=-3, seed=51) if not phone else tape(W / 2 - 48, -13, 96, 26, rot=-3, seed=65)
-    return paper(inner, W, H, rot=-1 if not phone else -.8, kind='hi', seed=501 if not phone else 651, pad=f'{34 if not phone else 24}px {P}px', tapes=tp, cls='thud')
+    return paper(inner, W, H, rot=-1 if not phone else -.8, kind='hi', seed=501 if not phone else 651, pad=f'{34 if not phone else 24}px {P}px', tapes=tp, cls='thud').replace(f'height:{H}px', 'height:{{cardH}}px', 1)
 
 def replies_off(phone=False):
     """Where replies would be: an empty, dashed slot and one soft line."""
@@ -185,8 +186,8 @@ def mopen_letter():
     inner = (f'{dogear(26)}'
              f'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-right:14px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">'
              f'{unsent_tag(9)}{fades(9.5, 6)}</div>'
-             f'<div style="{HAND};font-size:27px;line-height:1.2;color:{PENCIL};margin-top:14px">to grandpa,</div>'
-             f'<div style="flex:1 1 auto;{SERIF};font-size:18px;color:{INK};margin-top:6px;{ruled(29)}">{LETTER_LONG}</div>'
+             f'<div style="{HAND};font-size:27px;line-height:1.2;color:{PENCIL};margin-top:14px">to {{{{letterTo}}}},</div>'
+             f'<div style="flex:1 1 auto;{SERIF};font-size:18px;color:{INK};margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;{ruled(29)}">{{{{letterText}}}}</div>'
              f'<div style="position:relative;flex-shrink:0;margin-top:8px;border-top:1px dashed {RULE};padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">'
              f'<span style="flex-shrink:0;white-space:nowrap">{heard_btn(23)}</span><span style="{TYPE};font-size:9px;letter-spacing:.12em;line-height:1.6;color:{PENCIL};text-transform:uppercase;text-align:right;max-width:150px">{{{{heardHint}}}}</span>'
              f'{stamp(2, -54, 26, "1.3s")}</div>')

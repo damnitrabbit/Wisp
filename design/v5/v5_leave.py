@@ -73,7 +73,7 @@ echoes = f'''
 <div class="rise" style="--w:.8s;display:flex;align-items:center;gap:14px;margin-bottom:4px">
 <span style="{MARK};font-size:24px;color:#F0A08F;transform:rotate(-3deg)">your turn?</span>{chip('leave yours →', 'V5EchoWrite.dc.html', seed=411, w=210)}</div>
 </div>
-<div class="rise" style="--w:.4s;position:relative;height:540px">{wall_notes}</div>
+<div class="rise" data-slot="wall" style="--w:.4s;position:relative;height:540px">{wall_notes}</div>
 </main>'''
 page('V5Echoes', 'Echoes', echoes, css=STAMP_CSS)
 
@@ -81,7 +81,7 @@ page('V5Echoes', 'Echoes', echoes, css=STAMP_CSS)
 page('V5EchoWrite', 'Leave an echo', write_board('echo'), css=STAMP_CSS + KIND_CSS, script=THREAD_SCRIPT, props=THREAD_PROPS)
 
 # ---------- pinned (end state) ----------
-pinned_note = paper(f'<div style="{SERIF};font-size:22px;line-height:1.6;color:{INK}">I keep rehearsing conversations that will never happen.</div>'
+pinned_note = paper(f'<div data-slot="pinnedText" style="{SERIF};font-size:22px;line-height:1.6;color:{INK};display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">I keep rehearsing conversations that will never happen.</div>'
                     f'<div style="position:absolute;left:34px;bottom:22px;{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL}">FADES IN 24H</div>',
                     360, 210, rot=2.5, seed=431, pad='30px 34px',
                     tapes=f'<span class="slap" style="animation-delay:1s">{tape(130, -14, 100, 28, rot=-4, seed=43)}</span>')

@@ -308,7 +308,7 @@ echoes = f'''
 <span style="display:flex;align-items:center;gap:9px">{ico_letter(CHALK, 16)}<span><span style="color:{CHALK}">UNSENT LETTERS</span> · HEARD ONLY</span></span></div>
 <div class="rise" style="--w:.7s;display:flex;align-items:center;justify-content:space-between;margin-top:16px">
 <span style="{MARK};font-size:22px;color:{PINK};transform:rotate(-3deg)">your turn?</span>{chip('leave yours →', 'V5MEchoWrite.dc.html', seed=611, w=180)}</div>
-<div class="rise" style="--w:.4s;position:relative;height:{WALL_H}px;margin-top:22px">{wall}</div>
+<div class="rise" data-slot="wall" style="--w:.4s;position:relative;height:{WALL_H}px;margin-top:22px">{wall}</div>
 <div class="rise" style="--w:1.4s;display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px 0 34px">
 <span style="{HAND};font-size:22px;color:{BOARDTXT}">that's everything from tonight.</span>
 {chip('leave yours →', 'V5MEchoWrite.dc.html', seed=612, w=180, kind='kraft')}</div>
@@ -320,7 +320,7 @@ mpage('V5MEchoes', 'Echoes (scrolls)', echoes, h=EH, css=ECHO_CSS)
 mpage('V5MEchoWrite', 'Leave yours', mwrite_board('echo'), css=ECHO_CSS + KIND_CSS, script=THREAD_SCRIPT, props=THREAD_PROPS)
 
 # ---------- pinned ----------
-pinned_note = paper(f'<div style="{SERIF};font-size:19px;line-height:1.55;color:{INK}">I keep rehearsing conversations that will never happen.</div>'
+pinned_note = paper(f'<div data-slot="pinnedText" style="{SERIF};font-size:19px;line-height:1.55;color:{INK};display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden">I keep rehearsing conversations that will never happen.</div>'
                     f'<div style="position:absolute;left:26px;bottom:18px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">FADES IN 24H</div>',
                     290, 170, rot=2.5, seed=631, pad='24px 26px',
                     tapes=f'<span class="slap" style="animation-delay:1s">{tape(100, -13, 92, 26, rot=-4, seed=63)}</span>')
@@ -343,17 +343,19 @@ mpage('V5MEchoPinned', "It's up there now", pinned, css=ECHO_CSS)
 # ---------- an echo: listen, heard, reply ----------
 echo_inner = f'''
 <div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">
-<span>AN ECHO · VOICE</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN 14H</span></div>
-<div style="{HAND};font-size:26px;line-height:1.2;color:{INK};margin-top:12px">left here at 1:12 am</div>
+<span>AN ECHO · {{{{modeLabel}}}}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN {{{{fadesShort}}}}</span></div>
+<sc-if value="{{{{isVoice}}}}" hint-placeholder-val="{{{{ true }}}}">
+<div style="{HAND};font-size:26px;line-height:1.2;color:{INK};margin-top:12px">{{{{timeTitle}}}}</div>
 <div style="display:flex;align-items:center;gap:14px;margin-top:18px">
 <button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(54, 'mpbe', True)}</button>
-{wave(222, 58, 77, 'mwe', .4, main=True, sw=2)}</div>
-<div style="{TYPE};font-size:10.5px;letter-spacing:.1em;color:{INK};text-align:right;margin-top:8px">0:19 / 0:48</div>
-<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:10px">Just their voice. No transcript, and nothing left of it once it fades.</div>
+{wave(222, 58, 77, 'mwe', 0, main=True, sw=2)}</div>
+<div data-slot="playTime" style="{TYPE};font-size:10.5px;letter-spacing:.1em;color:{INK};text-align:right;margin-top:8px">0:19 / 0:48</div>
+<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:10px">Just their voice. No transcript, and nothing left of it once it fades.</div></sc-if>
+<sc-if value="{{{{isText}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="{SERIF};font-size:18px;line-height:1.5;color:{INK};margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere">{{{{noteText}}}}</div></sc-if>
 <div style="position:absolute;left:24px;right:24px;bottom:20px;border-top:1px dashed {RULE};padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
 {heard_btn(23)}<span style="{TYPE};font-size:9px;letter-spacing:.12em;line-height:1.6;color:{PENCIL};text-transform:uppercase;text-align:right;max-width:150px">{{{{heardHint}}}}</span></div>
 {stamp(26, 236, 26, '1.3s')}'''
-echo = paper(echo_inner, 340, 362, rot=-1, kind='hi', seed=651, pad='24px 24px', tapes=tape(122, -13, 96, 26, rot=-3, seed=65), cls='thud')
+echo = paper(echo_inner, 340, 362, rot=-1, kind='hi', seed=651, pad='24px 24px', tapes=tape(122, -13, 96, 26, rot=-3, seed=65), cls='thud').replace('height:362px', 'height:{{mcardH}}px', 1)
 
 def mslip(name, when, kind, content, pk, seed, i):
     if kind == 'text':
@@ -375,9 +377,9 @@ slips = ''.join(mslip(*rr, i) for i, rr in enumerate(REPLIES))
 mcomposer = paper(f'''
 <div style="display:flex;justify-content:space-between;align-items:center">{toggle(10, 14)}<span style="{TYPE};font-size:9px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">NO NAME ON IT</span></div>
 <sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px">
-<div style="{SERIF};font-size:17px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
-{chip('reply', '#', kind='ink', w=96, seed=661)}</div></sc-if>
-<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px">
+<div data-slot="replyText" style="{SERIF};font-size:17px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
+{chip('reply', kind='ink', w=96, seed=661, onclick='sendReply')}</div></sc-if>
+<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="replyVoice" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px">
 <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:{RED}"></span><span style="{HAND};font-size:21px;color:{INK}">hold to record a reply</span></div>
 <span style="{TYPE};font-size:9px;letter-spacing:.12em;color:{PENCIL};text-align:right">UP TO<br>30 SEC</span></div></sc-if>''',
     346, 132, rot=.4, seed=662, pad='18px 20px', tapes=tape(136, -11, 80, 22, rot=2, seed=66))
@@ -388,13 +390,13 @@ thread = f'''
 {mtopbar(crumb='the wall', back='V5MEchoes.dc.html')}
 <main style="position:relative;z-index:10;flex-grow:1;padding:0 {MPAD}px;display:flex;flex-direction:column">
 {h_hand('Left for whoever is up.', 29, wait='.2s')}
-<div class="rise" style="--w:.9s;display:flex;align-items:flex-start;gap:9px;margin-top:6px">{ico_note(BOARDTXT, 15)}<div style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.7;color:{BOARDTXT}">AN ECHO · ANONYMOUS · FADES IN 14H<br>ANYONE CAN LISTEN AND REPLY</div></div>
+<div class="rise" style="--w:.9s;display:flex;align-items:flex-start;gap:9px;margin-top:6px">{ico_note(BOARDTXT, 15)}<div style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.7;color:{BOARDTXT}">AN ECHO · ANONYMOUS · FADES IN {{{{fadesShort}}}}<br>ANYONE CAN LISTEN AND REPLY</div></div>
 <div class="rise" style="--w:.5s;margin:24px 0 0 2px">{echo}</div>
 <div class="rise" style="--w:2.2s;margin:22px 0 0 8px">{t_mark("heard is the only reaction.<br>no likes, no followers.", 20, PINK, 'transform:rotate(-1.5deg)')}</div>
 <div class="rise" style="--w:.7s;display:flex;align-items:baseline;justify-content:space-between;margin-top:34px">
-<span style="{HAND};font-size:28px;color:{CHALK}">3 replies</span>
+<span style="{HAND};font-size:28px;color:{CHALK}">{{{{repliesTitle}}}}</span>
 <span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{BOARDTXT}">THEY FADE WITH IT</span></div>
-<div style="display:flex;flex-direction:column;gap:22px;margin-top:20px">{slips}</div>
+<div data-slot="replies" style="display:flex;flex-direction:column;gap:22px;margin-top:20px">{slips}</div>
 <div class="rise" style="--w:1.6s;margin-top:auto;margin-bottom:22px">{mcomposer}</div>
 </main>
 {mfooter()}'''

@@ -118,7 +118,9 @@ tapHeard: () => this.setState({ heard: !heard }),
 writeMode: mode === 'write', speakMode: mode === 'speak',
 writeColor: mode === 'write' ? on : off, speakColor: mode === 'speak' ? on : off,
 writeLine: mode === 'write' ? 1 : 0, speakLine: mode === 'speak' ? 1 : 0,
-toWrite: () => this.setState({ mode: 'write' }), toSpeak: () => this.setState({ mode: 'speak' })
+toWrite: () => this.setState({ mode: 'write' }), toSpeak: () => this.setState({ mode: 'speak' }),
+isVoice: true, isText: false, modeLabel: 'VOICE', fadesShort: '14H', timeTitle: 'left here at 1:12 am', cardH: 336, mcardH: 362,
+noteText: '', repliesTitle: '3 replies', sendReply: () => {}
 };
 }""" % (INK, PENCIL)
 THREAD_PROPS = '"heard":{"editor":"boolean","default":true},"playing":{"editor":"boolean","default":false},"mode":{"editor":"enum","options":["write","speak"],"default":"write"}'
@@ -242,11 +244,11 @@ def compose_paper(sel='echo', phone=False):
         W, P, fs, lh, tf, cnt = 600, 40, 22, 36, 12, 11
     else:
         W, P, fs, lh, tf, cnt = 338, 24, 18.5, 30, 11, 9.5
-    count = f'<span style="{TYPE};font-size:{cnt}px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
+    count = f'<span data-slot="noteCount" style="{TYPE};font-size:{cnt}px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
     top = f'<div style="display:flex;justify-content:space-between;align-items:center">{toggle(tf, 22 if not phone else 16)}{count}</div>'
     rec = _rec(W - 2 * P, 'dcw' if not phone else 'mcw', 26 if not phone else 22, phone=phone)
     if sel == 'echo':
-        words = f'<div style="{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:20px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:20px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot = 'NO NAME ON IT. EVER. FADES IN 24H.'
         H = 262 if not phone else 234
         extra_top, ear, crease = '', '', ''
@@ -257,7 +259,7 @@ def compose_paper(sel='echo', phone=False):
               f'<span style="{HAND};font-size:{30 if not phone else 25}px;line-height:1.2;color:{INK}">grandpa,</span>'
               f'<span style="margin-left:auto;{TYPE};font-size:{9.5 if not phone else 8.5}px;letter-spacing:.12em;color:{PENCIL}">A NAME, OR JUST &ldquo;YOU&rdquo;</span></div>')
         extra_top = to
-        words = f'<div style="{SERIF};font-size:{fs}px;color:{INK};margin-top:10px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="{SERIF};font-size:{fs}px;color:{INK};margin-top:10px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot = "NOT SENT TO THEM. NO NAME ON IT. FADES IN 24H." if not phone else "NOT SENT TO THEM. FADES IN 24H."
         H = 318 if not phone else 272
         ear = dogear(30 if not phone else 24)
@@ -267,7 +269,7 @@ def compose_paper(sel='echo', phone=False):
         kind = 'hi'
     body = (f'{ear}{crease}{top}{extra_top}'
             f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}">{words}</sc-if>'
-            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="margin-top:18px">{rec}</div></sc-if>'
+            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="noteVoice" style="margin-top:18px">{rec}</div></sc-if>'
             f'<div style="position:absolute;left:{P}px;right:{P}px;bottom:{22 if not phone else 18}px;border-top:1px dashed {RULE};padding-top:12px;'
             f'{TYPE};font-size:{11 if not phone else 9.5}px;letter-spacing:.14em;color:{PENCIL}">{foot}</div>')
     tx = W / 2 - 55
@@ -308,24 +310,24 @@ def _ctape(w, h, rot, seed, top=-13):
 def _mcompose(sel='echo'):
     """Phone compose paper as the screen's main sheet: grows to the dock, foot pinned to its bottom edge."""
     P, fs, lh = 22, 18.5, 30
-    count = f'<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
+    count = f'<span data-slot="noteCount" style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
     top = f'<div style="display:flex;justify-content:space-between;align-items:center">{toggle(11, 16)}{count}</div>'
     rec = _rec(250, 'mcw', 22, phone=True).replace('width:250px', 'width:100%;max-width:250px')
     if sel == 'echo':
-        words = f'<div style="flex:1 1 auto;{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:16px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="flex:1 1 auto;{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:16px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot, extra, ear, crease, rot = 'NO NAME ON IT. EVER. FADES IN 24H.', '', '', '', -.4
     else:
         extra = (f'<div style="display:flex;align-items:baseline;gap:10px;margin-top:10px;padding-bottom:2px;border-bottom:1.5px solid {RULE}">'
                  f'<span style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{PENCIL}">TO</span>'
                  f'<span style="{HAND};font-size:25px;line-height:1.2;color:{INK}">grandpa,</span>'
                  f'<span style="margin-left:auto;{TYPE};font-size:8.5px;letter-spacing:.12em;color:{PENCIL};text-align:right">A NAME, OR JUST &ldquo;YOU&rdquo;</span></div>')
-        words = f'<div style="flex:1 1 auto;min-height:{lh * 2}px;{SERIF};font-size:{fs}px;color:{INK};margin-top:8px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="flex:1 1 auto;min-height:{lh * 2}px;{SERIF};font-size:{fs}px;color:{INK};margin-top:8px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot, ear, rot = 'NOT SENT TO THEM. FADES IN 24H.', dogear(24), -.3
         crease = (f'<span aria-hidden="true" style="position:absolute;left:0;right:0;top:62%;height:2px;'
                   f'background:linear-gradient(to bottom,rgba(120,96,60,.13),rgba(255,252,242,.5))"></span>')
     body = (f'{ear}{crease}{top}{extra}'
             f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}">{words}</sc-if>'
-            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="margin-top:16px">{rec}</div></sc-if>'
+            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="noteVoice" style="margin-top:16px">{rec}</div></sc-if>'
             f'<div style="margin-top:auto;padding-top:12px;border-top:1px dashed {RULE};flex-shrink:0;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">{foot}</div>')
     return msheet(body, kind='hi', seed=621, pad=f'20px {P}px 16px', rot=rot, minh=200, tapes=_ctape(96, 26, -3, 62))
 
@@ -358,17 +360,19 @@ if __name__ == '__main__':
     # ---------- the echo ----------
     echo_inner = f'''
 <div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL}">
-<span>AN ECHO · VOICE</span><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN 14H</span></div>
-<div style="{HAND};font-size:32px;line-height:1.2;color:{INK};margin-top:16px">left here at 1:12 am</div>
+<span>AN ECHO · {{{{modeLabel}}}}</span><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN {{{{fadesShort}}}}</span></div>
+<sc-if value="{{{{isVoice}}}}" hint-placeholder-val="{{{{ true }}}}">
+<div style="{HAND};font-size:32px;line-height:1.2;color:{INK};margin-top:16px">{{{{timeTitle}}}}</div>
 <div style="display:flex;align-items:center;gap:22px;margin-top:22px">
 <button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(64, 'pbe', True)}</button>
-{wave(340, 70, 77, 'we', .4, main=True)}
-<span style="{TYPE};font-size:12px;letter-spacing:.1em;color:{INK};white-space:nowrap">0:19 / 0:48</span></div>
-<div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:22px">Just their voice. No transcript, and nothing left of it once it fades.</div>
+{wave(340, 70, 77, 'we', 0, main=True)}
+<span data-slot="playTime" style="{TYPE};font-size:12px;letter-spacing:.1em;color:{INK};white-space:nowrap">0:19 / 0:48</span></div>
+<div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:22px">Just their voice. No transcript, and nothing left of it once it fades.</div></sc-if>
+<sc-if value="{{{{isText}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="{SERIF};font-size:21px;line-height:1.55;color:{INK};margin-top:18px;white-space:pre-wrap;overflow-wrap:anywhere">{{{{noteText}}}}</div></sc-if>
 <div style="position:absolute;left:40px;right:40px;bottom:30px;border-top:1px dashed {RULE};padding-top:18px;display:flex;justify-content:space-between;align-items:center">
 {heard_btn(26)}<span style="{TYPE};font-size:10.5px;letter-spacing:.16em;color:{PENCIL};text-transform:uppercase">{{{{heardHint}}}}</span></div>
 {stamp(40, 56, 36)}'''
-    echo = paper(echo_inner, 600, 336, rot=-1.2, kind='hi', seed=501, pad='34px 40px', tapes=tape(245, -14, 110, 28, rot=-3, seed=51), cls='thud')
+    echo = paper(echo_inner, 600, 336, rot=-1.2, kind='hi', seed=501, pad='34px 40px', tapes=tape(245, -14, 110, 28, rot=-3, seed=51), cls='thud').replace('height:336px', 'height:{{cardH}}px', 1)
 
     def slip(name, when, kind, content, pk, seed, i):
         if kind == 'text':
@@ -390,9 +394,9 @@ if __name__ == '__main__':
     composer = paper(f'''
 <div style="display:flex;justify-content:space-between;align-items:center">{toggle(11, 18)}<span style="{TYPE};font-size:10px;letter-spacing:.14em;color:{PENCIL}">NO NAME ON IT</span></div>
 <sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
-<div style="{SERIF};font-size:20px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
-{chip('reply', '#', kind='ink', w=120, seed=521)}</div></sc-if>
-<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
+<div data-slot="replyText" style="{SERIF};font-size:20px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
+{chip('reply', kind='ink', w=120, seed=521, onclick='sendReply')}</div></sc-if>
+<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="replyVoice" style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
 <div style="display:flex;align-items:center;gap:12px"><span style="width:12px;height:12px;border-radius:50%;background:{RED}"></span><span style="{HAND};font-size:24px;color:{INK}">hold to record a reply</span></div>
 <span style="{TYPE};font-size:10px;letter-spacing:.14em;color:{PENCIL}">UP TO 30 SECONDS</span></div></sc-if>''',
         600, 146, rot=.4, kind='', seed=522, pad='22px 28px', tapes=tape(270, -12, 90, 24, rot=2, seed=52))
@@ -406,16 +410,16 @@ if __name__ == '__main__':
 <div style="width:640px;display:flex;flex-direction:column;gap:18px;padding-top:2px">
 <div class="rise" style="--w:.1s">{link('← the wall', 'V5Echoes.dc.html', BOARDTXT, 12)}</div>
 {h_hand('Left for whoever is up.', 44, wait='.2s')}
-<div class="rise" style="--w:.9s;display:flex;align-items:center;gap:10px;margin-top:-6px">{ico_note(BOARDTXT, 16)}{step_label('AN ECHO · ANONYMOUS · ANYONE CAN LISTEN AND REPLY · FADES IN 14H')}</div>
+<div class="rise" style="--w:.9s;display:flex;align-items:center;gap:10px;margin-top:-6px">{ico_note(BOARDTXT, 16)}{step_label('AN ECHO · ANONYMOUS · ANYONE CAN LISTEN AND REPLY · FADES IN {{fadesShort}}')}</div>
 <div class="rise" style="--w:.5s;margin:18px 0 0 14px">{echo}</div>
 <div class="rise" style="--w:2.2s;display:flex;align-items:center;gap:14px;margin:26px 0 0 30px">
 {t_mark("heard is the only reaction. no likes, no followers.", 22, SOFTRED, 'transform:rotate(-1.5deg)')}</div>
 </div>
 <div style="flex-grow:1;display:flex;flex-direction:column;padding-top:40px">
 <div class="rise" style="--w:.7s;display:flex;align-items:baseline;justify-content:space-between;padding-right:8px">
-<span style="{HAND};font-size:34px;color:{CHALK}">3 replies</span>
+<span style="{HAND};font-size:34px;color:{CHALK}">{{{{repliesTitle}}}}</span>
 <span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT}">BY VOICE OR TEXT · THEY FADE WITH IT</span></div>
-<div style="display:flex;flex-direction:column;gap:20px;margin-top:22px">{slips}</div>
+<div data-slot="replies" style="display:flex;flex-direction:column;gap:20px;margin-top:22px">{slips}</div>
 <div class="rise" style="--w:1.8s;margin-top:auto;margin-bottom:26px">{composer}</div>
 </div>
 </main>

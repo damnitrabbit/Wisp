@@ -11,7 +11,7 @@ BOARDS = []
 def board(name, title, w, h, row):
     BOARDS.append({"file": name + '.dc.html', "title": title, "w": w, "h": h, "row": row})
 
-EDGE_SCRIPT = THREAD_SCRIPT.replace('heard ? 13 : 12', 'heard ? 4 : 3')
+EDGE_SCRIPT = THREAD_SCRIPT.replace('heard ? 13 : 12', 'heard ? 4 : 3').replace("timeTitle: 'left here at 1:12 am'", "timeTitle: 'left here at 12:40 am'").replace("fadesShort: '14H'", "fadesShort: '22H'").replace('mcardH: 362', 'mcardH: 330')
 EDGE_PROPS = THREAD_PROPS.replace('"heard":{"editor":"boolean","default":true}', '"heard":{"editor":"boolean","default":false}')
 
 # ---------------------------------------------------------------- small local helpers
@@ -142,30 +142,32 @@ def echo_card(w, h, phone=False):
     if not phone:
         inner = f'''
 <div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL}">
-<span>AN ECHO · VOICE</span><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN 22H</span></div>
-<div style="{HAND};font-size:32px;line-height:1.2;color:{INK};margin-top:16px">left here at 12:40 am</div>
+<span>AN ECHO · {{{{modeLabel}}}}</span><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN {{{{fadesShort}}}}</span></div>
+<sc-if value="{{{{isVoice}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="{HAND};font-size:32px;line-height:1.2;color:{INK};margin-top:16px">{{{{timeTitle}}}}</div>
 <div style="display:flex;align-items:center;gap:22px;margin-top:22px">
 <button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(64, 'epb', True)}</button>
 {wave(340, 70, 91, 'ewe', 0, main=True)}
-<span style="{TYPE};font-size:12px;letter-spacing:.1em;color:{INK};white-space:nowrap">0:00 / 0:34</span></div>
-<div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:22px">Just their voice. No transcript, and nothing left of it once it fades.</div>
+<span data-slot="playTime" style="{TYPE};font-size:12px;letter-spacing:.1em;color:{INK};white-space:nowrap">0:00 / 0:34</span></div>
+<div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:22px">Just their voice. No transcript, and nothing left of it once it fades.</div></sc-if>
+<sc-if value="{{{{isText}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="{SERIF};font-size:21px;line-height:1.55;color:{INK};margin-top:18px;white-space:pre-wrap;overflow-wrap:anywhere">{{{{noteText}}}}</div></sc-if>
 <div style="position:absolute;left:40px;right:40px;bottom:30px;border-top:1px dashed {RULE};padding-top:18px;display:flex;justify-content:space-between;align-items:center">
 {heard_btn(26)}<span style="{TYPE};font-size:10.5px;letter-spacing:.16em;color:{PENCIL};text-transform:uppercase">{{{{heardHint}}}}</span></div>
 {stamp(40, 56, 36)}'''
-        return paper(inner, w, h, rot=-1.2, kind='hi', seed=5501, pad='34px 40px', tapes=tape(w / 2 - 55, -14, 110, 28, rot=-3, seed=551), cls='thud')
+        return paper(inner, w, h, rot=-1.2, kind='hi', seed=5501, pad='34px 40px', tapes=tape(w / 2 - 55, -14, 110, 28, rot=-3, seed=551), cls='thud').replace(f'height:{h}px', 'height:{{cardH}}px', 1)
     inner = f'''
 <div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">
-<span>AN ECHO · VOICE</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN 22H</span></div>
-<div style="{HAND};font-size:26px;line-height:1.2;color:{INK};margin-top:12px">left here at 12:40 am</div>
+<span>AN ECHO · {{{{modeLabel}}}}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;border:1.5px solid {PENCIL}"></span>FADES IN {{{{fadesShort}}}}</span></div>
+<sc-if value="{{{{isVoice}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="{HAND};font-size:26px;line-height:1.2;color:{INK};margin-top:12px">{{{{timeTitle}}}}</div>
 <div style="display:flex;align-items:center;gap:14px;margin-top:18px">
 <button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(54, 'mepb', True)}</button>
 {wave(222, 58, 91, 'mewe', 0, main=True, sw=2)}</div>
-<div style="{TYPE};font-size:10.5px;letter-spacing:.1em;color:{INK};text-align:right;margin-top:8px">0:00 / 0:34</div>
-<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:10px">Just their voice. No transcript, and nothing left of it once it fades.</div>
+<div data-slot="playTime" style="{TYPE};font-size:10.5px;letter-spacing:.1em;color:{INK};text-align:right;margin-top:8px">0:00 / 0:34</div>
+<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:10px">Just their voice. No transcript, and nothing left of it once it fades.</div></sc-if>
+<sc-if value="{{{{isText}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="{SERIF};font-size:18px;line-height:1.5;color:{INK};margin-top:14px;white-space:pre-wrap;overflow-wrap:anywhere">{{{{noteText}}}}</div></sc-if>
 <div style="position:absolute;left:24px;right:24px;bottom:20px;border-top:1px dashed {RULE};padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
 {heard_btn(23)}<span style="{TYPE};font-size:9px;letter-spacing:.12em;line-height:1.6;color:{PENCIL};text-transform:uppercase;text-align:right;max-width:150px">{{{{heardHint}}}}</span></div>
 {stamp(26, 206, 26, '1.3s')}'''
-    return paper(inner, w, h, rot=-1, kind='hi', seed=6501, pad='24px 24px', tapes=tape(w / 2 - 48, -13, 96, 26, rot=-3, seed=651), cls='thud')
+    return paper(inner, w, h, rot=-1, kind='hi', seed=6501, pad='24px 24px', tapes=tape(w / 2 - 48, -13, 96, 26, rot=-3, seed=651), cls='thud').replace(f'height:{h}px', 'height:{{mcardH}}px', 1)
 
 def blank_slip(w, h, phone=False):
     top = 58 if not phone else 50
@@ -182,18 +184,18 @@ def composer(w, h, phone=False):
         return paper(f'''
 <div style="display:flex;justify-content:space-between;align-items:center">{toggle(11, 18)}<span style="{TYPE};font-size:10px;letter-spacing:.14em;color:{PENCIL}">NO NAME ON IT</span></div>
 <sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
-<div style="{SERIF};font-size:20px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
-{chip('reply', '#', kind='ink', w=120, seed=5521)}</div></sc-if>
-<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
+<div data-slot="replyText" style="{SERIF};font-size:20px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
+{chip('reply', kind='ink', w=120, seed=5521, onclick='sendReply')}</div></sc-if>
+<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="replyVoice" style="display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:12px">
 <div style="display:flex;align-items:center;gap:12px"><span style="width:12px;height:12px;border-radius:50%;background:{RED}"></span><span style="{HAND};font-size:24px;color:{INK}">hold to record a reply</span></div>
 <span style="{TYPE};font-size:10px;letter-spacing:.14em;color:{PENCIL}">UP TO 30 SECONDS</span></div></sc-if>''',
             w, h, rot=.4, seed=5522, pad='22px 28px', tapes=tape(w / 2 - 45, -12, 90, 24, rot=2, seed=553))
     return paper(f'''
 <div style="display:flex;justify-content:space-between;align-items:center">{toggle(10, 14)}<span style="{TYPE};font-size:9px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">NO NAME ON IT</span></div>
 <sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px">
-<div style="{SERIF};font-size:17px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
-{chip('reply', '#', kind='ink', w=96, seed=6521)}</div></sc-if>
-<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px">
+<div data-slot="replyText" style="{SERIF};font-size:17px;color:{PENCIL};font-style:italic">say something kind back<span class="blink" style="color:{RED};font-style:normal">|</span></div>
+{chip('reply', kind='ink', w=96, seed=6521, onclick='sendReply')}</div></sc-if>
+<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="replyVoice" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px">
 <div style="display:flex;align-items:center;gap:10px"><span style="width:11px;height:11px;border-radius:50%;background:{RED}"></span><span style="{HAND};font-size:21px;color:{INK}">hold to record a reply</span></div>
 <span style="{TYPE};font-size:9px;letter-spacing:.12em;color:{PENCIL};text-align:right">UP TO<br>30 SEC</span></div></sc-if>''',
         w, h, rot=.4, seed=6522, pad='18px 20px', tapes=tape(w / 2 - 40, -11, 80, 22, rot=2, seed=653))
@@ -248,14 +250,14 @@ def yours_note(w, h, phone=False):
     fs, pad = (24, '34px 40px') if not phone else (19.5, '24px 24px')
     lr = 40 if not phone else 24
     inner = (f'<div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:{11 if not phone else 9.5}px;letter-spacing:.16em;color:{PENCIL}">'
-             f'<span>YOURS · FADES IN 19H</span><span>AN ECHO · TEXT</span></div>'
-             f'<div style="{SERIF};font-size:{fs}px;line-height:1.55;color:{INK};margin-top:{20 if not phone else 14}px">{YOURS}</div>'
+             f'<span>YOURS · FADES IN {{{{fadesShort}}}}</span><span>{{{{kindLabel}}}} · {{{{modeLabel}}}}</span></div>'
+             f'<div data-slot="yoursBody" style="{SERIF};font-size:{fs}px;line-height:1.55;color:{INK};margin-top:{20 if not phone else 14}px">{YOURS}</div>'
              f'<div style="position:absolute;left:{lr}px;right:{lr}px;bottom:{28 if not phone else 20}px;border-top:1px dashed {RULE};padding-top:{16 if not phone else 14}px;display:flex;justify-content:space-between;align-items:center;gap:12px">'
-             f'<span style="display:flex;align-items:center;gap:12px">{tally(6, 24 if not phone else 20, color=PENCIL, seed=7)}'
-             f'<span style="{MARK};font-size:{23 if not phone else 20}px;color:{PENCIL}">heard by 6</span></span>'
-             f'<a href="{"V5Echoes" if not phone else "V5MEchoes"}.dc.html" class="ul" style="{MARK};font-size:{22 if not phone else 19}px;color:{RED}">take it down now</a></div>')
+             f'<span style="display:flex;align-items:center;gap:12px"><span data-slot="tally">{tally(6, 24 if not phone else 20, color=PENCIL, seed=7)}</span>'
+             f'<span style="{MARK};font-size:{23 if not phone else 20}px;color:{PENCIL}">{{{{heardBy}}}}</span></span>'
+             f'<a href="#" data-act="takeDown" class="ul" style="{MARK};font-size:{22 if not phone else 19}px;color:{RED}">{{{{takeDownLabel}}}}</a></div>')
     return paper(inner, w, h, rot=-1.2 if not phone else -1, kind='hi', seed=5701 if not phone else 6701, pad=pad,
-                 tapes=tape(w / 2 - 55, -14, 110, 28, rot=-3, seed=571))
+                 tapes=tape(w / 2 - 55, -14, 110, 28, rot=-3, seed=571)).replace(f'height:{h}px', 'height:{{cardH}}px', 1)
 
 def reply_slip(i, phone=False, wslip=560):
     name, when, kind, content, pk, seed = REPLIES[i]
@@ -294,13 +296,14 @@ eyours = f'''
 </div>
 <div style="flex-grow:1;display:flex;flex-direction:column;padding-top:40px">
 <div class="rise" style="--w:.7s;display:flex;align-items:baseline;justify-content:space-between;padding-right:8px">
-<span style="{HAND};font-size:34px;color:{CHALK}">2 replies</span>
+<span style="{HAND};font-size:34px;color:{CHALK}">{{{{repliesTitle}}}}</span>
 <span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT}">THEY FADE WITH IT</span></div>
-<div style="display:flex;flex-direction:column;gap:22px;margin-top:22px">{reply_slip(0)}{reply_slip(1)}</div>
+<div data-slot="replies" style="display:flex;flex-direction:column;gap:22px;margin-top:22px">{reply_slip(0)}{reply_slip(1)}</div>
 </div>
 </main>
 {footer()}'''
-page('V5EchoYours', 'Your echo', eyours, css=ECHO_CSS)
+YOURS_VALS = "fadesShort: '19H', kindLabel: 'AN ECHO', modeLabel: 'TEXT', heardBy: 'heard by 6', takeDownLabel: 'take it down now', repliesTitle: '2 replies'"
+page('V5EchoYours', 'Your echo', eyours, css=ECHO_CSS, script="renderVals() { return { %s, cardH: 250 }; }" % YOURS_VALS)
 board('V5EchoYours', 'L14 — Your echo (owner view)', 1440, 900, 'edge_leave')
 
 meyours = f'''
@@ -311,13 +314,13 @@ meyours = f'''
 <div class="rise" style="--w:.5s;margin:26px 0 0 2px">{yours_note(340, 204, True)}</div>
 <div class="rise" style="--w:2s;margin:18px 0 0 8px">{t_mark("there's no way to see who heard it.", 20, PINK, 'transform:rotate(-1.5deg)')}</div>
 <div class="rise" style="--w:.7s;display:flex;align-items:baseline;justify-content:space-between;margin-top:26px">
-<span style="{HAND};font-size:28px;color:{CHALK}">2 replies</span>
+<span style="{HAND};font-size:28px;color:{CHALK}">{{{{repliesTitle}}}}</span>
 <span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{BOARDTXT}">THEY FADE WITH IT</span></div>
-<div style="display:flex;flex-direction:column;gap:22px;margin-top:20px;flex-shrink:0">{reply_slip(0, True)}{reply_slip(1, True)}</div>
+<div data-slot="replies" style="display:flex;flex-direction:column;gap:22px;margin-top:20px;flex-shrink:0">{reply_slip(0, True)}{reply_slip(1, True)}</div>
 <div class="rise" style="--w:2.2s;{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.8;color:{BOARDTXT};margin-top:22px">TAKING IT DOWN LETS IT GO EARLY.<br>THE REPLIES GO WITH IT.</div>
 </main>
 {mfooter()}'''
-mpage('V5MEchoYours', 'Your echo', meyours, css=ECHO_CSS)
+mpage('V5MEchoYours', 'Your echo', meyours, css=ECHO_CSS, script="renderVals() { return { %s, cardH: 204 }; }" % YOURS_VALS)
 board('V5MEchoYours', 'ML14 — Your echo (owner view)', 390, 844, 'm_edge_leave')
 
 
@@ -336,14 +339,14 @@ long_html = (f'{LONG[:CUT - TAIL]}<span style="text-decoration:underline wavy {R
 def compose_long(w, h, phone=False):
     if not phone:
         return paper(f'''
-<div style="display:flex;justify-content:space-between;align-items:center">{stoggle('write', 12, 22)}<span style="{TYPE};font-size:12px;font-weight:700;letter-spacing:.14em;color:{INK};padding-bottom:6px">400 / 400</span></div>
-<div style="{SERIF};font-size:19px;line-height:1.6;color:{INK};margin-top:18px">{long_html}</div>
+<div style="display:flex;justify-content:space-between;align-items:center">{stoggle('write', 12, 22)}<span data-slot="noteCount" style="{TYPE};font-size:12px;font-weight:700;letter-spacing:.14em;color:{INK};padding-bottom:6px">400 / 400</span></div>
+<div data-slot="noteText" style="{SERIF};font-size:19px;line-height:1.6;color:{INK};margin-top:18px">{long_html}</div>
 <div style="position:absolute;left:40px;right:40px;bottom:24px;border-top:1px dashed {RULE};padding-top:14px;display:flex;justify-content:space-between;align-items:center;gap:16px">
 {inline_note('a little shorter, it has to fit on a note', 'red', 22)}<span style="{TYPE};font-size:10.5px;letter-spacing:.14em;color:{PENCIL};white-space:nowrap">NO NAME ON IT</span></div>''',
             w, h, rot=.9, kind='hi', seed=5802, pad='34px 40px', tapes=tape(w / 2 - 55, -14, 110, 28, rot=2, seed=582))
     return msheet(f'''
-<div style="display:flex;justify-content:space-between;align-items:center">{stoggle('write', 11, 16)}<span style="{TYPE};font-size:10.5px;font-weight:700;letter-spacing:.14em;color:{INK};padding-bottom:6px">400 / 400</span></div>
-<div style="{SERIF};font-size:15.5px;line-height:1.5;color:{INK};margin-top:14px">{long_html}</div>
+<div style="display:flex;justify-content:space-between;align-items:center">{stoggle('write', 11, 16)}<span data-slot="noteCount" style="{TYPE};font-size:10.5px;font-weight:700;letter-spacing:.14em;color:{INK};padding-bottom:6px">400 / 400</span></div>
+<div data-slot="noteText" style="{SERIF};font-size:15.5px;line-height:1.5;color:{INK};margin-top:14px">{long_html}</div>
 <div style="margin-top:auto;flex-shrink:0;border-top:1px dashed {RULE};padding-top:10px">{inline_note('a little shorter, it has to fit on a note', 'red', 17.5)}</div>''',
         kind='hi', seed=6802, pad='20px 24px 16px', rot=-1.2, minh=h, tapes=tape(0, -13, 96, 26, rot=-3, seed=682).replace('left:0px', 'left:calc(50% - 48px)', 1))
 
