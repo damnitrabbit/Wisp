@@ -231,6 +231,11 @@ export default function Chat({ role = 'talk' }) {
 
   const open = lobby?.pods ? lobby.pods.open : clientPodsOpen();
 
+  // Outside pod hours, go to the asleep page straight away — even before (or without) the server answering.
+  useEffect(() => {
+    if (!lobby?.pods && !clientPodsOpen() && !['chat', 'closed', 'ended', 'reported'].includes(phaseRef.current)) router.replace('/asleep');
+  }, [lobby?.pods, router]);
+
   const add = (kind, text, t) => setItems((l) => [...l, { id: nid(), kind, text, t: t ?? clock() }]);
 
   const resetChat = useCallback(() => {
