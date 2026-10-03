@@ -1,0 +1,58 @@
+[
+ {
+  "file": "V5MBoot.dc.html",
+  "title": "MA01 — Boot",
+  "w": 390,
+  "h": 844,
+  "row": "m_arrival"
+ },
+ {
+  "file": "V5MStory.dc.html",
+  "title": "MA02 — The story",
+  "w": 390,
+  "h": 844,
+  "row": "m_arrival"
+ },
+ {
+  "file": "V5MAge.dc.html",
+  "title": "MA03 — Before you go in",
+  "w": 390,
+  "h": 844,
+  "row": "m_arrival"
+ },
+ {
+  "file": "V5MNotYet.dc.html",
+  "title": "MA04 — Not yet, under 18",
+  "w": 390,
+  "h": 844,
+  "row": "m_arrival"
+ },
+ {
+  "file": "V5Remember.dc.html",
+  "title": "H03 — First arrival: keep this name?",
+  "w": 1440,
+  "h": 900,
+  "row": "home"
+ },
+ {
+  "file": "V5MHome.dc.html",
+  "title": "MH01 — Home, pods asleep",
+  "w": 390,
+  "h": 844,
+  "row": "m_home"
+ },
+ {
+  "file": "V5MHomeOpen.dc.html",
+  "title": "MH02 — Home, pods open + capsule arrived (scrolls)",
+  "w": 390,
+  "h": 844,
+  "row": "m_home"
+ },
+ {
+  "file": "V5MRemember.dc.html",
+  "title": "MH03 — Keep this name?",
+  "w": 390,
+  "h": 844,
+  "row": "m_home"
+ }
+]

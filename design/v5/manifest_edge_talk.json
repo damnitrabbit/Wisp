@@ -1,0 +1,142 @@
+[
+ {
+  "file": "V5NoOneFree.dc.html",
+  "title": "T11 \u2014 Nobody's free right now",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5PodsClosing.dc.html",
+  "title": "T12 \u2014 Pods close soon",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5PodsClosedMidChat.dc.html",
+  "title": "T13 \u2014 Pods closed mid-conversation",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5SendFailed.dc.html",
+  "title": "T14 \u2014 A message didn't send",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5VoiceDeclined.dc.html",
+  "title": "T15 \u2014 They'd rather keep it to text",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5CallDropped.dc.html",
+  "title": "T16 \u2014 Voice dropped",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5QuestionEmpty.dc.html",
+  "title": "T17 \u2014 First one in the room",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5RoomsAllFull.dc.html",
+  "title": "T18 \u2014 Every room is full",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5MovedOffStage.dc.html",
+  "title": "T19 \u2014 Moved off stage",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5RoomAlone.dc.html",
+  "title": "T20 \u2014 Alone in your room",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_talk"
+ },
+ {
+  "file": "V5MNoOneFree.dc.html",
+  "title": "MT11 \u2014 Nobody's free right now",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MPodsClosing.dc.html",
+  "title": "MT12 \u2014 Pods close soon",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MPodsClosedMidChat.dc.html",
+  "title": "MT13 \u2014 Pods closed mid-conversation",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MSendFailed.dc.html",
+  "title": "MT14 \u2014 A message didn't send",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MVoiceDeclined.dc.html",
+  "title": "MT15 \u2014 They'd rather keep it to text",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MCallDropped.dc.html",
+  "title": "MT16 \u2014 Voice dropped",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MQuestionEmpty.dc.html",
+  "title": "MT17 \u2014 First one in the room",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MRoomsAllFull.dc.html",
+  "title": "MT18 \u2014 Every room is full",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MMovedOffStage.dc.html",
+  "title": "MT19 \u2014 Moved off stage",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ },
+ {
+  "file": "V5MRoomAlone.dc.html",
+  "title": "MT20 \u2014 Alone in your room",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_talk"
+ }
+]

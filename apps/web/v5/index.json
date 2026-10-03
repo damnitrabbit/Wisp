@@ -1,0 +1,687 @@
+{
+"V5Brand": {
+"w": 1440,
+"h": 2100,
+"phone": false
+},
+"V5Boot": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Story": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5StoryBoard": {
+"w": 1440,
+"h": 920,
+"phone": false
+},
+"V5Age": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5NotYet": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Home": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5HomeOpen": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Burn": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Echoes": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5EchoWrite": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5EchoPinned": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Capsule": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5CapsuleSealed": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5CapsuleOpen": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Matching": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Pod": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5PodNudge": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5PodEnd": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Question": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Asleep": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Help": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Reported": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Privacy": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5EchoThread": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Listener": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Requeue": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Paused": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5VoiceWait": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5VoiceAsk": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Call": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Rooms": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Room": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5RoomHand": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MicAsk": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MicBlocked": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Offline": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Reconnect": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5NotFound": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5Terms": {
+"w": 1440,
+"h": 1780,
+"phone": false
+},
+"V5Notices": {
+"w": 1440,
+"h": 1400,
+"phone": false
+},
+"V5MHome": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MHomeOpen": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MBoot": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MStory": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MAge": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MNotYet": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRemember": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5Remember": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MBurn": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MEchoes": {
+"w": 390,
+"h": 2064,
+"phone": true
+},
+"V5MEchoWrite": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MEchoPinned": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MEchoThread": {
+"w": 390,
+"h": 1310,
+"phone": true
+},
+"V5MCapsule": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MCapsuleSealed": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MCapsuleOpen": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MHelp": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MReported": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPrivacy": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MTerms": {
+"w": 390,
+"h": 2830,
+"phone": true
+},
+"V5MMatching": {
+"w": 390,
+"h": 1050,
+"phone": true
+},
+"V5MVoiceWait": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MVoiceAsk": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MCall": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRooms": {
+"w": 390,
+"h": 1610,
+"phone": true
+},
+"V5MRoom": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRoomHand": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPod": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPodNudge": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPodEnd": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MQuestion": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MAsleep": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MListener": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRequeue": {
+"w": 390,
+"h": 1000,
+"phone": true
+},
+"V5MPaused": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MMicAsk": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MMicBlocked": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MOffline": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MReconnect": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MNotFound": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5EchoesEmpty": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MEchoesEmpty": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5EchoNoReplies": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MEchoNoReplies": {
+"w": 390,
+"h": 1010,
+"phone": true
+},
+"V5EchoYours": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MEchoYours": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5EchoTooLong": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MEchoTooLong": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5BurnEmpty": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MBurnEmpty": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5BurnRecording": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MBurnRecording": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5CapsuleNotYet": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MCapsuleNotYet": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5CapsuleLost": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MCapsuleLost": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5CapsuleEmailError": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MCapsuleEmailError": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5NoOneFree": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5PodsClosing": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5PodsClosedMidChat": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5SendFailed": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5VoiceDeclined": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5CallDropped": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5QuestionEmpty": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5RoomsAllFull": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MovedOffStage": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5RoomAlone": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MNoOneFree": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPodsClosing": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MPodsClosedMidChat": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MSendFailed": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MVoiceDeclined": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MCallDropped": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MQuestionEmpty": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRoomsAllFull": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MMovedOffStage": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MRoomAlone": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5SomethingBroke": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MSomethingBroke": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5Loading": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MLoading": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5NoVoice": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MNoVoice": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5StorageBlocked": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MStorageBlocked": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5WelcomeBack": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MWelcomeBack": {
+"w": 390,
+"h": 890,
+"phone": true
+},
+"V5SlowDown": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MSlowDown": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5UnsentWrite": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MUnsentWrite": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5UnsentPinned": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MUnsentPinned": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5UnsentOpen": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MUnsentOpen": {
+"w": 390,
+"h": 844,
+"phone": true
+}
+}
