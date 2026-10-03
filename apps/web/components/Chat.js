@@ -545,7 +545,6 @@ export default function Chat({ role = 'talk' }) {
     PodEnd: leaveGently,
     Reported: report,
     Matching: again,
-    atching: again, // <Screen> reads "V5Matching" as "atching" (it strips a leading M)
     'keep-going': () => setNudge(false),
     mutelabel: () => setMuted((m) => !m),
     Pod: voice === 'incoming' ? () => answerVoice(false) : voice === 'asked' ? cancelVoice : voice === 'on' ? endCall : () => {},

@@ -81,7 +81,7 @@ function build(html, vals, slots, links, router) {
 
       // links between screens
       if (node.name === 'a' && plain.href && plain.href.endsWith('.dc.html') || (node.name === 'a' && /\.dc\.html/.test(plain.href || ''))) {
-        const key = plain.href.replace(/^V5M?/, '').replace(/\.dc\.html.*$/, '');
+        const key = plain.href.replace(/^V5(M(?=[A-Z]))?/, '').replace(/\.dc\.html.*$/, '');
         const over = links && (links[key] ?? links[plain.href]);
         const props = attributesToProps({ ...plain, href: undefined });
         delete props.href;

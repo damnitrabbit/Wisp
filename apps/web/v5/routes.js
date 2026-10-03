@@ -23,7 +23,7 @@ const R = {
 
 export function routeFor(href) {
   if (!href) return null;
-  const m = /^V5M?([A-Za-z]+)\.dc\.html(.*)$/.exec(href);
+  const m = /^V5(?:M(?=[A-Z]))?([A-Za-z]+)\.dc\.html(.*)$/.exec(href);
   if (!m) return null;
   return (R[m[1]] || '/home') + (m[2] || '');
 }

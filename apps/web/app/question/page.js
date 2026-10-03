@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useRouter } from 'next/navigation';
 import { QUESTION_ROOM, questionFor } from '@wisp/shared/pods.js';
 import Guard from '@/components/Guard';
-import Screen from '@/v5/Screen';
+import Screen, { pickPhone } from '@/v5/Screen';
 import D from '@/v5/screens/V5Question';
 import M from '@/v5/screens/V5MQuestion';
 import DE from '@/v5/screens/V5QuestionEmpty';
@@ -62,7 +62,7 @@ function Question() {
     document.title = "Tonight's question · NoTrace";
     const t = () => {
       setOpen(podsOpen());
-      setPhone(window.innerWidth < 700 || (window.innerWidth < 1000 && window.innerHeight > window.innerWidth));
+      setPhone(pickPhone());
     };
     t();
     window.addEventListener('resize', t);
