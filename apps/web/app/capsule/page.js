@@ -84,7 +84,7 @@ export default function CapsulePage() {
   const setPick = useCallback((k) => { setPicked(true); setPickRaw(k); }, []);
   const [date, setDate] = useState('');
   const [canStore, setCanStore] = useState(true);
-  const [remind, setRemind] = useState(null); // null | 'ok' | 'unavailable' | 'far' | 'fail'
+  const [remind, setRemind] = useState(null); // null | 'ok' | 'unavailable' | 'far' | 'offline' | 'fail'
   const [sealed, setSealed] = useState(null); // { openAt, preview }
   const text = useRef('');
   const email = useRef('');
@@ -126,7 +126,7 @@ export default function CapsulePage() {
     if (mail) {
       email.current = '';
       if (!remindable(at)) setRemind('far');
-      else remindByEmail(mail, at).then((r) => setRemind(r?.ok ? 'ok' : r?.error === 'unavailable' ? 'unavailable' : r?.error === 'too_long' ? 'far' : 'fail'));
+      else remindByEmail(mail, at).then((r) => setRemind(r?.ok ? 'ok' : r?.error === 'unavailable' ? 'unavailable' : r?.error === 'too_long' ? 'far' : r?.error === 'offline' || r?.error === 'timeout' ? 'offline' : 'fail'));
     }
   }, [pick, date, openPicker]);
 
@@ -153,8 +153,8 @@ export default function CapsulePage() {
       preview: sealed?.preview || '',
       remindOk: remind === 'ok',
       remindOkText: at ? `we'll email you on ${lowerDate(at)}. then we forget the address.` : '',
-      remindFail: remind === 'fail' || remind === 'unavailable' || remind === 'far',
-      remindFailA: remind === 'unavailable' ? "email reminders aren't switched on yet." : remind === 'far' ? 'reminders only reach 30 days out.' : "couldn't set the reminder.",
+      remindFail: remind === 'fail' || remind === 'unavailable' || remind === 'far' || remind === 'offline',
+      remindFailA: remind === 'unavailable' ? "email reminders aren't switched on yet." : remind === 'far' ? 'reminders only reach 30 days out.' : remind === 'offline' ? "couldn't reach us for the reminder just now." : "couldn't set the reminder.",
       remindFailB: 'the letter is still sealed here.'
     };
   }, [pick, date, canStore, sealed, remind, openPicker, setPick]);
