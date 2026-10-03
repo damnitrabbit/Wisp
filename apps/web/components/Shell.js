@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { connect, useWisp, toast, retryNow } from '@/lib/wisp';
 import { resumeAudio } from '@/lib/rtc';
 import { bus } from '@/lib/wisp';
@@ -10,6 +11,10 @@ import Toasts from './Toasts';
 
 export default function Shell({ children }) {
   const status = useWisp((s) => s.status);
+  const path = usePathname() || '/';
+  // Only pages that live on the server (pods, rooms, the wall) give way to the full "lost the signal" page.
+  // Everything you do on your own (arrival, home, burn, capsule, care pages) keeps working with a small slip.
+  const needsServer = /^\/(talk|listen|chat|rooms|question|echoes)(\/|$)/.test(path);
 
   useEffect(() => {
     connect();
@@ -25,12 +30,12 @@ export default function Shell({ children }) {
     };
   }, []);
 
-  if (status === 'offline') return (<><OfflineScreen /><Toasts /></>);
+  if (status === 'offline' && needsServer) return (<><OfflineScreen /><Toasts /></>);
   if (status === 'replaced') return <Replaced />;
   return (
     <>
       {children}
-      {status === 'reconnecting' && <Reconnecting />}
+      {(status === 'reconnecting' || status === 'offline') && (needsServer || path === '/home') && <Reconnecting />}
       <Toasts />
     </>
   );
