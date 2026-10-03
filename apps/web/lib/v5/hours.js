@@ -4,7 +4,12 @@ const OPEN_MIN = 22 * 60; // 22:00
 const CLOSE_MIN = 2 * 60; // 02:00
 const IST_OFFSET_MIN = 330;
 
-const alwaysOpen = () => process.env.NEXT_PUBLIC_PODS_ALWAYS_OPEN === '1';
+// In development, localStorage 'nt-pods-test' = 'real' ignores the always-open override (to see the closed screens).
+function devReal() {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return false;
+  try { return localStorage.getItem('nt-pods-test') === 'real'; } catch { return false; }
+}
+const alwaysOpen = () => process.env.NEXT_PUBLIC_PODS_ALWAYS_OPEN === '1' && !devReal();
 
 // minutes since midnight, India time (fractional)
 function istMinutes(now) {

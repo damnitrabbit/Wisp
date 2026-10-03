@@ -71,9 +71,10 @@ export default function HomePage() {
   const vals = useMemo(() => ({ letter, noLetter: !letter, keep, fresh }), [letter, keep, fresh]);
   const slots = useMemo(() => ({
     here: online == null ? null : <span>{` · ${online} HERE`}</span>,
-    pods: <span>{label ? `PODS OPEN AT 10PM · ${label}` : 'PODS OPEN AT 10PM'}</span>,
+    // the closed-home status line; the remember note sits on that board, so while pods are open it says so instead
+    pods: <span>{open ? 'PODS OPEN · UNTIL 2AM' : label ? `PODS OPEN AT 10PM · ${label}` : 'PODS OPEN AT 10PM'}</span>,
     name: keepEl(name || '')
-  }), [online, label, name]);
+  }), [online, label, name, open]);
 
   if (!ok || !info) return <div style={{ minHeight: '100dvh', background: '#0D0D0E' }} />;
   if (note === 'remember') return <Screen key="rem" desktop={Remember} phone={MRemember} vals={vals} slots={slots} />;

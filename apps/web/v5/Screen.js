@@ -34,6 +34,9 @@ const EV = { onclick: 'onClick', onpointerdown: 'onPointerDown', onpointerup: 'o
   onpointercancel: 'onPointerCancel', onkeydown: 'onKeyDown', onkeyup: 'onKeyUp', onmousedown: 'onMouseDown', onmouseup: 'onMouseUp',
   onmouseleave: 'onMouseLeave', ontouchstart: 'onTouchStart', ontouchend: 'onTouchEnd', oncontextmenu: 'onContextMenu', oninput: 'onInput', onchange: 'onChange' };
 
+// HTML boolean attributes written bare in the generators (React wants true, not "")
+const BOOL = ['inert'];
+
 const ONE = /^\s*\{\{\s*([^}]+?)\s*\}\}\s*$/;
 function look(expr, vals) {
   expr = expr.trim();
@@ -92,8 +95,10 @@ function build(html, vals, slots, links, router) {
         const f = links[a['data-act']];
         return <a {...attributesToProps(plain)} href="#" onClick={(e) => { e.preventDefault(); f(e); }}>{kids()}</a>;
       }
-      if (!Object.keys(ev).length && !Object.keys(plain).some((k) => a[k] !== plain[k])) return undefined;
+      const bare = BOOL.filter((k) => a[k] === '');
+      if (!Object.keys(ev).length && !bare.length && !Object.keys(plain).some((k) => a[k] !== plain[k])) return undefined;
       const props = { ...attributesToProps(plain), ...ev };
+      for (const k of bare) props[k] = true; // <div inert> in the HTML means inert={true} in React
       if (ev.onClick && !props.role && node.name !== 'button' && node.name !== 'a') { props.role = 'button'; props.tabIndex = 0; }
       return createElement(node.name, props, node.children && node.children.length ? kids() : undefined);
     }
