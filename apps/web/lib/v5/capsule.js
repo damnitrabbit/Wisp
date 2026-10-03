@@ -103,7 +103,8 @@ export const isEmail = (e) =>
   typeof e === 'string' && e.length <= 254 && /^[^\s@<>()[\]\\,;:"]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.[A-Za-z]{2,24}$/.test(e);
 
 // Ask the server to schedule the reminder. Resolves { ok } or { error }.
-export function remindByEmail(email, openAt, waitMs = 6000) {
+// kind 'pods' = the asleep screen's "EMAIL ME AT 10PM" (same one-off email, tonight's opening).
+export function remindByEmail(email, openAt, kind, waitMs = 6000) {
   return new Promise((resolve) => {
     let s;
     try {
@@ -111,7 +112,7 @@ export function remindByEmail(email, openAt, waitMs = 6000) {
     } catch {
       return resolve({ error: 'offline' });
     }
-    const send = () => s.timeout(8000).emit('capsule:remind', { email, openAt: new Date(openAt).toISOString() }, (err, res) => resolve(err ? { error: 'timeout' } : res || { error: 'unavailable' }));
+    const send = () => s.timeout(8000).emit('capsule:remind', { email, openAt: new Date(openAt).toISOString(), ...(kind ? { kind } : null) }, (err, res) => resolve(err ? { error: 'timeout' } : res || { error: 'unavailable' }));
     if (s.connected) return send();
     const t = setTimeout(() => {
       s.off('connect', go);

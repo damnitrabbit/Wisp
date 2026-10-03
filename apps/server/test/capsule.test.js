@@ -35,6 +35,17 @@ test('schedules one Resend email at the opening time, without the letter', async
   assert.ok(!JSON.stringify(body).includes('secret'), 'the letter never goes into the email');
 });
 
+test('kind "pods": the 10pm "pods are open" email, at most a day ahead', async () => {
+  const f = fakeFetch();
+  const remind = makeCapsuleRemind({ fetchImpl: f, env: { RESEND_API_KEY: 'k' }, now: () => NOW, perHour: 100 });
+  const at = new Date(NOW + 6.5 * 3600_000).toISOString();
+  assert.equal((await remind(user, { kind: 'pods', email: 'a@b.co', openAt: at })).ok, true);
+  assert.equal(f.calls[0].body.subject, 'the pods are open');
+  assert.equal(f.calls[0].body.scheduled_at, at);
+  assert.match(f.calls[0].body.text, /notrace\.chat\/home/);
+  assert.equal((await remind(user, { kind: 'pods', email: 'a@b.co', openAt: inDays(2) })).error, 'too_long');
+});
+
 test('RESEND_FROM overrides the sender', async () => {
   const f = fakeFetch();
   const remind = makeCapsuleRemind({ fetchImpl: f, env: { RESEND_API_KEY: 'k', RESEND_FROM: 'X <x@y.z>' }, now: () => NOW });
