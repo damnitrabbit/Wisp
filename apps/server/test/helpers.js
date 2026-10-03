@@ -12,7 +12,9 @@ Object.assign(process.env, {
   ECHO_POST_COOLDOWN_MS: '300',
   ECHO_REPLY_COOLDOWN_MS: '100',
   ECHO_TTL_MS: '4000',
-  ECHO_IP_POSTS: '3'
+  ECHO_IP_POSTS: '3',
+  PODS_ALWAYS_OPEN: '1',
+  TALK_FALLBACK_MS: '400'
 });
 
 const { createWisp } = await import('../src/index.js');

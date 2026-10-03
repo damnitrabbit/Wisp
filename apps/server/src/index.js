@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import { CHANNELS, ERRORS } from '@wisp/shared';
+import { podWindowOpen, podMinsToClose } from '@wisp/shared/pods.js';
 import { config } from './config.js';
 import { makeName, isValidName } from './names.js';
 import { Rooms } from './rooms.js';
@@ -16,6 +17,13 @@ const BOOTED = Date.now();
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,128}$/;
 // Events that are worthless after a delay are not buffered for reconnecting users.
 const NO_BUFFER = /^(rtc:|pairRtc:|pair:typing|channels:list|channel:update)/;
+// Pods are open 22:00–02:00 India time. PODS_ALWAYS_OPEN=1 keeps them open (testing); outside production
+// (local dev) they are always open unless PODS_ALWAYS_OPEN=0.
+const alwaysOpen = () => {
+  const v = process.env.PODS_ALWAYS_OPEN;
+  return v === '1' || (v !== '0' && process.env.NODE_ENV !== 'production');
+};
+export const podsOpen = (now = new Date()) => alwaysOpen() || podWindowOpen(now);
 
 export function createWisp() {
   const users = new Map(); // id -> user
@@ -128,6 +136,7 @@ export function createWisp() {
     },
     lobbyChanged,
     echoesChanged,
+    podsOpen: () => podsOpen(),
   };
 
   const rooms = new Rooms(hub);
@@ -141,7 +150,13 @@ export function createWisp() {
   }
 
   function lobbyPayload() {
-    return { channels: rooms.counts(), online: onlineCount(), waiting: pairs.waitingCount(), echoes: echoes.count() };
+    const open = podsOpen();
+    return {
+      channels: rooms.counts(), online: onlineCount(), waiting: pairs.waitingCount(), echoes: echoes.count(),
+      listeners: pairs.queue.filter((id) => users.get(id)?.podRole === 'listen').length,
+      question: rooms.questionInfo(),
+      pods: { open, minsToClose: open ? (podWindowOpen() ? podMinsToClose() : null) : 0 }
+    };
   }
 
   // The wall changed (new note, reply, removal): tell everyone, at most twice a second.
@@ -283,7 +298,8 @@ export function createWisp() {
     });
 
     // voice rooms
-    on('channel:join', ({ id }) => rooms.join(user, id));
+    on('channel:join', ({ id, voice }) => rooms.join(user, id, { voice: Boolean(voice) }));
+    on('question:voice', ({ on: v }) => rooms.questionVoice(user, Boolean(v)));
     on('channel:leave', () => (rooms.leave(user, 'left'), { ok: true }));
     on('channel:invite', ({ to }) => rooms.invite(user, to));
     on('channel:acceptInvite', () => rooms.answerInvite(user, true));
@@ -300,7 +316,7 @@ export function createWisp() {
     for (const e of ['rtc:offer', 'rtc:answer', 'rtc:ice']) on(e, (p) => (rooms.relay(user, e, p), { ok: true }));
 
     // 1:1
-    on('pair:join', () => pairs.join(user));
+    on('pair:join', ({ role }) => pairs.join(user, role));
     on('pair:leave', () => pairs.leave(user));
     on('pair:skip', () => pairs.skip(user));
     on('pair:report', () => pairs.report(user));
@@ -349,6 +365,19 @@ export function createWisp() {
     });
   });
 
+  // At closing time every live pod ends together (both people see the same "pods are asleep" note).
+  let wasOpen = podsOpen();
+  const hours = setInterval(() => {
+    const open = podsOpen();
+    if (wasOpen && !open) {
+      pairs.closeAll();
+      rooms.closeAll();
+    }
+    if (wasOpen !== open) lobbyChanged();
+    wasOpen = open;
+  }, 15_000);
+  hours.unref?.();
+
   return {
     io,
     httpServer,
@@ -358,6 +387,8 @@ export function createWisp() {
     },
     close() {
       echoes.stop();
+      pairs.stop();
+      clearInterval(hours);
       return new Promise((resolve) => io.close(() => resolve()));
     }
   };
