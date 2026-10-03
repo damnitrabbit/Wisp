@@ -24,6 +24,14 @@ def stoggle(mode='write', size=12, gap=22, dark=False):
     return (f'<div style="display:flex;gap:{gap}px;align-items:center;{TYPE};font-size:{size}px;letter-spacing:.18em">'
             f'{b("WRITE", mode == "write")}<span style="color:{SOOT if dark else PENCIL};opacity:{1 if dark else .5}">/</span>{b("SPEAK", mode == "speak")}</div>')
 
+def btoggle(size=12, gap=22):
+    """WRITE / SPEAK on the live recording screen (speak is the chosen one here)."""
+    def b(lbl, sel, fn):
+        return (f'<button type="button" onClick="{{{{{fn}}}}}" style="color:{CHALK if sel else BOARDTXT};position:relative;padding-bottom:6px;letter-spacing:inherit">{lbl}'
+                f'<span style="position:absolute;left:0;right:0;bottom:0;height:2px;background:{RED};opacity:{1 if sel else 0}"></span></button>')
+    return (f'<div style="display:flex;gap:{gap}px;align-items:center;{TYPE};font-size:{size}px;letter-spacing:.18em">'
+            f'{b("WRITE", False, "toWrite")}<span style="color:{SOOT}">/</span>{b("SPEAK", True, "toSpeak")}</div>')
+
 def heard_static(n, size=22):
     return (f'<span class="heard" style="font-size:{size}px"><svg width="{size - 4}" height="{size - 4}" viewBox="0 0 20 20" aria-hidden="true">'
             f'<path d="M10 17 C3 12 1 8 3 5 C5 2 9 3 10 6 C11 3 15 2 17 5 C19 8 17 12 10 17 Z" fill="none" stroke="{RED}" stroke-width="1.8" stroke-linejoin="round"/></svg>heard · {n}</span>')
@@ -457,28 +465,35 @@ def live_wave(w, h, frac, seed, uid, sw=2.2):
             f'<g filter="url(#rough{uid})" fill="none" stroke="{INK}" stroke-width="{sw}" stroke-linecap="round"><path d="{"".join(done)}"/>{"".join(live)}</g>'
             f'{rest}<line x1="{xe + 3}" y1="-4" x2="{xe + 4}" y2="{h + 4}" stroke="{RED}" stroke-width="2" stroke-linecap="round"/></svg>')
 
+def idle_wave(w, h):
+    """Before you speak: just the pencil line the note will be drawn along."""
+    return (f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" aria-hidden="true" style="display:block;overflow:visible">'
+            f'<path d="M3 {h / 2} L{w - 2} {h / 2}" stroke="{PENCIL}" stroke-width="1.4" stroke-dasharray="2 6" opacity=".6"/>'
+            f'<line x1="3" y1="-4" x2="4" y2="{h + 4}" stroke="{RED}" stroke-width="2" stroke-linecap="round"/></svg>')
+
 def rec_held(size=72):
     """The record button, pressed down: a calm ring breathes out from it while you hold."""
-    return (f'<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:{size}px;height:{size}px;flex-shrink:0">'
-            f'<span class="pressring" aria-hidden="true" style="position:absolute;inset:0;border-radius:50%;border:2px solid {RED}"></span>'
+    return (f'<button type="button" class="recbtn" aria-label="{{{{recAria}}}}" onPointerDown="{{{{recStart}}}}" onPointerUp="{{{{recStop}}}}" onPointerCancel="{{{{recStop}}}}" onKeyDown="{{{{recKeyDown}}}}" onKeyUp="{{{{recKeyUp}}}}" onContextMenu="{{{{noMenu}}}}" '
+            f'style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:{size}px;height:{size}px;flex-shrink:0;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none">'
+            f'<sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}"><span class="pressring" aria-hidden="true" style="position:absolute;inset:0;border-radius:50%;border:2px solid {RED}"></span></sc-if>'
             f'<span style="position:absolute;inset:0;border-radius:50%;border:2px solid {INK};background:rgba(184,53,42,.08);transform:scale(.94)"></span>'
-            f'<span style="position:relative;width:{size * .38:.0f}px;height:{size * .38:.0f}px;border-radius:50%;background:{RED}"></span></span>')
+            f'<span style="position:relative;width:{size * .38:.0f}px;height:{size * .38:.0f}px;border-radius:50%;background:{RED}"></span></button>')
 
 def rec_head(size, tsize):
     return (f'<div style="display:flex;align-items:center;justify-content:space-between">'
-            f'<span style="display:flex;align-items:center;gap:12px"><span class="recdot" style="width:{size * .45:.0f}px;height:{size * .45:.0f}px;border-radius:50%;background:{RED}"></span>'
-            f'<span style="{HAND};font-size:{size}px;color:{INK}">recording</span></span>'
-            f'<span style="{TYPE};font-weight:700;font-size:{tsize}px;letter-spacing:.1em;color:{INK}">0:07</span></div>')
+            f'<span style="display:flex;align-items:center;gap:12px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}"><span class="recdot" style="display:block;width:{size * .45:.0f}px;height:{size * .45:.0f}px;border-radius:50%;background:{RED}"></span></sc-if>'
+            f'<span style="{HAND};font-size:{size}px;color:{INK}">{{{{recLabel}}}}</span></span>'
+            f'<span style="{TYPE};font-weight:700;font-size:{tsize}px;letter-spacing:.1em;color:{INK}">{{{{recTime}}}}</span></div>')
 
 RBH = 470
 rsheet = paper(f'''
 <div style="{HAND};font-size:24px;color:{PENCIL};margin-top:-4px">tonight, 11:48 pm</div>
 <div style="margin-top:18px">{rec_head(30, 18)}</div>
-<div style="margin-top:18px">{live_wave(512, 80, .78, 404, 'rlw')}</div>
+<div style="margin-top:18px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(512, 80, .78, 404, 'rlw')}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(512, 80)}</sc-if></div>
 <div style="display:flex;justify-content:flex-end;margin-top:10px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>
 <div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:10px">Only you hear it. When it burns, the recording goes with it.</div>
 <div style="position:absolute;left:44px;right:44px;bottom:40px;border-top:1px dashed {RULE};padding-top:18px;display:flex;align-items:center;gap:22px">
-{rec_held(72)}<div><div style="{HAND};font-size:30px;color:{INK}">let go to stop</div>
+{rec_held(72)}<div><div style="{HAND};font-size:30px;color:{INK}">{{{{recHint}}}}</div>
 <div style="{TYPE};font-size:10.5px;letter-spacing:.16em;color:{PENCIL};margin-top:6px">KEEP HOLDING WHILE YOU TALK · OR HOLD SPACE</div></div></div>''',
                BW, RBH, rot=-.8, kind='hi', seed=301, pad='40px 44px', tapes=tape(240, -15, 120, 30, rot=-3, seed=31))
 
@@ -489,17 +504,18 @@ brec = f'''
 <div style="width:440px;display:flex;flex-direction:column;gap:30px">
 {h_hand("Say the thing you can't say out loud.", 52, wait='.2s', d='2s')}
 <div class="rise" style="--w:1.2s;{TYPE};font-size:12px;letter-spacing:.16em;line-height:1.9;color:{BOARDTXT}">IT STAYS ON THIS DEVICE.<br>WHEN YOU BURN IT, IT'S GONE. FOR GOOD.</div>
-<div class="rise" style="--w:1.5s">{stoggle('speak', 12, 22, dark=True)}</div>
+<div class="rise" style="--w:1.5s">{btoggle(12, 22)}</div>
 </div>
-<div class="rise" style="--w:.5s;margin-bottom:60px">{anchored(rsheet, RBH, dim_match(104), f'<span style="{HAND};font-size:30px;color:{BOARDTXT};opacity:.7;white-space:nowrap">hold to burn it</span>' + inline_note('the match is yours once you let go.', 'soft', 23), pad=40)}</div>
+<div class="rise" style="--w:.5s;margin-bottom:60px">{anchored(rsheet, RBH, dim_match(104), f'<span style="{HAND};font-size:30px;color:{BOARDTXT};opacity:.7;white-space:nowrap">hold to burn it</span>' + ('<sc-if value="{{recording}}" hint-placeholder-val="{{ true }}">' + inline_note('the match is yours once you let go.', 'soft', 23) + '</sc-if><sc-if value="{{recIdle}}">' + inline_note('say it first. then the match.', 'soft', 23) + '</sc-if><sc-if value="{{micBlocked}}">' + inline_note('your mic is blocked. allow it for this site<br>in the address bar, then hold again.', 'red', 21) + '</sc-if>'), pad=40)}</div>
 </main>'''
-page('V5BurnRecording', 'Burn, recording a voice note', brec, css=REC_CSS)
+REC_SCRIPT = "renderVals() { return { recording: true, notRecording: false, recIdle: false, micBlocked: false, notBlocked: true, recLabel: 'recording', recTime: '0:07', recHint: 'let go to stop', recAria: 'Hold to record' }; }"
+page('V5BurnRecording', 'Burn, recording a voice note', brec, css=REC_CSS, script=REC_SCRIPT)
 board('V5BurnRecording', 'L12 — Burn, recording a voice note', 1440, 900, 'edge_leave')
 
 mrsheet = paper(f'''
 <div style="{HAND};font-size:19px;color:{PENCIL};margin-top:-2px">tonight, 11:48 pm</div>
 <div style="margin-top:22px">{rec_head(25, 15)}</div>
-<div style="margin-top:22px">{live_wave(282, 78, .78, 404, 'mrlw', 2)}</div>
+<div style="margin-top:22px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(282, 78, .78, 404, 'mrlw', 2)}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(282, 78)}</sc-if></div>
 <div style="display:flex;justify-content:flex-end;margin-top:12px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>
 <div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:22px">Only you hear it. When it burns, the recording goes with it.</div>''',
                 MBW, 340, rot=-.8, kind='hi', seed=301, pad='26px 24px', tapes=tape(115, -13, 100, 26, rot=-3, seed=31))
@@ -509,17 +525,18 @@ mbrec = f'''
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;padding:0 {MPAD}px 26px">
 {h_hand("Say the thing you can't say out loud.", 31, wait='.2s', d='1.8s')}
 <div class="rise" style="--w:1.1s;display:flex;justify-content:space-between;align-items:center;margin-top:12px">
-{stoggle('speak', 11, 16, dark=True)}<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{BOARDTXT};padding-bottom:6px">STAYS ON THIS DEVICE</span></div>
+{btoggle(11, 16)}<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{BOARDTXT};padding-bottom:6px">STAYS ON THIS DEVICE</span></div>
 <div style="flex-grow:1;min-height:24px"></div>
 <div class="rise" style="--w:.5s;margin:0 0 0 8px">{mrsheet}</div>
 <div class="rise" style="--w:1.4s;margin-top:18px;display:flex;align-items:center;gap:20px">
 <span style="display:inline-flex;border-radius:50%;background:{PAPERHI};padding:6px" class="lift">{rec_held(76)}</span>
-<div><div style="{HAND};font-size:27px;color:{CHALK}">let go to stop</div>
-<div style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.7;color:{BOARDTXT};margin-top:4px">KEEP HOLDING WHILE YOU TALK.<br>THE MATCH COMES BACK AFTER.</div></div></div>
+<div><div style="{HAND};font-size:27px;color:{CHALK}">{{{{recHint}}}}</div>
+<sc-if value="{{{{notBlocked}}}}" hint-placeholder-val="{{{{ true }}}}"><div style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.7;color:{BOARDTXT};margin-top:4px">KEEP HOLDING WHILE YOU TALK.<br>THE MATCH COMES BACK AFTER.</div></sc-if>
+<sc-if value="{{{{micBlocked}}}}">{inline_note("your mic is blocked. allow it for<br>this site, then hold again.", 'red', 18)}</sc-if></div></div>
 <div style="flex-grow:.45;flex-shrink:0;min-height:40px"></div>
 </main>
 {mfooter()}'''
-mpage('V5MBurnRecording', 'Burn, recording a voice note', mbrec, css=REC_CSS)
+mpage('V5MBurnRecording', 'Burn, recording a voice note', mbrec, css=REC_CSS, script=REC_SCRIPT)
 board('V5MBurnRecording', 'ML12 — Burn, recording a voice note', 390, 844, 'm_edge_leave')
 
 

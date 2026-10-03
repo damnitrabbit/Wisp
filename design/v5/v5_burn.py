@@ -122,6 +122,13 @@ css = f"""
 @keyframes flick{{50%{{transform:scale(1.08,.94) skewX(3deg)}}}}
 .holding .match{{animation:shake .12s linear infinite}}
 @keyframes shake{{50%{{transform:translateX(1px) rotate(1deg)}}}}
+/* nothing to burn yet (L11): the match waits, dim */
+.isempty .match{{pointer-events:none}}
+.isempty .match .ring circle:nth-child(2){{stroke-opacity:.35}}
+.isempty .match .ring circle.p{{opacity:0}}
+.isempty .match svg:not(.ring){{opacity:.38;filter:saturate(.3)}}
+.isempty .match .flame{{display:none}}
+.isempty .holdlabel{{color:{BOARDTXT} !important;opacity:.7}}
 /* the ending */
 .bloom{{position:absolute;left:50%;top:46%;width:1400px;height:1100px;margin:-550px 0 0 -700px;border-radius:50%;pointer-events:none;mix-blend-mode:screen;
 background:radial-gradient(circle,rgba(255,214,160,.75),rgba(255,160,100,.28) 28%,rgba(255,120,80,.06) 55%,transparent 70%);animation:bloom 3.2s cubic-bezier(.2,.7,.2,1) both;z-index:2}}
@@ -141,12 +148,12 @@ lines_bg = (f'<div aria-hidden="true" style="position:absolute;inset:0;backgroun
             f'<div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:66px;width:1.5px;background:rgba(184,53,42,.45)"></div>')
 
 write_body = (f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}">'
-              f'<div class="words" style="position:relative;{SERIF};font-size:22px;line-height:38px;color:{INK};padding-top:16px">{TEXT}<span class="blink" style="color:{RED}">|</span></div></sc-if>')
+              f'<div class="words" data-slot="burnText" style="position:relative;{SERIF};font-size:22px;line-height:38px;color:{INK};padding-top:16px">{TEXT}<span class="blink" style="color:{RED}">|</span></div></sc-if>')
 wave_pts = ' '.join(f'{x},{40 + math.sin(x / 9) * (8 + 22 * abs(math.sin(x / 41))) * (1 if (x // 3) % 2 else -1) * random.Random(x).uniform(.4, 1):.1f}' for x in range(0, 420, 3))
 voice_body = (f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div class="words" style="position:relative;padding-top:12px;color:{INK}">'
-              f'<div style="{HAND};font-size:28px;line-height:1.2">a voice note, 0:42</div>'
+              f'<div style="{HAND};font-size:28px;line-height:1.2">a voice note, {{{{voiceLen}}}}</div>'
               f'<svg width="420" height="80" viewBox="0 0 420 80" style="margin-top:2px;display:block;height:58px" preserveAspectRatio="none" aria-hidden="true"><polyline points="{wave_pts}" fill="none" stroke="{INK}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>'
-              f'<div style="display:flex;gap:26px;margin-top:10px;{TYPE};font-size:12px;letter-spacing:.16em"><span>▶ PLAY</span><span style="color:{PENCIL}">RE-RECORD</span></div>'
+              f'<div style="display:flex;gap:26px;margin-top:10px;{TYPE};font-size:12px;letter-spacing:.16em"><button type="button" onClick="{{{{togglePlay}}}}" style="color:inherit;letter-spacing:inherit">{{{{playLabel}}}}</button><button type="button" onClick="{{{{reRecord}}}}" style="color:{PENCIL};letter-spacing:inherit">RE-RECORD</button></div>'
               f'<div style="{SERIF};font-style:italic;font-size:18px;color:{PENCIL};margin-top:12px">Only you hear it. When it burns, the recording goes with it.</div></div></sc-if>')
 
 sheet_inner = f'''<div style="position:relative;{HAND};font-size:24px;color:{PENCIL};padding-left:46px;margin-top:-4px">tonight, 11:48 pm</div>
@@ -163,8 +170,9 @@ match = f'''<div class="matchpin" style="position:absolute;left:-34px;top:{H - 2
 <rect x="17" y="16" width="6" height="48" rx="1.5" fill="{KRAFT}"/><ellipse cx="20" cy="14" rx="6.5" ry="8" fill="{RED}"/></svg>
 </button>
 <div style="display:flex;flex-direction:column;gap:6px;padding-top:34px">
-<span style="{HAND};font-size:30px;color:{CHALK};white-space:nowrap">{{{{holdLabel}}}}</span>
-<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD · OR HOLD SPACE</span></div></div>'''
+<span class="holdlabel" style="{HAND};font-size:30px;color:{CHALK};white-space:nowrap">{{{{holdLabel}}}}</span>
+<sc-if value="{{{{hasWords}}}}"><span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD · OR HOLD SPACE</span></sc-if>
+<sc-if value="{{{{isEmpty}}}}">{inline_note('write something first. even one word.', 'soft', 23)}</sc-if></div></div>'''
 
 sheet = (f'<div style="position:relative;width:{W}px;height:{H}px"><div class="heat"></div><div class="lift curl" style="position:relative;width:{W}px;height:{H}px;transform:rotate(-.8deg)">'
          f'<div class="sheet-in paper hi" style="position:absolute;inset:0;padding:40px 44px 40px 30px;clip-path:{deckle(W, H, seed=301)}">{lines_bg}{sheet_inner}<div class="char"></div></div>'
@@ -183,7 +191,7 @@ writing = f'''<sc-if value="{{{{notGone}}}}" hint-placeholder-val="{{{{ true }}}
 <div class="dimmable" style="width:440px;display:flex;flex-direction:column;gap:30px">
 {h_hand("Say the thing you can't say out loud.", 52, wait='.2s', d='2s')}
 <div class="rise" style="--w:1.2s;{TYPE};font-size:12px;letter-spacing:.16em;line-height:1.9;color:{BOARDTXT}">IT STAYS ON THIS DEVICE.<br>WHEN YOU BURN IT, IT'S GONE. FOR GOOD.</div>
-<div class="rise" style="--w:1.5s">{toggle}</div>
+<div class="rise" style="--w:1.5s">{toggle}<sc-if value="{{{{isEmpty}}}}"><div style="{HAND};font-size:21px;color:{BOARDTXT};margin-top:14px">or tap speak, and just say it.</div></sc-if></div>
 </div>
 <div class="rise" style="--w:.5s;margin-bottom:60px">{sheet}</div>
 </main></sc-if>'''
@@ -227,7 +235,8 @@ holdLabel: stage === 'burning' ? 'letting it go…' : (this.state.holding ? 'kee
 startHold, cancelHold,
 keyDown: (e) => { if ((e.key === ' ' || e.key === 'Enter') && !this.state.holding) { e.preventDefault(); startHold(); } },
 toWrite: () => this.setState({ mode: 'write' }), toSpeak: () => this.setState({ mode: 'speak' }),
-again: () => this.setState({ stage: 'writing', holding: false })
+again: () => this.setState({ stage: 'writing', holding: false }),
+hasWords: true, isEmpty: false, voiceLen: '0:42', playLabel: '▶ PLAY'
 };
 }""" % (int(T * 1000 + 300), BOARDTXT, BOARDTXT)
 
