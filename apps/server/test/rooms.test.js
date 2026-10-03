@@ -199,3 +199,20 @@ test('reporting the same person twice only counts once', async () => {
   const again = await a.emit('channel:join', { id });
   assert.deepEqual(again.reported, [c.session.id]);
 });
+
+test('the stage has four seats: invites and hands wait when it is full', async () => {
+  const id = 'comedy-open-mic';
+  const [mod, , a, b, c] = await fill(id, 5);
+  for (const x of [a, b]) {
+    await mod.emit('channel:invite', { to: x.session.id });
+    await x.waitFor('channel:speakInviteReceived');
+    assert.deepEqual(await x.emit('channel:acceptInvite'), { ok: true });
+  }
+  const s = await mod.waitFor('channel:update', (u) => u.members.filter((m) => m.role !== 'listener').length === 4);
+  assert.equal(s.stageCap, 4);
+  assert.deepEqual(await mod.emit('channel:invite', { to: c.session.id }), { error: 'stage_full' });
+  await c.emit('hand:raise');
+  assert.deepEqual(await mod.emit('hand:approve', { to: c.session.id }), { error: 'stage_full' });
+  assert.deepEqual(await a.emit('stage:stepDown'), { ok: true });
+  assert.deepEqual(await mod.emit('hand:approve', { to: c.session.id }), { ok: true });
+});

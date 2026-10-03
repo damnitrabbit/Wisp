@@ -5,6 +5,9 @@ import { config } from './config.js';
 
 const L = config.limits;
 const { MOD, SPEAKER, LISTENER } = ROLES;
+// Seats on an open pod's stage (the V5 room board has four). Mods choose who fills them.
+export const STAGE_CAP = 4;
+const STAGE_FULL = 'stage_full';
 
 // Reports needed to remove someone. 5 in a busy room, but never more than half of the others,
 // so a small room can still act (with a floor of 2 so one person can't remove anyone alone).
@@ -69,6 +72,7 @@ export class Rooms {
       id: room.id,
       name: room.name,
       cap: this.cap(room),
+      stageCap: room.id === QUESTION_ROOM.id ? null : STAGE_CAP,
       question: room.id === QUESTION_ROOM.id ? questionFor() : undefined,
       serverNow: now,
       reportThreshold: reportThreshold(room.members.size),
@@ -160,7 +164,7 @@ export class Rooms {
       room.modsGranted = 0;
     }
     // First people into a room get the keys; so does anyone walking into a room with no mods at all.
-    if ((room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) || this.modCount(room) === 0) {
+    if (((room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) || this.modCount(room) === 0) && this.stageCount(room) < STAGE_CAP) {
       member.role = MOD;
       member.stageSince = now;
       room.modsGranted++;
@@ -212,6 +216,12 @@ export class Rooms {
   }
 
   // ---------- roles ----------
+
+  stageCount(room) {
+    let n = 0;
+    for (const m of room.members.values()) if (m.role !== LISTENER) n++;
+    return n;
+  }
 
   modCount(room) {
     let n = 0;
@@ -284,6 +294,7 @@ export class Rooms {
     const t = this.target(room, targetId);
     if (!t || t.role !== LISTENER) return { error: ERRORS.BAD_REQUEST };
     if (room.invites.has(t.user.id)) return { ok: true };
+    if (this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL };
     const expiresAt = Date.now() + L.INVITE_EXPIRY_MS;
     const timer = setTimeout(() => {
       if (room.invites.get(t.user.id)?.timer !== timer) return;
@@ -303,6 +314,7 @@ export class Rooms {
     const { room, member } = this.get(user);
     const inv = room?.invites.get(user.id);
     if (!inv) return { error: ERRORS.BAD_REQUEST };
+    if (accept && this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL }; // invite stays open until it expires
     clearTimeout(inv.timer);
     room.invites.delete(user.id);
     const inviter = this.hub.userById(inv.by);
@@ -352,6 +364,7 @@ export class Rooms {
     const t = this.target(room, targetId);
     const hand = t && room.hands.get(t.user.id);
     if (!hand) return { error: ERRORS.BAD_REQUEST };
+    if (approve && this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL };
     clearTimeout(hand.timer);
     room.hands.delete(t.user.id);
     if (approve) {
