@@ -171,8 +171,7 @@ match = f'''<div class="matchpin" style="position:absolute;left:-34px;top:{H - 2
 </button>
 <div style="display:flex;flex-direction:column;gap:6px;padding-top:34px">
 <span class="holdlabel" style="{HAND};font-size:30px;color:{CHALK};white-space:nowrap">{{{{holdLabel}}}}</span>
-<sc-if value="{{{{hasWords}}}}"><span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD · OR HOLD SPACE</span></sc-if>
-<sc-if value="{{{{isEmpty}}}}">{inline_note('write something first. even one word.', 'soft', 23)}</sc-if></div></div>'''
+<div style="display:grid;align-items:start"><div style="grid-area:1/1;transition:opacity .35s ease;opacity:{{{{wordsOp}}}}" aria-hidden="{{{{wordsHidden}}}}"><span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD · OR HOLD SPACE</span></div><div style="grid-area:1/1;transition:opacity .35s ease;opacity:{{{{emptyOp}}}}" aria-hidden="{{{{emptyHidden}}}}">{inline_note('write something first. even one word.', 'soft', 23)}</div></div></div></div>'''
 
 sheet = (f'<div style="position:relative;width:{W}px;height:{H}px"><div class="heat"></div><div class="lift curl" style="position:relative;width:{W}px;height:{H}px;transform:rotate(-.8deg)">'
          f'<div class="sheet-in paper hi" style="position:absolute;inset:0;padding:40px 44px 40px 30px;clip-path:{deckle(W, H, seed=301)}">{lines_bg}{sheet_inner}<div class="char"></div></div>'
@@ -191,7 +190,7 @@ writing = f'''<sc-if value="{{{{notGone}}}}" hint-placeholder-val="{{{{ true }}}
 <div class="dimmable" style="width:440px;display:flex;flex-direction:column;gap:30px">
 {h_hand("Say the thing you can't say out loud.", 52, wait='.2s', d='2s')}
 <div class="rise" style="--w:1.2s;{TYPE};font-size:12px;letter-spacing:.16em;line-height:1.9;color:{BOARDTXT}">IT STAYS ON THIS DEVICE.<br>WHEN YOU BURN IT, IT'S GONE. FOR GOOD.</div>
-<div class="rise" style="--w:1.5s">{toggle}<sc-if value="{{{{isEmpty}}}}"><div style="{HAND};font-size:21px;color:{BOARDTXT};margin-top:14px">or tap speak, and just say it.</div></sc-if></div>
+<div class="rise" style="--w:1.5s">{toggle}<div style="{HAND};font-size:21px;color:{BOARDTXT};margin-top:14px;transition:opacity .35s ease;opacity:{{{{emptyOp}}}}" aria-hidden="{{{{emptyHidden}}}}">or tap speak, and just say it.</div></div>
 </div>
 <div class="rise" style="--w:.5s;margin-bottom:60px">{sheet}</div>
 </main></sc-if>'''
@@ -236,7 +235,7 @@ startHold, cancelHold,
 keyDown: (e) => { if ((e.key === ' ' || e.key === 'Enter') && !this.state.holding) { e.preventDefault(); startHold(); } },
 toWrite: () => this.setState({ mode: 'write' }), toSpeak: () => this.setState({ mode: 'speak' }),
 again: () => this.setState({ stage: 'writing', holding: false }),
-hasWords: true, isEmpty: false, voiceLen: '0:42', playLabel: '▶ PLAY'
+hasWords: true, isEmpty: false, wordsOp: 1, emptyOp: 0, wordsHidden: 'false', emptyHidden: 'true', voiceLen: '0:42', playLabel: '▶ PLAY'
 };
 }""" % (int(T * 1000 + 300), BOARDTXT, BOARDTXT)
 

@@ -162,8 +162,7 @@ match = f'''<div class="matchpin" style="position:absolute;left:-12px;top:{H - 2
 </button>
 <div style="display:flex;flex-direction:column;gap:5px;padding-top:28px">
 <span class="holdlabel" style="{HAND};font-size:25px;color:{CHALK};white-space:nowrap">{{{{holdLabel}}}}</span>
-<sc-if value="{{{{hasWords}}}}"><span style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.6;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD.<br>ONCE IT BURNS, IT'S GONE.</span></sc-if>
-<sc-if value="{{{{isEmpty}}}}">{inline_note('write something first.<br>even one word.', 'soft', 19)}</sc-if></div></div>'''
+<div style="display:grid;align-items:start"><div style="grid-area:1/1;transition:opacity .35s ease;opacity:{{{{wordsOp}}}}" aria-hidden="{{{{wordsHidden}}}}"><span style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.6;color:{BOARDTXT};white-space:nowrap">PRESS AND HOLD.<br>ONCE IT BURNS, IT'S GONE.</span></div><div style="grid-area:1/1;transition:opacity .35s ease;opacity:{{{{emptyOp}}}}" aria-hidden="{{{{emptyHidden}}}}">{inline_note('write something first.<br>even one word.', 'soft', 19)}</div></div></div></div>'''
 sheet = (f'<div style="position:relative;width:{W}px;height:{H}px"><div class="lift curl" style="position:relative;width:{W}px;height:{H}px;transform:rotate(-.8deg)">'
          f'<div class="sheet-in paper hi" style="position:absolute;inset:0;padding:26px 24px 26px 20px;clip-path:{deckle(W, H, seed=301)}">{lines_bg}{sheet_inner}<div class="char"></div></div>'
          f'<div class="glow"></div><div class="emit">{sparks}{ash}</div>'
@@ -175,7 +174,7 @@ writing = f'''<sc-if value="{{{{notGone}}}}" hint-placeholder-val="{{{{ true }}}
 {h_hand("Say the thing you can't say out loud.", 31, wait='.2s', d='1.8s')}
 <div class="rise" style="--w:1.1s;display:flex;justify-content:space-between;align-items:center;margin-top:12px">
 {toggle(11, 16)}<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{BOARDTXT};padding-bottom:6px">STAYS ON THIS DEVICE</span></div>
-<sc-if value="{{{{isEmpty}}}}"><div style="{HAND};font-size:18px;color:{BOARDTXT};margin-top:8px">or tap speak, and just say it.</div></sc-if></div>
+<div style="{HAND};font-size:18px;color:{BOARDTXT};margin-top:8px;transition:opacity .35s ease;opacity:{{{{emptyOp}}}}" aria-hidden="{{{{emptyHidden}}}}">or tap speak, and just say it.</div></div>
 <div style="flex-grow:1;min-height:24px"></div>
 <div class="rise" style="--w:.5s;margin:0 0 0 8px">{sheet}</div>
 <div style="flex-grow:.45;flex-shrink:0;min-height:84px"></div>
@@ -220,7 +219,7 @@ startHold, cancelHold,
 keyDown: (e) => { if ((e.key === ' ' || e.key === 'Enter') && !this.state.holding) { e.preventDefault(); startHold(); } },
 toWrite: () => this.setState({ mode: 'write' }), toSpeak: () => this.setState({ mode: 'speak' }),
 again: () => this.setState({ stage: 'writing', holding: false }),
-hasWords: true, isEmpty: false, voiceLen: '0:42', playLabel: '▶ PLAY'
+hasWords: true, isEmpty: false, wordsOp: 1, emptyOp: 0, wordsHidden: 'false', emptyHidden: 'true', voiceLen: '0:42', playLabel: '▶ PLAY'
 };
 }""" % (int(T * 1000 + 300), BOARDTXT, BOARDTXT)
 frozen_css = ''.join(f'.frozen {c}{{animation-play-state:paused !important}}' for c in ['.sheet-in', '.char', '.glow', '.curl', '.emit', '.spark', '.ash', '.words', '.tapeburn'])

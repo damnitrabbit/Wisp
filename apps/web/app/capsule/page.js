@@ -9,6 +9,7 @@ import DErr from '@/v5/screens/V5CapsuleEmailError';
 import MErr from '@/v5/screens/V5MCapsuleEmailError';
 import DSealed from '@/v5/screens/V5CapsuleSealed';
 import MSealed from '@/v5/screens/V5MCapsuleSealed';
+import DatePicker from './DatePicker';
 import { storageOk, sealCapsule, openTime, dateBounds, longDate, shortDate, lowerDate, isEmail, remindByEmail, remindable } from '@/lib/v5/capsule';
 
 const INK = '#221E1A';
@@ -87,7 +88,6 @@ export default function CapsulePage() {
   const [sealed, setSealed] = useState(null); // { openAt, preview }
   const text = useRef('');
   const email = useRef('');
-  const dateInput = useRef(null);
   const [bounds, setBounds] = useState({ min: '', max: '' });
 
   useEffect(() => {
@@ -95,20 +95,17 @@ export default function CapsulePage() {
     setBounds(dateBounds(new Date(), false));
   }, []);
 
-  const openPicker = useCallback(() => {
-    const el = dateInput.current;
-    if (!el) return;
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [anchor, setAnchor] = useState(null);
+  const openPicker = useCallback((e) => {
     // with an email, the date can only be as far as the reminder can reach (30 days)
-    const b = dateBounds(new Date(), Boolean(email.current.trim()));
-    setBounds(b);
-    el.min = b.min;
-    el.max = b.max;
-    try {
-      if (el.showPicker) return el.showPicker();
-    } catch {}
-    el.focus();
-    el.click();
+    setBounds(dateBounds(new Date(), Boolean(email.current.trim())));
+    const el = e?.currentTarget || [...document.querySelectorAll('.capopt')].pop();
+    setAnchor(el ? el.getBoundingClientRect() : null); // the screen re-renders on pick, so keep where it was, not the node
+    setPickerOpen(true);
   }, []);
+  const closePicker = useCallback(() => setPickerOpen(false), []);
+  useEffect(() => { if (stage !== 'write' && stage !== 'error') setPickerOpen(false); }, [stage]);
 
   const seal = useCallback(() => {
     const words = text.current.trim();
@@ -120,6 +117,7 @@ export default function CapsulePage() {
     if (mail && !isEmail(mail)) return setStage('error');
     const at = openTime(pick, date);
     if (!at) return openPicker();
+    setPickerOpen(false);
     sealCapsule(words, at); // false in a private window: the inline note already said so
     setSealed({ openAt: at.toISOString(), preview: words });
     setRemind(null);
@@ -144,9 +142,9 @@ export default function CapsulePage() {
       colDate: opt('Date') ? INK : PENCIL,
       pickWeek: () => setPick('Week'),
       pickMonth: () => setPick('Month'),
-      pickDate: () => {
+      pickDate: (e) => {
         setPick('Date');
-        openPicker();
+        openPicker(e);
       },
       dateLabel: date ? lowerDate(openTime('Date', date)) : 'a date',
       storageNote: !canStore,
@@ -184,21 +182,14 @@ export default function CapsulePage() {
   return (
     <>
       <Screen key={stage} desktop={d} phone={m} vals={vals} slots={slots} links={links} css={CSS} className={picked ? 'cap-picked' : ''} />
-      <input
-        ref={dateInput}
-        type="date"
-        aria-label="When it opens"
+      <DatePicker
+        open={pickerOpen && stage !== 'sealed'}
+        anchor={anchor}
         min={bounds.min}
         max={bounds.max}
         value={date}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (!v || (e.target.min && v < e.target.min) || (e.target.max && v > e.target.max)) return;
-          setDate(v);
-          setPick('Date');
-        }}
-        tabIndex={-1}
-        style={{ position: 'fixed', left: '50%', top: '50%', width: 1, height: 1, opacity: 0, pointerEvents: 'none', border: 0, padding: 0 }}
+        onPick={(v) => { setDate(v); setPick('Date'); }}
+        onClose={closePicker}
       />
     </>
   );

@@ -122,6 +122,11 @@ export default function BurnPage() {
       speakLine: w ? 0 : 1,
       hasWords: !isEmpty,
       isEmpty: isEmpty && stage === 'writing',
+      // both hints keep their place in the layout; only their opacity changes, so nothing on the page moves
+      wordsOp: isEmpty ? 0 : 1,
+      emptyOp: isEmpty && stage === 'writing' ? 1 : 0,
+      wordsHidden: isEmpty ? 'true' : 'false',
+      emptyHidden: isEmpty && stage === 'writing' ? 'false' : 'true',
       holdLabel: stage === 'burning' ? 'letting it go…' : hold.holding ? 'keep holding…' : 'hold to burn it',
       startHold,
       cancelHold: hold.end,
