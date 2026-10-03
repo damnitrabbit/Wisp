@@ -6,7 +6,8 @@
 import { connect } from '@/lib/wisp';
 
 export const KEY = 'nt-capsule';
-export const MAX_DAYS = 29; // reminders can only be scheduled 30 days out; letters open at 9:00 local time
+export const MAX_DAYS = 29; // with an email reminder: Resend schedules at most 30 days out; letters open at 9:00 local time
+export const MAX_DAYS_NO_EMAIL = 365; // without one, the letter just waits in this browser
 const DAY = 86400_000;
 
 export function storageOk() {
@@ -64,7 +65,12 @@ export function openTime(pick, dateStr, now = new Date()) {
   return null;
 }
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-export const dateBounds = (now = new Date()) => ({ min: ymd(new Date(now.getTime() + DAY)), max: ymd(new Date(now.getTime() + MAX_DAYS * DAY)) });
+export const dateBounds = (now = new Date(), withEmail = true) => ({
+  min: ymd(new Date(now.getTime() + DAY)),
+  max: ymd(new Date(now.getTime() + (withEmail ? MAX_DAYS : MAX_DAYS_NO_EMAIL) * DAY))
+});
+// the reminder can be scheduled for this opening time (Resend: up to 30 days ahead)
+export const remindable = (openAt, now = Date.now()) => new Date(openAt).getTime() - now <= 30 * DAY - 60_000;
 
 const fmt = (d, o) => new Intl.DateTimeFormat('en-GB', o).format(new Date(d));
 export const longDate = (d) => fmt(d, { day: 'numeric', month: 'long' }); // 15 October

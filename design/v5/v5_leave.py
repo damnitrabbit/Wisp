@@ -203,10 +203,10 @@ sealed = f'''
 {h_hand('Sealed. See you on {{openLong}}.', 58, color=PAPERHI, wait='3.4s')}
 <div class="rise" style="--w:4.2s;{SERIF};font-style:italic;font-size:21px;color:rgba(233,233,231,.8);5">Until then it waits here, in this browser. Not even we can open it.</div>
 <sc-if value="{{{{remindOk}}}}"><div class="rise" style="--w:4.4s">{inline_note('{{remindOkText}}', 'soft', 22)}</div></sc-if>
-<sc-if value="{{{{remindFail}}}}"><div class="rise" style="--w:4.4s">{inline_note("couldn't set the reminder. the letter is still sealed here.", 'soft', 22)}</div></sc-if>
+<sc-if value="{{{{remindFail}}}}"><div class="rise" style="--w:4.4s">{inline_note('{{remindFailA}} {{remindFailB}}', 'soft', 22)}</div></sc-if>
 <div class="rise" style="--w:4.6s;display:flex;align-items:center;gap:34px;margin-top:20px">{chip('back home', 'V5Home.dc.html', seed=463, w=180)}{link('write another', 'V5Capsule.dc.html')}</div>
 </div></main>'''
-SEALED_VALS = "openLong: '15 October', openShort: '15 oct', preview: 'Right now you\\'re scared about the interview on Monday. Whatever happened, you went…', remindOk: false, remindFail: false"
+SEALED_VALS = "openLong: '15 October', openShort: '15 oct', preview: 'Right now you\\'re scared about the interview on Monday. Whatever happened, you went…', remindOk: false, remindFail: false, remindFailA: 'couldn\\'t set the reminder.', remindFailB: 'the letter is still sealed here.'"
 page('V5CapsuleSealed', 'Capsule sealed', sealed, css=SEAL_CSS, script="renderVals() { return { %s }; }" % SEALED_VALS)
 
 # ---------- capsule: open ----------

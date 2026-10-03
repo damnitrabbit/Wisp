@@ -9,13 +9,14 @@ import DErr from '@/v5/screens/V5CapsuleEmailError';
 import MErr from '@/v5/screens/V5MCapsuleEmailError';
 import DSealed from '@/v5/screens/V5CapsuleSealed';
 import MSealed from '@/v5/screens/V5MCapsuleSealed';
-import { storageOk, sealCapsule, openTime, dateBounds, longDate, shortDate, lowerDate, isEmail, remindByEmail } from '@/lib/v5/capsule';
+import { storageOk, sealCapsule, openTime, dateBounds, longDate, shortDate, lowerDate, isEmail, remindByEmail, remindable } from '@/lib/v5/capsule';
 
 const INK = '#221E1A';
 const PENCIL = '#5F584E';
 const RED = '#B8352A';
 const CSS = `.captext textarea,.capmail input{scrollbar-width:none}.captext textarea:focus-visible,.capmail input:focus-visible{outline:none;box-shadow:none}
 .captext textarea::placeholder{color:transparent}.capmail input::placeholder{color:${PENCIL};font-style:italic;opacity:1}
+.cap-picked .capopt .draw{animation-delay:0s !important;animation-duration:.55s !important}
 .capopt{cursor:pointer;background:none;border:0}.capopt:focus-visible{outline:2px dashed ${INK};outline-offset:2px}`;
 
 function strip(node) {
@@ -77,10 +78,12 @@ function CapEmail({ node, store }) {
 
 export default function CapsulePage() {
   const [stage, setStage] = useState('write'); // write | error | sealed
-  const [pick, setPick] = useState('Week');
+  const [pick, setPickRaw] = useState('Week');
+  const [picked, setPicked] = useState(false); // once they choose, the circle draws at once (no entrance delay)
+  const setPick = useCallback((k) => { setPicked(true); setPickRaw(k); }, []);
   const [date, setDate] = useState('');
   const [canStore, setCanStore] = useState(true);
-  const [remind, setRemind] = useState(null); // null | 'ok' | 'fail'
+  const [remind, setRemind] = useState(null); // null | 'ok' | 'unavailable' | 'far' | 'fail'
   const [sealed, setSealed] = useState(null); // { openAt, preview }
   const text = useRef('');
   const email = useRef('');
@@ -89,12 +92,17 @@ export default function CapsulePage() {
 
   useEffect(() => {
     setCanStore(storageOk());
-    setBounds(dateBounds());
+    setBounds(dateBounds(new Date(), false));
   }, []);
 
   const openPicker = useCallback(() => {
     const el = dateInput.current;
     if (!el) return;
+    // with an email, the date can only be as far as the reminder can reach (30 days)
+    const b = dateBounds(new Date(), Boolean(email.current.trim()));
+    setBounds(b);
+    el.min = b.min;
+    el.max = b.max;
     try {
       if (el.showPicker) return el.showPicker();
     } catch {}
@@ -118,8 +126,9 @@ export default function CapsulePage() {
     setStage('sealed');
     text.current = '';
     if (mail) {
-      remindByEmail(mail, at).then((r) => setRemind(r?.ok ? 'ok' : 'fail'));
       email.current = '';
+      if (!remindable(at)) setRemind('far');
+      else remindByEmail(mail, at).then((r) => setRemind(r?.ok ? 'ok' : r?.error === 'unavailable' ? 'unavailable' : r?.error === 'too_long' ? 'far' : 'fail'));
     }
   }, [pick, date, openPicker]);
 
@@ -146,9 +155,11 @@ export default function CapsulePage() {
       preview: sealed?.preview || '',
       remindOk: remind === 'ok',
       remindOkText: at ? `we'll email you on ${lowerDate(at)}. then we forget the address.` : '',
-      remindFail: remind === 'fail'
+      remindFail: remind === 'fail' || remind === 'unavailable' || remind === 'far',
+      remindFailA: remind === 'unavailable' ? "email reminders aren't switched on yet." : remind === 'far' ? 'reminders only reach 30 days out.' : "couldn't set the reminder.",
+      remindFailB: 'the letter is still sealed here.'
     };
-  }, [pick, date, canStore, sealed, remind, openPicker]);
+  }, [pick, date, canStore, sealed, remind, openPicker, setPick]);
 
   const slots = useMemo(
     () => ({
@@ -172,7 +183,7 @@ export default function CapsulePage() {
   const [d, m] = stage === 'sealed' ? [DSealed, MSealed] : stage === 'error' ? [DErr, MErr] : [D, M];
   return (
     <>
-      <Screen key={stage} desktop={d} phone={m} vals={vals} slots={slots} links={links} css={CSS} />
+      <Screen key={stage} desktop={d} phone={m} vals={vals} slots={slots} links={links} css={CSS} className={picked ? 'cap-picked' : ''} />
       <input
         ref={dateInput}
         type="date"
@@ -182,7 +193,7 @@ export default function CapsulePage() {
         value={date}
         onChange={(e) => {
           const v = e.target.value;
-          if (!v || (bounds.min && v < bounds.min) || (bounds.max && v > bounds.max)) return;
+          if (!v || (e.target.min && v < e.target.min) || (e.target.max && v > e.target.max)) return;
           setDate(v);
           setPick('Date');
         }}
