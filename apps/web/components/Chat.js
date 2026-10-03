@@ -350,7 +350,8 @@ export default function Chat({ role = 'talk' }) {
 
   // Outside pod hours there's nothing to join.
   useEffect(() => {
-    if (lobby?.pods && !lobby.pods.open && phaseRef.current !== 'closed' && phaseRef.current !== 'ended' && phaseRef.current !== 'reported') router.replace('/asleep');
+    // (mid-chat the server's pods:closed shows the 2am page instead)
+    if (lobby?.pods && !lobby.pods.open && !['chat', 'closed', 'ended', 'reported'].includes(phaseRef.current)) router.replace('/asleep');
   }, [lobby?.pods, router]);
 
   useEffect(() => () => {

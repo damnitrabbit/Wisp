@@ -127,7 +127,7 @@ def fact_grid(rows, cols='150px 1fr', size=12):
 
 ask_card = paper(f'''
 <div style="display:flex;align-items:center;justify-content:space-between">{t_mark('a small ask', 24)}<span style="color:{INK}">{ic(MIC, 22)}</span></div>
-{h_hand('moss_byte would like<br>to talk by voice.', 46, color=INK, wait='1s', d='1.8s', extra='margin-top:6px')}
+{h_hand('moss_byte<br>would like to talk<br>by voice.', 46, color=INK, wait='1s', d='1.8s', extra='margin-top:6px')}
 <div class="rise" style="--w:1.9s;{SERIF};font-size:20px;line-height:1.55;color:{INK};margin-top:14px">Only if you want to. Text is just as good, and you can come back to it any time.</div>
 <div class="rise" style="--w:2.1s;margin-top:22px;padding-top:18px;border-top:1px dashed {RULE}">{fact_grid([('VOICE', 'PEER TO PEER · NEVER RECORDED', INK), ('YOUR MIC', 'ASKED ONLY AFTER YOU SAY YES', INK), ('KEPT', 'NOTHING', INK)])}</div>
 <div class="rise" style="--w:2.4s;display:flex;align-items:center;gap:30px;margin-top:30px">{tchip('say yes', 'V5Call.dc.html', 'ink', 170, 54, 701)}
