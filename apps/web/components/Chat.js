@@ -380,7 +380,18 @@ export default function Chat({ role = 'talk' }) {
     return () => clearInterval(t);
   }, [since, nudgeAt, closingAt, lobby?.pods]);
 
-  const call = usePairCall({ active: voice === 'on', polite, track, muted });
+  // They said yes to our ask: now the mic (the design's "your mic · asked only after yes"). No mic -> back to text.
+  const askingMic = useRef(false);
+  useEffect(() => {
+    if (voice !== 'on' || track || askingMic.current) return;
+    askingMic.current = true;
+    mic.ask().then((ok) => {
+      askingMic.current = false;
+      if (ok && micTrack()) setTrack(micTrack());
+      else emit('pair:voiceEnd');
+    });
+  }, [voice, track, mic]);
+  const call = usePairCall({ active: voice === 'on' && !!track, polite, track, muted });
   // dev: ?dev=drop drops the voice line 6s after it goes live
   useEffect(() => {
     if (DEV !== 'drop' || call.state !== 'live') return;
@@ -461,9 +472,7 @@ export default function Chat({ role = 'talk' }) {
   const askVoice = useCallback(async () => {
     if (voice !== 'off') return;
     if (!voiceSupported()) return setNoVoice(true);
-    const ok = await mic.ask();
-    if (!ok) return;
-    setTrack(micTrack());
+    // the mic is asked for only after they say yes (see below)
     const r = await emit('pair:voiceRequest');
     if (r.ok) {
       setVoice('asked');
