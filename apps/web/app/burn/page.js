@@ -80,6 +80,13 @@ export default function BurnPage() {
   }, []);
   const hold = useHold(burn);
   useEffect(() => () => clearTimeout(timer.current), []);
+  // arriving from a capsule's "let it go": straight to the ending
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('gone') === '1') {
+      setStage('gone');
+      window.history.replaceState(null, '', '/burn');
+    }
+  }, []);
 
   const canBurn = stage === 'writing' && !isEmpty;
   const startHold = useCallback((e) => hold.start(e, canBurn), [hold, canBurn]);

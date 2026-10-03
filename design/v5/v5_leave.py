@@ -104,16 +104,32 @@ def opt(label, sel=False):
     c = circle_scribble(len(label) * 12 + 44, 54, RED, wait='1.8s') if sel else ''
     return f'<span style="position:relative;display:inline-block;padding:8px 14px;{HAND};font-size:23px;color:{INK if sel else PENCIL}">{c}{label}</span>'
 
+def copt(label, key, sel=False, cw=None):
+    """A clickable "open it" option; the chosen one gets the red circle."""
+    c = circle_scribble(cw or (len(label) * 12 + 44), 54, RED, wait='1.8s')
+    hint = 'true' if sel else 'false'
+    return (f'<button type="button" class="capopt" onClick="{{{{pick{key}}}}}" aria-pressed="{{{{on{key}}}}}" '
+            f'style="position:relative;display:inline-block;padding:8px 14px;{HAND};font-size:23px;color:{{{{col{key}}}}}">'
+            f'<sc-if value="{{{{on{key}}}}}" hint-placeholder-val="{{{{ {hint} }}}}">{c}</sc-if>{label}</button>')
+
+def slot_field(html, name):
+    """field() with its value line as a live slot."""
+    k = 'padding:8px 0 6px'
+    i = html.index(k); j = html.rindex('<div ', 0, i)
+    return html[:j] + f'<div data-slot="{name}" ' + html[j + 5:]
+
+CAP_VALS = ("onWeek: false, onMonth: false, onDate: true, colWeek: '#5F584E', colMonth: '#5F584E', colDate: '#221E1A', "
+            "dateLabel: 'on 15 october', storageNote: false")
 CAP_COPY = 'Sealed in this browser. If you add an email, we keep only that and the date, and delete both once it sends.'
 
 def cap_letter(email_value='', error='', date='on 15 october', h=506, chip_seed=452):
     """The capsule letter: words, then when it opens, then the optional email, and the seal at the bottom right."""
     return paper(f'''
 <div style="{HAND};font-size:34px;color:{INK}">Dear later me,</div>
-<div style="{SERIF};font-size:21px;line-height:1.65;color:{INK};margin-top:14px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.{'' if email_value else '<span class="blink" style="color:' + RED + '">|</span>'}</div>
+<div data-slot="capText" style="{SERIF};font-size:21px;line-height:1.65;color:{INK};margin-top:14px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.{'' if email_value else '<span class="blink" style="color:' + RED + '">|</span>'}</div>
 <div style="margin-top:40px;border-top:1px dashed {RULE};padding-top:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL};margin-right:10px">OPEN IT</span>{opt('next week')}{opt('in a month')}{opt(date, True)}</div>
-<div style="margin-top:24px">{field('remind me by email · optional', email_value, 'you@somewhere.com', error=error, w=556)}</div>
+<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL};margin-right:10px">OPEN IT</span>{copt('next week', 'Week')}{copt('in a month', 'Month')}{copt('{{dateLabel}}', 'Date', True, cw=200)}</div>
+<div style="margin-top:24px">{slot_field(field('remind me by email · optional', email_value, 'you@somewhere.com', error=error, w=556), 'capEmail')}</div>
 <div style="display:flex;justify-content:flex-end;margin-top:22px">{chip('seal it', 'V5CapsuleSealed.dc.html', seed=chip_seed, w=170, kind='ink')}</div>''',
         660, h, rot=.8, kind='hi', seed=451, pad='46px 52px 40px', tapes=tape(270, -15, 120, 30, rot=3, seed=45))
 
@@ -126,11 +142,12 @@ cwrite = f'''
 <div style="width:400px;display:flex;flex-direction:column;gap:24px">
 {h_hand('Write to the you who comes later.', 50, d='2s')}
 <div class="rise" style="--w:1.3s;{SERIF};font-size:19px;line-height:1.55;color:{BOARDTXT}">{CAP_COPY}</div>
+<sc-if value="{{{{storageNote}}}}">{inline_note("this browser can't keep things right now (a private window?).<br>the letter won't wait here. an email reminder still works.", 'soft', 21)}</sc-if>
 <div class="rise" style="--w:1.7s;margin-top:8px">{link('not now', 'V5Home.dc.html')}</div>
 </div>
 <div class="rise" style="--w:.5s">{letter}</div>
 </main>'''
-page('V5Capsule', 'Time capsule', cwrite)
+page('V5Capsule', 'Time capsule', cwrite, script="renderVals() { return { %s }; }" % CAP_VALS)
 
 # ---------- capsule: sealed (end state) ----------
 SEAL = (f'<svg width="96" height="96" viewBox="0 0 100 100" aria-hidden="true"><defs>{ROUGH.format(i="seal", s=11, sc=6)}'
@@ -143,7 +160,7 @@ env_w, env_h = 460, 290
 VY = env_h * .56          # where the side flaps meet (the V of the pocket)
 FY = env_h * .60          # how far the top flap reaches when closed
 LW, LH = env_w - 64, 238  # letter
-_letter = paper(f'<div style="{HAND};font-size:26px">Dear later me,</div><div style="{SERIF};font-size:15px;line-height:1.6;margin-top:8px;color:{PENCIL}">Right now you\'re scared about the interview on Monday. Whatever happened, you went…</div>',
+_letter = paper(f'<div style="{HAND};font-size:26px">Dear later me,</div><div style="{SERIF};font-size:15px;line-height:1.6;margin-top:8px;color:{PENCIL};display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden">{{{{preview}}}}</div>',
                 LW, LH, kind="hi", seed=461, pad='24px 26px')
 def _poly(pts):
     return 'polygon(' + ','.join(f'{x:.0f}px {y:.0f}px' for x, y in pts) + ')'
@@ -159,7 +176,7 @@ envelope = f"""<div class="env" style="position:relative;width:{env_w}px;height:
 <div style="position:absolute;inset:0;z-index:4;filter:drop-shadow(0 -2px 3px rgba(0,0,0,.22))">
 <div class="paper kraft" style="position:absolute;inset:0;clip-path:{pocket}"></div>
 <svg width="{env_w}" height="{env_h}" style="position:absolute;inset:0" aria-hidden="true"><path d="M2 {env_h - 2} L{env_w / 2} {VY + 18:.0f} L{env_w - 2} {env_h - 2}" fill="none" stroke="rgba(80,55,25,.32)" stroke-width="1.5"/></svg>
-<div style="position:absolute;right:26px;bottom:20px;{HAND};font-size:22px;color:{INK};transform:rotate(-3deg)">open on 15 oct.</div></div>
+<div style="position:absolute;right:26px;bottom:20px;{HAND};font-size:22px;color:{INK};transform:rotate(-3deg)">open on {{{{openShort}}}}.</div></div>
 <!-- 4. the top flap: open and behind everything first, then folds down over the front -->
 <div class="flap" style="position:absolute;left:0;top:0;width:{env_w}px;height:{FY:.0f}px;transform-origin:50% 0">
 <div class="paper kraft" style="position:absolute;inset:0;background-color:#CDB892;clip-path:{flap_poly}"></div></div>
@@ -183,18 +200,21 @@ sealed = f'''
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:50px;padding-bottom:40px">
 <div class="envwrap" style="margin-top:110px">{envelope}</div>
 <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-{h_hand('Sealed. See you on 15 October.', 58, color=PAPERHI, wait='3.4s')}
+{h_hand('Sealed. See you on {{openLong}}.', 58, color=PAPERHI, wait='3.4s')}
 <div class="rise" style="--w:4.2s;{SERIF};font-style:italic;font-size:21px;color:rgba(233,233,231,.8);5">Until then it waits here, in this browser. Not even we can open it.</div>
+<sc-if value="{{{{remindOk}}}}"><div class="rise" style="--w:4.4s">{inline_note('{{remindOkText}}', 'soft', 22)}</div></sc-if>
+<sc-if value="{{{{remindFail}}}}"><div class="rise" style="--w:4.4s">{inline_note("couldn't set the reminder. the letter is still sealed here.", 'soft', 22)}</div></sc-if>
 <div class="rise" style="--w:4.6s;display:flex;align-items:center;gap:34px;margin-top:20px">{chip('back home', 'V5Home.dc.html', seed=463, w=180)}{link('write another', 'V5Capsule.dc.html')}</div>
 </div></main>'''
-page('V5CapsuleSealed', 'Capsule sealed', sealed, css=SEAL_CSS)
+SEALED_VALS = "openLong: '15 October', openShort: '15 oct', preview: 'Right now you\\'re scared about the interview on Monday. Whatever happened, you went…', remindOk: false, remindFail: false"
+page('V5CapsuleSealed', 'Capsule sealed', sealed, css=SEAL_CSS, script="renderVals() { return { %s }; }" % SEALED_VALS)
 
 # ---------- capsule: open ----------
 opened_letter = paper(f'''
 <div style="{HAND};font-size:36px;color:{INK}">Dear later me,</div>
-<div style="{SERIF};font-size:22px;line-height:1.7;color:{INK};margin-top:16px">Right now you're scared about the interview on Monday.</div>
-<div style="{SERIF};font-size:22px;line-height:1.7;color:{INK};margin-top:14px">Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div>
-<div style="{HAND};font-size:28px;color:{INK};margin-top:22px;text-align:right">you, on 1 October</div>
+<div data-slot="openText" style="{SERIF};font-size:22px;line-height:1.7;color:{INK};margin-top:16px"><div>Right now you're scared about the interview on Monday.</div>
+<div style="margin-top:14px">Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div></div>
+<div style="{HAND};font-size:28px;color:{INK};margin-top:22px;text-align:right">you, on {{{{sealedOn}}}}</div>
 ''', 640, 470, rot=-1, kind='hi', seed=471, pad='48px 54px')
 open_css = """.unfold{animation:unfold 1.6s cubic-bezier(.2,.8,.2,1) .3s both;transform-origin:50% 100%}
 @keyframes unfold{from{opacity:0;transform:perspective(900px) rotateX(-70deg) translateY(60px)}to{opacity:1;transform:none}}"""
@@ -204,12 +224,12 @@ copen = f'''
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;align-items:center;justify-content:center;gap:80px;padding-bottom:40px">
 <div style="width:380px;display:flex;flex-direction:column;gap:22px">
 {t_mark('it arrived.', 30, '#F0A08F', 'transform:rotate(-3deg)')}
-{h_hand('A note from you, two weeks ago.', 50, wait='.4s', d='2s')}
+{h_hand('A note from you, {{agoText}}.', 50, wait='.4s', d='2s')}
 <div class="rise" style="--w:1.5s;{SERIF};font-size:19px;line-height:1.55;color:{ASH}">Read it as many times as you like. When you leave this page, it's gone.</div>
 <div class="rise" style="--w:1.9s;display:flex;flex-direction:column;align-items:flex-start;gap:20px;margin-top:10px">
 {chip('let it go', 'V5BurnGone.dc.html', seed=472, w=170)}{link('write back to a later you', 'V5Capsule.dc.html')}</div>
 </div>
 <div class="unfold">{opened_letter}</div>
 </main>'''
-page('V5CapsuleOpen', 'Capsule opened', copen, css=open_css)
+page('V5CapsuleOpen', 'Capsule opened', copen, css=open_css, script="renderVals() { return { sealedOn: '1 October', agoText: 'two weeks ago' }; }")
 print('leave ok')

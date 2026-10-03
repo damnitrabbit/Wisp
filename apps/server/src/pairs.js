@@ -197,7 +197,7 @@ export class Pairs {
     return { ok: true };
   }
 
-  report(user) {
+  report(user, requeue = true) {
     const { partner } = this.get(user);
     if (!partner) return { error: ERRORS.BAD_REQUEST };
     const now = Date.now();
@@ -206,7 +206,7 @@ export class Pairs {
     r.reporters.add(user.id);
     const blockNow = r.reporters.size >= L.PAIR_REPORT_THRESHOLD;
     this.end(user, 'report');
-    this.enqueue(user);
+    if (requeue) this.enqueue(user);
     if (blockNow) {
       this.blocked.set(partner.id, now + L.PAIR_BLOCK_MS);
       this.reports.delete(partner.id);
@@ -251,6 +251,17 @@ export class Pairs {
     pair.voiceTimer.unref?.();
     this.hub.toUser(partner, 'pair:voiceRequested', { name: user.name, expiresAt, serverNow: Date.now() });
     return { ok: true, expiresAt };
+  }
+
+  // The asker changed their mind before an answer.
+  voiceCancel(user) {
+    const { pair, partner } = this.get(user);
+    if (!pair || pair.voice !== 'requested' || pair.voiceBy !== user.id) return { error: ERRORS.BAD_REQUEST };
+    clearTimeout(pair.voiceTimer);
+    pair.voice = 'off';
+    pair.voiceBy = null;
+    this.hub.toUser(partner, 'pair:voiceWithdrawn', {});
+    return { ok: true };
   }
 
   voiceAnswer(user, accept) {

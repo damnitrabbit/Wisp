@@ -1,4 +1,5 @@
 from gen5 import *
+import v5_live as LV
 from v5m_talk import tchip
 
 # ---------------- MATCHING ----------------
@@ -76,6 +77,7 @@ matching = f'''
 </div>
 </main>'''
 page('V5Matching', 'Finding someone', matching, css=match_css)
+LV.mark('V5Matching', replace=[('4 LISTENERS AWAKE', '{{awake}}'), ("Finding someone who'll listen…", '{{matchTitle}}')])
 
 # ---------------- POD (1:1) ----------------
 def slip(text, mine=False, who='moss_byte', seed=0, rot=0, w=None):
@@ -192,7 +194,9 @@ def pod(nudge=False):
 <div class="rise" style="--w:.3s;padding-top:8px">{chat_sheet}</div>
 </main>{ov}'''
 page('V5Pod', 'Talk pod', pod(), css=pod_css)
+LV.pod('V5Pod')
 page('V5PodNudge', 'Talk pod, 10 minute check-in', pod(True), css=pod_css)
+LV.pod('V5PodNudge')
 
 # ---------------- POD ENDED ----------------
 pr = random.Random(9)
@@ -216,6 +220,7 @@ podend = f'''
 <div class="rise" style="--w:3.6s;display:flex;align-items:center;gap:34px;margin-top:30px">{chip('back home', 'V5Home.dc.html', seed=552, w=180)}{link('talk to someone new', 'V5Matching.dc.html')}</div>
 </main>'''
 page('V5PodEnd', 'Pod ended', podend, css=end_css)
+LV.mark('V5PodEnd', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}'), ("MOSS_BYTE'S LAST WORDS", '{{lastLabel}}'), ("take care of yourself, okay? you're easier to talk to than you think.", '{{lastWords}}')])
 
 # ---------------- GROUP ROOM (tonight's question) ----------------
 def person(name, state, me=False):

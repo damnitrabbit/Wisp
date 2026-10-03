@@ -562,7 +562,7 @@ def sealed_env(ew, eh, seal, label_size, uid, seed):
 <div style="position:absolute;inset:0;filter:drop-shadow(0 16px 24px rgba(0,0,0,.55))"><div class="paper kraft" style="position:absolute;inset:0;background-color:#B49D74;clip-path:{deckle(ew, eh, seed=seed)}"></div></div>
 <div style="position:absolute;inset:0;filter:drop-shadow(0 -2px 3px rgba(0,0,0,.22))"><div class="paper kraft" style="position:absolute;inset:0;clip-path:{pocket}"></div>
 <svg width="{ew}" height="{eh}" style="position:absolute;inset:0" aria-hidden="true"><path d="M2 {eh - 2} L{ew / 2} {VY + 18:.0f} L{ew - 2} {eh - 2}" fill="none" stroke="rgba(80,55,25,.32)" stroke-width="1.5"/></svg>
-<div style="position:absolute;right:{ew * .056:.0f}px;bottom:{eh * .07:.0f}px;{HAND};font-size:{label_size}px;color:{INK};transform:rotate(-3deg)">open on 11 oct.</div></div>
+<div style="position:absolute;right:{ew * .056:.0f}px;bottom:{eh * .07:.0f}px;{HAND};font-size:{label_size}px;color:{INK};transform:rotate(-3deg)">open on {{{{openShort}}}}.</div></div>
 <div style="position:absolute;left:0;top:0;width:{ew}px;height:{FY:.0f}px;filter:brightness(1) drop-shadow(0 3px 3px rgba(0,0,0,.25))"><div class="paper kraft" style="position:absolute;inset:0;background-color:#CDB892;clip-path:{flap}"></div></div>
 <div style="position:absolute;left:{ew / 2 - seal / 2:.0f}px;top:{FY - seal * .65:.0f}px">{seal_svg(seal, uid)}</div>
 </div>"""
@@ -598,12 +598,13 @@ cnot = f'''
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:50px;padding-bottom:40px">
 <div class="rise" style="--w:.2s;transform:rotate(-1.5deg)">{sealed_env(460, 290, 96, 22, 'cns', 462)}</div>
 <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-{h_hand('Not yet. 9 more days.', 58, color=PAPERHI, wait='.8s')}
-<div class="rise" style="--w:1.6s;{TYPE};font-size:12px;letter-spacing:.18em;color:{BOARDTXT}">SEALED 14 SEPTEMBER · OPENS SUNDAY, 11 OCTOBER</div>
+{h_hand('Not yet. {{daysLeft}}.', 58, color=PAPERHI, wait='.8s')}
+<div class="rise" style="--w:1.6s;{TYPE};font-size:12px;letter-spacing:.18em;color:{BOARDTXT}">SEALED {{{{sealedUp}}}} · OPENS {{{{opensUp}}}}</div>
 <div class="rise" style="--w:1.9s;{SERIF};font-style:italic;font-size:21px;color:rgba(233,233,231,.82);margin-top:4px">It's waiting right here. No peeking, not even for you.</div>
 <div class="rise" style="--w:2.3s;margin-top:22px">{chip('back home', 'V5Home.dc.html', seed=7041, w=180)}</div>
 </div></main>'''
-page('V5CapsuleNotYet', 'Capsule, not yet', cnot)
+NOTYET_VALS = "renderVals() { return { daysLeft: '9 more days', sealedUp: '14 SEPTEMBER', opensUp: 'SUNDAY, 11 OCTOBER', openShort: '11 oct' }; }"
+page('V5CapsuleNotYet', 'Capsule, not yet', cnot, script=NOTYET_VALS)
 board('V5CapsuleNotYet', 'L17 — Capsule, not yet', 1440, 900, 'edge_leave')
 
 mcnot = f'''
@@ -612,13 +613,13 @@ mcnot = f'''
 {mbody(f'''<div style="display:flex;flex-direction:column;align-items:center">
 <div class="rise" style="--w:.2s;transform:rotate(-1.5deg)">{sealed_env(304, 192, 62, 16, 'mcns', 1462)}</div>
 <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:48px;text-align:center">
-{h_hand('Not yet.<br>9 more days.', 38, color=PAPERHI, wait='.8s')}
-<div class="rise" style="--w:1.6s;{TYPE};font-size:10px;letter-spacing:.16em;line-height:1.8;color:{BOARDTXT};margin-top:4px">OPENS SUNDAY, 11 OCTOBER</div>
+{h_hand('Not yet.<br>{{daysLeft}}.', 38, color=PAPERHI, wait='.8s')}
+<div class="rise" style="--w:1.6s;{TYPE};font-size:10px;letter-spacing:.16em;line-height:1.8;color:{BOARDTXT};margin-top:4px">OPENS {{{{opensUp}}}}</div>
 <div class="rise" style="--w:1.9s;{SERIF};font-style:italic;font-size:17px;line-height:1.5;color:rgba(233,233,231,.82);max-width:300px">It's waiting right here.<br>No peeking, not even for you.</div>
 </div></div>''', center=True)}
 <div class="rise" style="--w:2.2s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHome.dc.html', 'paper', seed=7042))}</div>
 {mfooter()}'''
-mpage('V5MCapsuleNotYet', 'Capsule, not yet', mcnot)
+mpage('V5MCapsuleNotYet', 'Capsule, not yet', mcnot, script=NOTYET_VALS)
 board('V5MCapsuleNotYet', 'ML17 — Capsule, not yet', 390, 844, 'm_edge_leave')
 
 # ================================================================ C05 — couldn't be kept
@@ -651,7 +652,17 @@ mpage('V5MCapsuleLost', 'Capsule, the browser forgot', mclost)
 board('V5MCapsuleLost', 'ML19 — Capsule, the browser forgot', 390, 844, 'm_edge_leave')
 
 # ================================================================ C06 — reminder email, check it
-def opt(label, sel=False, phone=False):
+def opt(label, sel=False, phone=False, key=None, cw=None):
+    if key:   # live: clickable, the chosen one circled
+        hint = 'true' if sel else 'false'
+        if phone:
+            c = circle_scribble(cw or (len(label) * 9.5 + 30), 42, RED, wait='1.8s')
+            st = f'padding:4px 6px;{HAND};font-size:clamp(14px, 4vw, 18px)'
+        else:
+            c = circle_scribble(cw or (len(label) * 12 + 44), 54, RED, wait='1.8s')
+            st = f'padding:8px 14px;{HAND};font-size:23px'
+        return (f'<button type="button" class="capopt" onClick="{{{{pick{key}}}}}" aria-pressed="{{{{on{key}}}}}" style="position:relative;display:inline-block;{st};color:{{{{col{key}}}}}">'
+                f'<sc-if value="{{{{on{key}}}}}" hint-placeholder-val="{{{{ {hint} }}}}">{c}</sc-if>{label}</button>')
     if phone:
         c = circle_scribble(len(label) * 9.5 + 30, 42, RED, wait='1.8s') if sel else ''
         return f'<span style="position:relative;display:inline-block;padding:4px 6px;{HAND};font-size:{"18px" if sel else "clamp(14px, 4vw, 18px)"};color:{INK if sel else PENCIL}">{c}{label}</span>'
@@ -661,13 +672,20 @@ def opt(label, sel=False, phone=False):
 ERR = "that address looks off. leave it empty if you'd rather not."
 CAP_COPY = 'Sealed in this browser. If you add an email, we keep only that and the date, and delete both once it sends.'
 EMAIL_BAD = 'sam@gmial<span class="blink" style="color:' + RED + '">|</span>'
+def slot_field(html, name):
+    """field() with its value line as a live slot."""
+    k = 'padding:8px 0 6px'
+    i = html.index(k); j = html.rindex('<div ', 0, i)
+    return html[:j] + f'<div data-slot="{name}" ' + html[j + 5:]
+EMAIL_VALS = ("renderVals() { return { onWeek: false, onMonth: false, onDate: true, colWeek: '#5F584E', colMonth: '#5F584E', colDate: '#221E1A', "
+              "dateLabel: '%s', storageNote: false }; }")
 # same composition as the fixed V5Capsule / V5MCapsule letters (kept local so this module never re-runs those boards)
 letter = paper(f'''
 <div style="{HAND};font-size:34px;color:{INK}">Dear later me,</div>
-<div style="{SERIF};font-size:21px;line-height:1.65;color:{INK};margin-top:14px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div>
+<div data-slot="capText" style="{SERIF};font-size:21px;line-height:1.65;color:{INK};margin-top:14px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div>
 <div style="margin-top:40px;border-top:1px dashed {RULE};padding-top:16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL};margin-right:10px">OPEN IT</span>{opt('next week')}{opt('in a month')}{opt('11 november', True)}</div>
-<div style="margin-top:24px">{field('remind me by email · optional', EMAIL_BAD, error=ERR, w=556)}</div>
+<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL};margin-right:10px">OPEN IT</span>{opt('next week', key='Week')}{opt('in a month', key='Month')}{opt('{{dateLabel}}', True, key='Date', cw=200)}</div>
+<div style="margin-top:24px">{slot_field(field('remind me by email · optional', EMAIL_BAD, error=ERR, w=556), 'capEmail')}</div>
 <div style="display:flex;justify-content:flex-end;margin-top:18px">{chip('seal it', 'V5CapsuleSealed.dc.html', seed=452, w=170, kind='ink')}</div>''',
     660, 530, rot=.8, kind='hi', seed=451, pad='46px 52px 40px', tapes=tape(270, -15, 120, 30, rot=3, seed=45))
 
@@ -683,16 +701,16 @@ cemail = f'''
 </div>
 <div class="rise" style="--w:.5s">{letter}</div>
 </main>'''
-page('V5CapsuleEmailError', 'Capsule, email looks off', cemail)
+page('V5CapsuleEmailError', 'Capsule, email looks off', cemail, script=EMAIL_VALS % '11 november')
 board('V5CapsuleEmailError', "L18 — Capsule, email that doesn't look right", 1440, 900, 'edge_leave')
 
 mletter = fcard(f'''
 <div style="{HAND};font-size:clamp(24px, 3.6vh, 28px);color:{INK}">Dear later me,</div>
-<div style="{SERIF};font-size:clamp(16px, 2.2vh, 17px);line-height:1.5;color:{INK};margin-top:6px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div>
+<div data-slot="capText" style="{SERIF};font-size:clamp(16px, 2.2vh, 17px);line-height:1.5;color:{INK};margin-top:6px">Right now you're scared about the interview on Monday. Whatever happened, you went. That was the hard part. Be gentle with yourself either way.</div>
 <div style="margin-top:clamp(8px, 3vh - 8px, 30px);border-top:1px dashed {RULE};padding-top:12px">
 <div style="{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL};margin-bottom:4px">OPEN IT</div>
-<div style="display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;margin:0 -6px;white-space:nowrap">{opt('next week', phone=True)}{opt('in a month', phone=True)}{opt('11 nov', True, phone=True)}</div></div>
-<div style="margin-top:clamp(8px, 2.4vh - 6px, 24px)">{field('remind me by email · optional', EMAIL_BAD, error=ERR, w=294).replace('width:294px', 'width:100%')}</div>
+<div style="display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;margin:0 -6px;white-space:nowrap">{opt('next week', phone=True, key='Week')}{opt('in a month', phone=True, key='Month')}{opt('{{dateLabel}}', True, phone=True, key='Date', cw=125)}</div></div>
+<div style="margin-top:clamp(8px, 2.4vh - 6px, 24px)">{slot_field(field('remind me by email · optional', EMAIL_BAD, error=ERR, w=294).replace('width:294px', 'width:100%'), 'capEmail')}</div>
 <div style="margin-top:8px;{HAND};font-size:18px;line-height:1.25;color:{PENCIL}">you can still seal it without one.</div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:clamp(12px, 2.2vh, 20px);flex-shrink:0">{mtext('not now', 'V5MHome.dc.html', PENCIL)}{chip('seal it', 'V5MCapsuleSealed.dc.html', seed=1452, w=150, kind='ink')}</div>''',
     kind='hi', seed=1451, pad='clamp(18px, 2.8vh, 24px) 26px clamp(16px, 2.4vh, 22px)', rot=.8, tapes=tape(0, -13, 110, 28, rot=3, seed=145).replace('left:0px', 'left:calc(50% - 55px)', 1))
@@ -704,7 +722,7 @@ mcemail = f'''
        + f'<div class="rise" style="--w:.5s;flex:0 0 auto;display:flex;flex-direction:column;margin:auto 0">{mletter}</div>', gap=12)}
 <div style="height:{M_GAP + 6}px;flex-shrink:0"></div>
 {mfooter()}'''
-mpage('V5MCapsuleEmailError', 'Capsule, email looks off', mcemail)
+mpage('V5MCapsuleEmailError', 'Capsule, email looks off', mcemail, script=EMAIL_VALS % '11 nov')
 board('V5MCapsuleEmailError', "ML18 — Capsule, email that doesn't look right", 390, 844, 'm_edge_leave')
 
 # ---------------------------------------------------------------- manifest

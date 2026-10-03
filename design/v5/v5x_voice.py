@@ -1,5 +1,6 @@
 """N0TRACE V5 — voice + open pod rooms (desktop). Boards: V5VoiceWait, V5VoiceAsk, V5Call, V5Rooms, V5Room, V5RoomHand."""
 from gen5 import *
+import v5_live as LV
 import json, os
 from v5m_talk import tchip
 
@@ -117,6 +118,7 @@ v01_sheet = chat_sheet(sys_line('11:57 · you asked to talk by voice', 5) +
                        line_msg("no rush on that. what was your favourite tuesday with her?", False, t='11:57', i=6))
 v01 = pod_layout(side_card(wait_note, h=600), v01_sheet)
 page('V5VoiceWait', 'Voice asked, waiting', v01, css=POD_CSS)
+LV.pod('V5VoiceWait')
 
 # ================= V02 — they'd like to talk by voice =================
 def fact_grid(rows, cols='150px 1fr', size=12):
@@ -139,6 +141,7 @@ v02_side = side_card(f'''<div style="display:flex;flex-direction:column;gap:14px
 v02 = pod_layout(v02_side, chat_sheet(sys_line('11:57 · moss_byte asked to talk by voice', 5), tail=''),
                  overlay=f'<div class="veil"></div><div class="nudge">{ask_card}</div>')
 page('V5VoiceAsk', 'They would like to talk by voice', v02, css=POD_CSS)
+LV.pod('V5VoiceAsk')
 
 # ================= V03 — on voice =================
 def _smooth(pts):
@@ -214,6 +217,7 @@ call_side = paper(f'''
     300, 530, rot=-1.2, seed=521, pad='30px 30px', tapes=tape(100, -13, 100, 26, rot=-4, seed=52))
 call_under = f'<div class="rise" style="--w:2.4s;margin:14px 0 0 30px;{MARK};font-size:19px;color:{BOARDTXT};transform:rotate(-1deg)">the line only moves while someone speaks.</div>'
 page('V5Call', 'On voice', pod_layout(call_side, call_sheet, under=call_under), css=POD_CSS)
+LV.mark('V5Call', replace=[('03:41', '<span data-slot="calltimer">03:41</span>'), ('14 MIN TOGETHER', '{{together}}'), ('11:58 PM', '{{joined}}'), ('SPEAKING', '{{themState}}', 1), ('LISTENING', '{{meState}}', 1), ('>mute<', '>{{muteLabel}}<'), ('ON VOICE', '{{callState}}')])
 
 # ================= R01 — open pod: pick a room =================
 ROOMS = [  # name, theme, people, speakers, full?

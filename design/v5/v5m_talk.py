@@ -1,6 +1,7 @@
 """N0TRACE V5 phone: talk flow. Boards MT01-MT09 (V5MMatching ... V5MPaused).
 Helpers at the top are shared with v5x_talk.py (generation only runs under __main__)."""
 from gen5 import *
+import v5_live as LV
 import json, os
 
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'manifest_talk.json')
@@ -224,6 +225,7 @@ if __name__ == '__main__':
 </main>
 {mfooter()}'''
     mpage('V5MMatching', 'Finding someone', matching, h=1050, css=loader_css)
+    LV.mark('V5MMatching', replace=[('4 LISTENERS AWAKE', '{{awake}}'), ("Finding someone who'll listen…", '{{matchTitle}}')])
     board('V5MMatching', 'MT01 — Finding someone (scrolls)', 1050, 'm_talk')
 
     # =====================================================================
@@ -247,8 +249,10 @@ if __name__ == '__main__':
             ov = f'<div class="veil"></div><div class="nudge">{card}</div>'
         return vpod(pod_sheet, overlay=ov)
     mpage('V5MPod', 'Talk pod', mpod(), css=VPOD_CSS)
+    LV.pod('V5MPod')
     board('V5MPod', 'MT02 — Talk pod', MH, 'm_talk')
     mpage('V5MPodNudge', 'Talk pod, 10 minute check-in', mpod(True), css=VPOD_CSS)
+    LV.pod('V5MPodNudge')
     board('V5MPodNudge', 'MT03 — 10 minute check-in', MH, 'm_talk')
 
     # =====================================================================
@@ -272,6 +276,7 @@ if __name__ == '__main__':
 <div class="rise" style="--w:3.6s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHomeOpen.dc.html', 'paper', seed=1532) + mtext('talk to someone new', 'V5MMatching.dc.html'))}</div>
 {mfooter()}'''
     mpage('V5MPodEnd', 'Pod ended', podend, css=end_css)
+    LV.mark('V5MPodEnd', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}'), ("MOSS_BYTE'S LAST WORDS", '{{lastLabel}}'), ("take care of yourself, okay? you're easier to talk to than you think.", '{{lastWords}}')])
     board('V5MPodEnd', 'MT04 — You were heard tonight', MH, 'm_talk')
 
     # =====================================================================
@@ -391,6 +396,7 @@ if __name__ == '__main__':
 <div class="rise" style="--w:2.4s;display:flex;flex-direction:column">{mdock(mtext('stop looking', 'V5MHomeOpen.dc.html'))}</div>
 {mfooter()}'''
     mpage('V5MRequeue', 'They left, finding someone new', requeue, h=1000, css=rq_css)
+    LV.mark('V5MRequeue', replace=[('11:58 PM', '{{leftAt}}')])
     board('V5MRequeue', 'MT08 — They left. Finding someone new (scrolls)', 1000, 'm_talk')
 
     # =====================================================================

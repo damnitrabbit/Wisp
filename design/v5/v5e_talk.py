@@ -2,6 +2,7 @@
 T11 NoOneFree, T12 PodsClosing, T13 PodsClosedMidChat, T14 SendFailed, T15 VoiceDeclined, T16 CallDropped,
 T17 QuestionEmpty, T18 RoomsAllFull, T19 MovedOffStage, T20 RoomAlone. Each as V5<Name> (1440x900) + V5M<Name> (390x844)."""
 from gen5 import *
+import v5_live as LV
 from v5m_home import fcard
 import json, os
 # desktop pod / voice / room pieces (importing re-runs that module's page() calls: harmless)
@@ -147,6 +148,7 @@ nofree = f'''
 </div>
 </main>'''
 page('V5NoOneFree', "Nobody's free right now", nofree, css=EXTRA_CSS)
+LV.mark('V5NoOneFree', replace=[('LOOKED FOR 3 MINUTES', '{{looked}}')])
 board('V5NoOneFree', "T11 — Nobody's free right now", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -166,6 +168,7 @@ closing_side = side_card(STD_BTNS.replace("CHECK-IN", "CHECK-IN"))
 closing = pod_layout(side_card(STD_BTNS), dsheet(convo_html(LATE), typing(), close_slip(), header='1:31 AM · YOU BOTH JOINED · NOTHING HERE IS SAVED'))
 closing = closing.replace("PODS OPEN · UNTIL 2AM", "PODS CLOSE AT 2AM · 10 MIN LEFT")
 page('V5PodsClosing', 'Pods close in 10 minutes', closing, css=DCSS)
+LV.pod('V5PodsClosing')
 board('V5PodsClosing', 'T12 — Pods close soon', 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -221,6 +224,7 @@ closed = f'''
 </main>
 {footer()}'''
 page('V5PodsClosedMidChat', "Pods are asleep now", closed, css=DCSS + FADE_CSS)
+LV.mark('V5PodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')])
 board('V5PodsClosedMidChat', "T13 — Pods closed mid-conversation", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -231,6 +235,7 @@ SEND_NOTE = "the connection slipped for a second. your words are still here."
 sendfail = pod_layout(side_card(STD_BTNS), dsheet(convo_html(CONVO) + fail_line(FAILED, '11:57', 5),
                       f'<div class="retry" style="--w:1.9s;align-self:center;margin-top:2px">{inline_note(SEND_NOTE, "pencil", 21)}</div>'))
 page('V5SendFailed', "A message didn't send", sendfail, css=DCSS)
+LV.pod('V5SendFailed')
 board('V5SendFailed', "T14 — A message didn't send", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -240,6 +245,7 @@ dec_msgs = (convo_html(CONVO) + VX.sys_line('11:57 · you asked for voice', 5) +
             + line_msg("still here. tell me more about the tuesdays?", False, t='11:58', i=7))
 declined = pod_layout(side_card(STD_BTNS), dsheet(dec_msgs))
 page('V5VoiceDeclined', "They'd rather keep to text", declined, css=DCSS)
+LV.pod('V5VoiceDeclined')
 board('V5VoiceDeclined', "T15 — They'd rather keep it to text", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -263,6 +269,7 @@ DROP_BTNS = f'''<div style="display:flex;flex-direction:column;gap:14px;margin-t
 DROP_AFTER = ("lost you for a sec. still here, just typing now.", False, '1:03')
 drop_msgs = convo_html(CONVO[2:]) + VX.sys_line('12:02 · the voice line dropped', 3) + line_msg(DROP_AFTER[0], False, t=DROP_AFTER[2], i=4)
 page('V5CallDropped', 'Voice dropped', pod_layout(side_card(DROP_BTNS), dsheet(drop_msgs, '', drop_slip())), css=DCSS)
+LV.pod('V5CallDropped')
 board('V5CallDropped', 'T16 — Voice dropped', 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -459,12 +466,14 @@ mnofree = f'''
 <div class="rise" style="--w:1.7s;display:flex;flex-direction:column">{mdock(mcta('keep waiting', 'V5MMatching.dc.html', 'ink', seed=1901) + mtext('stop looking', 'V5MHomeOpen.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MNoOneFree', "Nobody's free right now", mnofree, css=EXTRA_CSS)
+LV.mark('V5MNoOneFree', replace=[('LOOKED FOR 3 MINUTES', '{{looked}}')])
 board('V5MNoOneFree', "MT11 — Nobody's free right now", 390, 844, 'm_edge_talk')
 
 # ---------- MT11 — Pods close in 10 minutes ----------
 mclosing = mpod_page(mchat_ed(''.join(mmsg(t, m, t=tt, i=i) for i, (t, m, tt) in enumerate(MLATE)), mtyping(), close_slip(W - 36, phone=True),
                             header='1:31 AM · NOTHING SAVED'), status='10 MIN LEFT · CLOSES 2AM')
 mpage('V5MPodsClosing', 'Pods close in 10 minutes', mclosing, css=MCSS)
+LV.pod('V5MPodsClosing')
 board('V5MPodsClosing', 'MT12 — Pods close soon', 390, 844, 'm_edge_talk')
 
 # ---------- MT12 — It's 2am. The pod closed. ----------
@@ -484,6 +493,7 @@ mclosed = f'''
 <div class="rise" style="--w:3.1s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHomeOpen.dc.html', 'ink', seed=1922) + mtext('leave something<br>on the wall', 'V5MEchoWrite.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MPodsClosedMidChat', "Pods are asleep now", mclosed, css=MCSS + FADE_CSS)
+LV.mark('V5MPodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')])
 board('V5MPodsClosedMidChat', "MT13 — Pods closed mid-conversation", 390, 844, 'm_edge_talk')
 
 # ---------- MT13 — A message didn't send ----------
@@ -491,6 +501,7 @@ MFAILED = "and the worst part is I haven't told anyone. it feels silly to miss s
 msendfail = mpod_page(mchat_ed(''.join(mmsg(t, m, t=tt, i=i) for i, (t, m, tt) in enumerate(MCONVO)) + fail_line(MFAILED, '11:57', 5, phone=True),
                       f'<div class="retry" style="--w:1.9s;align-self:center;text-align:center;max-width:90%">{inline_note(SEND_NOTE, "pencil", 18)}</div>'))
 mpage('V5MSendFailed', "A message didn't send", msendfail, css=MCSS)
+LV.pod('V5MSendFailed')
 board('V5MSendFailed', "MT14 — A message didn't send", 390, 844, 'm_edge_talk')
 
 # ---------- MV04 — They'd rather keep to text ----------
@@ -498,6 +509,7 @@ mdec_msgs = (''.join(mmsg(t, m, t=tt, i=i) for i, (t, m, tt) in enumerate(MCONVO
              + pencil_line("they'd like to keep it to text. that's okay.", 5, phone=True) + mmsg('still here. tell me more about the tuesdays?', t='11:58', i=6))
 mdeclined = mpod_page(mchat_ed(mdec_msgs, '', voice=None))
 mpage('V5MVoiceDeclined', "They'd rather keep to text", mdeclined, css=MCSS)
+LV.pod('V5MVoiceDeclined')
 board('V5MVoiceDeclined', "MT15 — They'd rather keep it to text", 390, 844, 'm_edge_talk')
 
 # ---------- MV05 — Voice dropped ----------
@@ -505,6 +517,7 @@ mdrop_msgs = (''.join(mmsg(t, m, t=tt, i=i) for i, (t, m, tt) in enumerate(MCONV
               + mmsg(DROP_AFTER[0], False, t=DROP_AFTER[2], i=3))
 mdrop = mpod_page(mchat_ed(mdrop_msgs, '', drop_slip(W - 36, phone=True), voice=('ask again', 'V5MVoiceWait.dc.html')), status='BACK ON TEXT')
 mpage('V5MCallDropped', 'Voice dropped', mdrop, css=MCSS)
+LV.pod('V5MCallDropped')
 board('V5MCallDropped', 'MT16 — Voice dropped', 390, 844, 'm_edge_talk')
 
 # ---------- MT14 — Tonight's question, first one here ----------

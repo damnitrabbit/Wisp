@@ -1,11 +1,6 @@
-'use client';
-import Guard from '@/components/Guard';
-import Chat from '@/components/Chat';
+import { redirect } from 'next/navigation';
 
+// The old 1:1 chat lives on as the talk pod.
 export default function Page() {
-  return (
-    <Guard>
-      <Chat />
-    </Guard>
-  );
+  redirect('/talk');
 }

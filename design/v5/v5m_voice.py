@@ -1,5 +1,6 @@
 """N0TRACE V5 — voice + open pod rooms (phone). Boards: V5MVoiceWait, V5MVoiceAsk, V5MCall, V5MRooms, V5MRoom, V5MRoomHand."""
 from gen5 import *
+import v5_live as LV
 # shared pieces from the desktop module of the same group (importing it also regenerates the desktop boards: harmless)
 from v5x_voice import (ic, MIC, MICOFF, DOOR, FLAG, TEXTI, HANDI, ink_wave, dots10, star, POD_CSS, status_dot, ROOMS, mini_wave,
                        write_manifest)
@@ -115,6 +116,7 @@ wait_note = f'''<div class="pinned" style="--w:1s;position:relative;flex-shrink:
 mv01 = mpod(mchat_sheet(msys('11:57 · you asked for voice', 5) + mmsg('no rush on that. what was the best tuesday?', t='11:57', i=6), note=wait_note),
             row=mcta('take it back', 'V5MPod.dc.html', 'kraft', seed=1515, icon=ic(MIC, 14)))
 mpage('V5MVoiceWait', 'Voice asked, waiting', mv01, css=POD_CSS)
+LV.pod('V5MVoiceWait')
 
 # ================= MV02 — they'd like to talk by voice =================
 def mfacts(rows):
@@ -132,6 +134,7 @@ ask_card = apaper(f'''
     rot=-1, seed=622, pad='26px 24px 22px', tapes=ctape(100, 26, 3, 62, y=-13))
 mv02 = mpod(mchat_sheet(msys('11:57 · moss_byte asked for voice', 5), tail=''), overlay=moverlay(ask_card))
 mpage('V5MVoiceAsk', 'They would like to talk by voice', mv02, css=POD_CSS + MOV_CSS)
+LV.pod('V5MVoiceAsk')
 
 # ================= MV03 — on voice =================
 def mlane(name, state, wave):
@@ -168,6 +171,7 @@ mv03 = f'''
 {mdock(mcta('mute', '#', 'ink', seed=641, icon=ic(MIC, 14)) + mcta('back to text', 'V5MPod.dc.html', 'kraft', seed=642, icon=ic(TEXTI, 14)),
        sub=mlink('leave gently', 'V5MPodEnd.dc.html', CHALK, 10.5, DOOR) + mlink('report · ends now', 'V5MReported.dc.html', CRISIS, 10.5, FLAG), footer=False)}</div>'''
 mpage('V5MCall', 'On voice', mv03, css=POD_CSS)
+LV.mark('V5MCall', replace=[('03:41', '<span data-slot="calltimer">03:41</span>'), ('14 MIN TOGETHER', '{{together}}'), ('11:58 PM', '{{joined}}'), ('SPEAKING', '{{themState}}', 1), ('LISTENING', '{{meState}}', 1), ('>mute<', '>{{muteLabel}}<'), ('ON VOICE', '{{callState}}')])
 
 # ================= MR01 — open pod: pick a room (scrolls) =================
 SW, SH = 164, 214

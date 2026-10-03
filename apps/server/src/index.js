@@ -9,6 +9,7 @@ import { makeName, isValidName } from './names.js';
 import { Rooms } from './rooms.js';
 import { Pairs } from './pairs.js';
 import { Echoes } from './echoes.js';
+import { capsuleRemind } from './capsule.js';
 import { getIceServers, reportRelayBytes, turnStatus } from './turn.js';
 
 const L = config.limits;
@@ -319,7 +320,8 @@ export function createWisp() {
     on('pair:join', ({ role }) => pairs.join(user, role));
     on('pair:leave', () => pairs.leave(user));
     on('pair:skip', () => pairs.skip(user));
-    on('pair:report', () => pairs.report(user));
+    on('pair:report', ({ requeue }) => pairs.report(user, requeue !== false));
+    on('pair:voiceCancel', () => pairs.voiceCancel(user));
     on('pair:message', ({ text }) => pairs.message(user, text));
     on('pair:typing', ({ on: typing }) => (pairs.typing(user, typing), { ok: true }));
     on('pair:voiceRequest', () => pairs.voiceRequest(user));
@@ -338,6 +340,7 @@ export function createWisp() {
     on('echoes:delete', (p) => echoes.remove(user, p));
     on('echoes:deleteReply', (p) => echoes.removeReply(user, p));
     on('echoes:heard', (p) => echoes.hear(user, p));
+    on('capsule:remind', (p) => capsuleRemind(user, p)); // TIME CAPSULE: schedule one reminder email; nothing kept
 
     // explicit goodbye (closing the tab cleanly): no grace period
     on('session:end', () => {

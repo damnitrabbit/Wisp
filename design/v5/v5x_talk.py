@@ -1,5 +1,6 @@
 """N0TRACE V5 desktop: new talk boards. T07 V5Listener, T08 V5Requeue, T09 V5Paused."""
 from gen5 import *
+import v5_live as LV
 from v5m_talk import (board, write_manifest, thread_loader, you_note, closed_sign, SIGN_CSS, LRED, SOFTRED, tchip)
 import gen5 as _g
 _pg = _g.page; _g.page = lambda *a, **k: None   # borrow the scrap atom without rewriting v5_talk's boards
@@ -73,6 +74,7 @@ requeue = f'''
 </main>
 {footer()}'''
 page('V5Requeue', 'They left, finding someone new', requeue, css=rq_css)
+LV.mark('V5Requeue', replace=[('11:58 PM', '{{leftAt}}')])
 board('V5Requeue', 'T08 — They left. Finding someone new', 900, 'talk', 1440)
 
 # =====================================================================
