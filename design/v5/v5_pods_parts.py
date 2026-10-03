@@ -41,6 +41,10 @@ P['mTyping'] = MV.mtyping('{{partner}}')
 P['mFail'] = act(nomsg(ET.fail_line('{{text}}', '{{t}}', phone=True)), 'try again', 'retry')
 P['mPencil'] = nomsg(ET.pencil_line('{{text}}', phone=True))
 P['mFirst'] = P['mPencil']
+# ---- the 2am close: the last lines fade on the page (v5e_talk T13 / MT13) ----
+P['fade'] = '<div class="fadeaway" style="--w:{{w}};--o:{{o}}">{{{line}}}</div>'
+P['dAsleep'] = ET.asleep_line()
+P['mAsleep'] = ET.asleep_line(True)
 
 CSS = ET.EXTRA_CSS + """
 .msg.live{animation-delay:0s !important}

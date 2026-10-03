@@ -224,7 +224,8 @@ closed = f'''
 </main>
 {footer()}'''
 page('V5PodsClosedMidChat', "Pods are asleep now", closed, css=DCSS + FADE_CSS)
-LV.mark('V5PodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')])
+LV.mark('V5PodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')],
+        slots=[('<div class="scroll" style="flex-grow:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:20px;padding:18px 6px 18px;overflow:hidden">', 'lastlines')])
 board('V5PodsClosedMidChat', "T13 — Pods closed mid-conversation", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -495,7 +496,8 @@ mclosed = f'''
 <div class="rise" style="--w:3.1s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHomeOpen.dc.html', 'ink', seed=1922) + mtext('leave something<br>on the wall', 'V5MEchoWrite.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MPodsClosedMidChat', "Pods are asleep now", mclosed, css=MCSS + FADE_CSS)
-LV.mark('V5MPodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')])
+LV.mark('V5MPodsClosedMidChat', replace=[('1:31 AM', '{{joined}}')],
+        slots=[('<div class="scroll" style="flex-grow:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:14px;padding:12px 2px 12px;overflow:hidden">', 'lastlines')])
 board('V5MPodsClosedMidChat', "MT13 — Pods closed mid-conversation", 390, 844, 'm_edge_talk')
 
 # ---------- MT13 — A message didn't send ----------

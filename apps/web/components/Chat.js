@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useRouter } from 'next/navigation';
 import { domToReact } from 'html-react-parser';
 import Screen from '@/v5/Screen';
-import Part, { Acts } from '@/app/talk/_pods/Part';
+import Part, { Acts, fill } from '@/app/talk/_pods/Part';
 import P, { CSS as PART_CSS } from '@/app/talk/_pods/parts.gen';
 import { emit, on, bus, syncClock, serverNow, useWisp } from '@/lib/wisp';
 import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
@@ -52,8 +52,14 @@ import MMicBlocked from '@/v5/screens/V5MMicBlocked';
 import DNoVoice from '@/v5/screens/V5NoVoice';
 import MNoVoice from '@/v5/screens/V5MNoVoice';
 
-const NOBODY_AFTER_MS = 3 * 60_000; // "nobody's free right now" after this long looking
-const NUDGE_EVERY_MS = 10 * 60_000; // the 10 minute check-in
+// Dev only: /talk?dev=nudge (check-in after 15s), ?dev=closing (10-minute slip at once), ?dev=closed (2am close
+// 15s into a pod), ?dev=nobody (nobody's free after 10s). Ignored in production.
+const DEV = (() => {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return '';
+  try { return new URLSearchParams(window.location.search).get('dev') || ''; } catch { return ''; }
+})();
+const NOBODY_AFTER_MS = DEV === 'nobody' ? 10_000 : 3 * 60_000; // "nobody's free right now" after this long looking
+const NUDGE_EVERY_MS = DEV === 'nudge' ? 15_000 : 10 * 60_000; // the 10 minute check-in
 
 let seq = 0;
 const nid = () => `l${++seq}`;
@@ -160,9 +166,30 @@ function CallTimer() {
   }, []);
   return <span>{c.callSince ? mmss(Date.now() - c.callSince) : '00:00'}</span>;
 }
-const SLOTS = { msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer /> };
+// 2am: the last few lines fade on the page, then "2:00 · pods are asleep"
+function LastLines(node) {
+  return <LastList base={node.attribs.style} />;
+}
+function LastList({ base }) {
+  const c = useContext(PodCtx);
+  const k = c.phone ? 'm' : 'd';
+  const pv = { partner: c.partner, PARTNER: c.partner.toUpperCase() };
+  const last = c.items.filter((m) => m.kind === 'me' || m.kind === 'them').slice(c.phone ? -3 : -6);
+  return (
+    <div className="scroll" style={styleObj(base)}>
+      {last.map((m, i) => {
+        const line = fill(P[k + (m.kind === 'me' ? 'Mine' : 'Theirs')], { ...pv, text: m.text, t: m.t });
+        const o = (0.16 + (0.34 * i) / Math.max(1, last.length - 1)).toFixed(2);
+        return <Part key={m.id} html={P.fade} vals={{ w: `${(1.4 + i * 0.25).toFixed(2)}s`, o, line }} />;
+      })}
+      <Part html={P[k + 'Asleep']} />
+    </div>
+  );
+}
+const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer /> };
 const POD_EXTRA_CSS = PART_CSS + `
 .pod-input::placeholder{color:#5F584E;font-style:italic;opacity:1}
+.pod-input:focus-visible{outline:none;box-shadow:none}
 [data-slot-live="composer"] .blink{display:none}`;
 
 // ---------- the pod ----------
@@ -195,6 +222,7 @@ export default function Chat({ role = 'talk' }) {
   const [closingAt, setClosingAt] = useState(null);
   const mic = useMicFlow();
   const sentTyping = useRef(0);
+  const droppedRef = useRef(false);
   const typingTimer = useRef(null);
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
@@ -289,7 +317,8 @@ export default function Chat({ role = 'talk' }) {
         setCallSince(null);
         closeMic();
         setTrack(null);
-        add('sys', `${clock()} · ${by === 'you' ? 'back to text' : 'they went back to text'}`);
+        if (droppedRef.current) droppedRef.current = false;
+        else add('sys', `${clock()} · ${by === 'you' ? 'back to text' : 'they went back to text'}`);
       }),
       on('pods:closed', () => {
         closeMic();
@@ -340,19 +369,36 @@ export default function Chat({ role = 'talk' }) {
       }
       if (p === 'chat' && !closingAt) {
         const left = lobby?.pods?.minsToClose ?? podMinsToClose();
-        if (left && left <= POD_CLOSING_WARN_MIN && (lobby?.pods?.minsToClose != null)) setClosingAt(clockAmPm());
+        if ((left && left <= POD_CLOSING_WARN_MIN && (lobby?.pods?.minsToClose != null)) || DEV === 'closing') setClosingAt(clockAmPm());
+      }
+      if (DEV === 'closed' && p === 'chat' && nudgeAt && Date.now() >= nudgeAt - NUDGE_EVERY_MS + 15_000) {
+        closeMic();
+        emit('pair:leave');
+        setPhase('closed');
       }
     }, 1000);
     return () => clearInterval(t);
   }, [since, nudgeAt, closingAt, lobby?.pods]);
 
   const call = usePairCall({ active: voice === 'on', polite, track, muted });
+  // dev: ?dev=drop drops the voice line 6s after it goes live
+  useEffect(() => {
+    if (DEV !== 'drop' || call.state !== 'live') return;
+    const t = setTimeout(() => {
+      droppedRef.current = true;
+      emit('pair:voiceEnd');
+      setDropped(clockAmPm());
+      add('sys', `${clock()} · voice line dropped`);
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [call.state]);
   // The line couldn't hold: back to text, say so.
   useEffect(() => {
     if (voice === 'on' && call.state === 'failed') {
+      droppedRef.current = true;
       emit('pair:voiceEnd');
       setDropped(clockAmPm());
-      add('sys', `${clock()} · the voice line dropped`);
+      add('sys', `${clock()} · voice line dropped`);
     }
   }, [call.state, voice]);
 
@@ -362,10 +408,10 @@ export default function Chat({ role = 'talk' }) {
     if (!text) return;
     if (!retryOf) setDraft('');
     sentTyping.current = 0;
-    const r = await emit('pair:message', { text });
+    const r = DEV === 'sendfail' && !retryOf && /fail/.test(text) ? { error: 'dev' } : await emit('pair:message', { text });
     if (r.ok) {
       setItems((l) => {
-        const rest = retryOf ? l.filter((m) => m.id !== retryOf.id) : l;
+        const rest = retryOf ? l.filter((m) => m.id !== retryOf.id && m.of !== retryOf.id) : l;
         return [...rest, { id: r.id, kind: 'me', text: text.replace(/\s+/g, ' '), t: clock(r.at) }];
       });
       setDropped(null);
@@ -374,7 +420,9 @@ export default function Chat({ role = 'talk' }) {
     } else if (r.error === 'too_long') {
       if (!retryOf) setDraft(text.slice(0, 500));
     } else if (!retryOf) {
-      add('fail', text);
+      const id = nid();
+      setItems((l) => [...l, { id, kind: 'fail', text, t: clock() },
+        { id: nid(), of: id, kind: 'pencil', text: 'the connection slipped for a second. your words are still here.', t: clock() }]);
     }
   }, [draft]);
   const onDraft = useCallback((v) => {
@@ -485,6 +533,7 @@ export default function Chat({ role = 'talk' }) {
     PodEnd: leaveGently,
     Reported: report,
     Matching: again,
+    atching: again, // <Screen> reads "V5Matching" as "atching" (it strips a leading M)
     'keep-going': () => setNudge(false),
     mutelabel: () => setMuted((m) => !m),
     Pod: voice === 'incoming' ? () => answerVoice(false) : voice === 'asked' ? cancelVoice : voice === 'on' ? endCall : () => {},

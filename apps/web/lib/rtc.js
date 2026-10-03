@@ -113,6 +113,7 @@ export function meter(id, stream) {
   unmeter(id);
   try {
     ctx ??= new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume?.().catch?.(() => {});
     const src = ctx.createMediaStreamSource(stream);
     const an = ctx.createAnalyser();
     an.fftSize = 512;
