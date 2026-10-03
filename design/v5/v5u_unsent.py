@@ -30,24 +30,24 @@ def fullw(html):
 def mcompose(sel='echo'):
     """Phone compose paper as the screen's main sheet: grows to the dock, foot pinned to its bottom edge."""
     P, fs, lh = 22, 18.5, 30
-    count = f'<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
+    count = f'<span data-slot="noteCount" style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL};padding-bottom:6px">{58 if sel == "echo" else 74} / 400</span>'
     top = f'<div style="display:flex;justify-content:space-between;align-items:center">{toggle(11, 16)}{count}</div>'
     rec = _rec(250, 'mcw', 22, phone=True).replace('width:250px', 'width:100%;max-width:250px')
     if sel == 'echo':
-        words = f'<div style="flex:1 1 auto;{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:16px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="flex:1 1 auto;{SERIF};font-size:{fs}px;line-height:1.6;color:{INK};margin-top:16px">{ECHO_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot, extra, ear, crease, rot = 'NO NAME ON IT. EVER. FADES IN 24H.', '', '', '', -.4
     else:
         extra = (f'<div style="display:flex;align-items:baseline;gap:10px;margin-top:10px;padding-bottom:2px;border-bottom:1.5px solid {RULE}">'
                  f'<span style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{PENCIL}">TO</span>'
-                 f'<span style="{HAND};font-size:25px;line-height:1.2;color:{INK}">grandpa,</span>'
+                 f'<span data-slot="noteTo" style="{HAND};font-size:25px;line-height:1.2;color:{INK}">grandpa,</span>'
                  f'<span style="margin-left:auto;{TYPE};font-size:8.5px;letter-spacing:.12em;color:{PENCIL};text-align:right">A NAME, OR JUST &ldquo;YOU&rdquo;</span></div>')
-        words = f'<div style="flex:1 1 auto;min-height:{lh * 2}px;{SERIF};font-size:{fs}px;color:{INK};margin-top:8px;{_ruled(lh)}">{_LT}<span class="blink" style="color:{RED}">|</span></div>'
+        words = f'<div data-slot="noteText" style="flex:1 1 auto;min-height:{lh * 2}px;{SERIF};font-size:{fs}px;color:{INK};margin-top:8px;{_ruled(lh)}">{_LT}<span class="blink" style="color:{RED}">|</span></div>'
         foot, ear, rot = 'NOT SENT TO THEM. FADES IN 24H.', dogear(24), -.3
         crease = (f'<span aria-hidden="true" style="position:absolute;left:0;right:0;top:62%;height:2px;'
                   f'background:linear-gradient(to bottom,rgba(120,96,60,.13),rgba(255,252,242,.5))"></span>')
     body = (f'{ear}{crease}{top}{extra}'
             f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true }}}}">{words}</sc-if>'
-            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div style="margin-top:16px">{rec}</div></sc-if>'
+            f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="noteVoice" style="margin-top:16px">{rec}</div></sc-if>'
             f'<div style="margin-top:auto;padding-top:12px;border-top:1px dashed {RULE};flex-shrink:0;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">{foot}</div>')
     return msheet(body, kind='hi', seed=621, pad=f'20px {P}px 16px', rot=rot, minh=200,
                   tapes=ctape(96, 26, -3, 62))
@@ -75,7 +75,15 @@ mpage('V5MUnsentWrite', 'Leave an unsent letter', mwrite_frame('unsent'), css=EC
 # =====================================================================
 # E06 — it's out of you now (same physics as the echo pin: drop + tape slap)
 # =====================================================================
+def _pin_slots(html, lh):
+    # the site fills these with what was just put up
+    return (html.replace(f'color:{PENCIL};margin-bottom:4px">to grandpa,', f'color:{PENCIL};margin-bottom:4px" data-slot="pinTo">to grandpa,', 1)
+                .replace(f'{ruled(lh)}">{LETTER_TXT}', f'{ruled(lh)}" data-slot="pinText">{LETTER_TXT}', 1))
+
 def pinned_letter(phone=False):
+    return _pin_slots(_pinned_letter(phone), 26 if phone else 31)
+
+def _pinned_letter(phone=False):
     if phone:  # phone
         foot = f'<div style="position:absolute;left:22px;bottom:16px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">NOT SENT · FADES IN 24H</div>'
         tp = f'<span class="slap" style="animation-delay:1s">{tape(100, -13, 92, 26, rot=-4, seed=63)}</span>'

@@ -240,7 +240,7 @@ function Thread() {
       writeLine: mode === 'write' ? 1 : 0, speakLine: mode === 'speak' ? 1 : 0,
       toWrite: () => setMode('write'), toSpeak: () => setMode('speak'),
       isVoice: note.mode === 'voice', isText: note.mode !== 'voice', modeLabel: note.mode === 'voice' ? 'VOICE' : 'TEXT',
-      kindLabel: note.kind === 'unsent' ? 'AN UNSENT LETTER' : 'AN ECHO',
+      kindLabel: note.kind === 'unsent' ? 'UNSENT' : 'AN ECHO', // "UNSENT · TEXT" fits the phone slip's one line, like the wall's tag
       fadesShort: fadesShort(left), timeTitle: leftAt(note.createdAt), noteText: note.text ?? '',
       letterTo: note.to || 'you', letterText: note.text ?? (note.mode === 'voice' ? `(a voice note · ${clock(note.duration)})` : ''),
       cardH: cardHeight(note, false, note.kind === 'unsent' ? 384 : mineHere ? 250 : 336),
@@ -261,7 +261,7 @@ function Thread() {
             <Slips replies={replies} phone={phone} now={now} playing={player.playing?.startsWith(`${id}:`) ? player.playing.slice(id.length + 1) : null}
               onPlay={playReply} onReport={reportReply} onRemove={removeReply} canRemove={mineHere} />
           ) : (
-            <div style={{ fontFamily: "'Nothing You Could Do', 'Caveat', cursive", fontSize: phone ? 19 : 22, color: '#A39A8C', padding: '4px 4px' }}>nobody has replied yet. heard is enough too.</div>
+            <div style={{ fontFamily: "'Nothing You Could Do', 'Caveat', cursive", fontSize: phone ? 19 : 22, color: '#A39A8C', padding: '4px 4px' }}>{note.kind === 'unsent' ? 'nobody can reply to a letter. heard is enough.' : 'nobody has replied yet. heard is enough too.'}</div>
           )}
         </div>
       ),

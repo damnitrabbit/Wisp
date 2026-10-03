@@ -256,7 +256,7 @@ def compose_paper(sel='echo', phone=False):
     else:
         to = (f'<div style="display:flex;align-items:baseline;gap:12px;margin-top:{16 if not phone else 12}px;padding-bottom:2px;border-bottom:1.5px solid {RULE}">'
               f'<span style="{TYPE};font-size:{10 if not phone else 9.5}px;letter-spacing:.16em;color:{PENCIL}">TO</span>'
-              f'<span style="{HAND};font-size:{30 if not phone else 25}px;line-height:1.2;color:{INK}">grandpa,</span>'
+              f'<span data-slot="noteTo" style="{HAND};font-size:{30 if not phone else 25}px;line-height:1.2;color:{INK}">grandpa,</span>'
               f'<span style="margin-left:auto;{TYPE};font-size:{9.5 if not phone else 8.5}px;letter-spacing:.12em;color:{PENCIL}">A NAME, OR JUST &ldquo;YOU&rdquo;</span></div>')
         extra_top = to
         words = f'<div data-slot="noteText" style="{SERIF};font-size:{fs}px;color:{INK};margin-top:10px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
@@ -319,7 +319,7 @@ def _mcompose(sel='echo'):
     else:
         extra = (f'<div style="display:flex;align-items:baseline;gap:10px;margin-top:10px;padding-bottom:2px;border-bottom:1.5px solid {RULE}">'
                  f'<span style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{PENCIL}">TO</span>'
-                 f'<span style="{HAND};font-size:25px;line-height:1.2;color:{INK}">grandpa,</span>'
+                 f'<span data-slot="noteTo" style="{HAND};font-size:25px;line-height:1.2;color:{INK}">grandpa,</span>'
                  f'<span style="margin-left:auto;{TYPE};font-size:8.5px;letter-spacing:.12em;color:{PENCIL};text-align:right">A NAME, OR JUST &ldquo;YOU&rdquo;</span></div>')
         words = f'<div data-slot="noteText" style="flex:1 1 auto;min-height:{lh * 2}px;{SERIF};font-size:{fs}px;color:{INK};margin-top:8px;{ruled(lh)}">{LETTER_TXT}<span class="blink" style="color:{RED}">|</span></div>'
         foot, ear, rot = 'NOT SENT TO THEM. FADES IN 24H.', dogear(24), -.3

@@ -6,7 +6,7 @@ const R = {
   Burn: '/burn', BurnVoice: '/burn', BurnMid: '/burn', BurnGone: '/burn', BurnEmpty: '/burn', BurnRecording: '/burn',
   Echoes: '/echoes', EchoesEmpty: '/echoes', EchoWrite: '/echoes/write', EchoPinned: '/echoes/write', EchoTooLong: '/echoes/write',
   EchoThread: '/echoes', EchoNoReplies: '/echoes', EchoYours: '/echoes',
-  UnsentWrite: '/unsent', UnsentPinned: '/unsent', UnsentOpen: '/echoes',
+  UnsentWrite: '/echoes/unsent', UnsentPinned: '/echoes/unsent', UnsentOpen: '/echoes',
   Capsule: '/capsule', CapsuleSealed: '/capsule', CapsuleOpen: '/capsule/open', CapsuleNotYet: '/capsule/open',
   CapsuleLost: '/capsule/open', CapsuleEmailError: '/capsule',
   Matching: '/talk', Pod: '/talk', PodNudge: '/talk', PodEnd: '/talk', Requeue: '/talk', Reported: '/talk',

@@ -44,6 +44,10 @@ export function NoteText({ node, store, placeholder, minLines = 3, grow = false 
       t.setSelectionRange(t.value.length, t.value.length);
     }
   }, [store]);
+  // keep the red underline under the words when the textarea scrolls
+  useEffect(() => {
+    if (mirror.current && ref.current) mirror.current.scrollTop = ref.current.scrollTop;
+  });
   const lh = st.lineHeight && String(st.lineHeight).endsWith('px') ? parseFloat(st.lineHeight) : parseFloat(st.fontSize || 20) * (parseFloat(st.lineHeight) || 1.6);
   const box = { ...st, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: Math.round(lh * minLines) };
   if (!grow) box.flex = '1 1 auto';
@@ -51,7 +55,7 @@ export function NoteText({ node, store, placeholder, minLines = 3, grow = false 
   return (
     <div style={box}>
       {over && (
-        <div ref={mirror} aria-hidden="true" style={{ position: 'absolute', inset: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: 'transparent', pointerEvents: 'none' }}>
+        <div ref={mirror} aria-hidden="true" style={{ position: 'absolute', inset: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: 'transparent', pointerEvents: 'none', overflow: 'hidden', scrollbarWidth: 'none' }}>
           {text.slice(0, NOTE_MAX)}
           <span style={{ textDecoration: 'underline wavy #B8352A', textDecorationThickness: '1.5px', textUnderlineOffset: 4 }}>{text.slice(NOTE_MAX)}</span>
         </div>
@@ -126,5 +130,27 @@ export function NoteVoice({ node, recStore, maxS = 30 }) {
     >
       {domToReact(node.children || [], { replace })}
     </div>
+  );
+}
+
+// "TO grandpa," on the letter: who it's for. A name, or just "you".
+export const TO_MAX = 40;
+export function NoteTo({ node, store }) {
+  const to = useStore(store, (s) => s.to);
+  const st = styleOf(node);
+  return (
+    <span style={{ ...st, display: 'flex', alignItems: 'baseline', flex: '1 1 auto', minWidth: 0 }}>
+      <input
+        value={to}
+        maxLength={TO_MAX}
+        placeholder="someone"
+        aria-label="Who it's for: a name, or just you"
+        className="nt-to"
+        onChange={(e) => store.set({ to: e.target.value })}
+        style={{ ...BARE, width: `${(to ? to.length : 7) + 1}ch`, maxWidth: '100%', flex: '0 1 auto', minWidth: 0 }}
+      />
+      <span aria-hidden="true">,</span>
+      <style>{`.nt-to::placeholder{color:#5F584E;opacity:.55}.nt-to:focus-visible{outline:none;box-shadow:none}`}</style>
+    </span>
   );
 }
