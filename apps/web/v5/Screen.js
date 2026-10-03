@@ -12,11 +12,11 @@ import { routeFor } from './routes';
 
 const useIso = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-// phone layout below this width, or on a portrait tablet
+// phone layout below ~760px wide, or on a portrait tablet
 export function pickPhone() {
   if (typeof window === 'undefined') return true;
   const w = window.innerWidth, h = window.innerHeight;
-  return w < 700 || (w < 1000 && h > w);
+  return w < 760 || (w < 1000 && h > w);
 }
 
 export function useView() {
@@ -115,11 +115,14 @@ export default function Screen({ phone, desktop, vals = {}, slots, links, css = 
   const style = <style dangerouslySetInnerHTML={{ __html: scr.css + '\n' + css }} />;
   if (scr.phone) {
     const fill = scr.h <= 844;
-    return (
+    const board = (
       <div className={`v5-phone ${className}`} style={{ position: 'relative', width: '100%', minWidth: 320, height: fill ? '100dvh' : 'auto', minHeight: fill ? 568 : scr.h, background: scr.bg, color: '#E9E9E7', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {style}{tree}
       </div>
     );
+    // a portrait tablet gets the phone board as a centred column, not stretched edge to edge
+    if (view.w <= 600) return board;
+    return <div style={{ minHeight: '100dvh', background: '#070707', display: 'flex', justifyContent: 'center' }}><div style={{ width: '100%', maxWidth: 520 }}>{board}</div></div>;
   }
   const tall = scr.h > 900;
   const s = tall ? Math.min(view.w / scr.w, 1.4) : Math.min(view.w / scr.w, view.h / scr.h, 1.4);
