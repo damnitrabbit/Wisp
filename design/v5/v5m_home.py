@@ -55,7 +55,7 @@ def mhome(open_, capsule=False, sub=None, strip=True):
 {mrow('I can listen', 'LISTEN POD', 'V5MListener.dc.html')}
 {mrow('Just talk', 'OPEN POD', 'V5MRooms.dc.html', True)}</nav>'''
         # the small group is tonight's question: it lives in the strip below, not as a fourth row
-        status = f'<span style="display:flex;align-items:center;gap:6px;{TYPE};font-size:9.5px;letter-spacing:.16em;color:{INK}"><span class="pulse-dot"></span>OPEN · 37 HERE</span>'
+        status = f'<span style="display:flex;align-items:center;gap:6px;{TYPE};font-size:9.5px;letter-spacing:.16em;color:{INK}"><span class="pulse-dot"></span>OPEN<span data-slot="here"> · 37 HERE</span></span>'
         rg = 4
     else:
         rinner = f'''<div style="margin-top:6px;border-top:1px dashed rgba(34,30,26,.25);padding:10px 0 8px;display:flex;align-items:center;gap:14px">
@@ -73,11 +73,13 @@ def mhome(open_, capsule=False, sub=None, strip=True):
            f'<svg width="34" height="22" viewBox="0 0 34 22" aria-hidden="true" style="overflow:visible;flex-shrink:0">'
            f'<path class="draw" style="--len:50;--d:.6s;--w:1.2s" d="M2 6 C12 2 22 4 30 13" fill="none" stroke="{SOFTRED}" stroke-width="1.8" stroke-linecap="round"/>'
            f'<path class="draw" style="--len:24;--d:.3s;--w:1.7s" d="M22 13 L31 14 L30 5" fill="none" stroke="{SOFTRED}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-           f'<span class="rise" style="--w:.8s;margin:8px 0 0 2px">{envelope(70, 6, uid="menv", tape_on=False)}</span></a>') if capsule else ''
-    if sub is None and capsule:
-        sub = ''   # the arrived letter is the line under the headline here
+           f'<span class="rise" style="--w:.8s;margin:8px 0 0 2px">{envelope(70, 6, uid="menv", tape_on=False)}</span></a>')
+    hint = str(capsule).lower()
+    cap = f'<sc-if value="{{{{letter}}}}" hint-placeholder-val="{{{{ {hint} }}}}">{cap}</sc-if>'
+    pick = f'<div class="rise msub" style="--w:1.2s;{TYPE};font-size:10px;letter-spacing:.14em;line-height:1.5;color:{BOARDTXT};margin-top:4px">PICK WHAT FITS. YOU CAN ALWAYS COME BACK.</div>'
     if sub is None:
-        sub = f'<div class="rise msub" style="--w:1.2s;{TYPE};font-size:10px;letter-spacing:.14em;line-height:1.5;color:{BOARDTXT};margin-top:4px">PICK WHAT FITS. YOU CAN ALWAYS COME BACK.</div>'
+        # the arrived letter takes the place of this line when it shows (site: vals.noLetter)
+        sub = f'<sc-if value="{{{{noLetter}}}}" hint-placeholder-val="{{{{ {str(not capsule).lower()} }}}}">{pick}</sc-if>'
     hello = f'<div class="mhello">{h_hand("What do you need <br>tonight?", 34, d="1.8s", extra=HEAD)}{sub}{cap}</div>'
     body = f'''
 {matmos()}
@@ -91,7 +93,7 @@ def mhome(open_, capsule=False, sub=None, strip=True):
 
 css = """.pulse-dot{width:7px;height:7px;border-radius:50%;background:#E08A3C;animation:pd 2.4s ease-out infinite}
 @keyframes pd{0%{box-shadow:0 0 0 0 rgba(224,138,60,.55)}100%{box-shadow:0 0 0 9px rgba(224,138,60,0)}}
-@media (max-height:780px){.msub{display:none}.mrow{min-height:38px!important}.mnotes{padding:0!important;gap:12px!important}.mhello br{display:none}.mhello .write{font-size:clamp(24px, 7.2vw, 30px)!important;white-space:nowrap}}"""
+@media (max-height:780px){.msub{display:none}.mrow{min-height:38px!important}.mnotes{padding:0!important;gap:12px!important}.mhello br{display:none}.mhello > .write{font-size:clamp(24px, 7.2vw, 30px)!important;white-space:nowrap}}"""
 MHOME_H = 844
 MHOME_OPEN_H = 844
 if __name__ == '__main__':

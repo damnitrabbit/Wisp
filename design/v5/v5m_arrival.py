@@ -104,7 +104,7 @@ mpage('V5MStory', 'A short story', mstory, css=story_css)
 
 # ---------------- MA03 AGE ----------------
 # the circled answer is the signature mark: it lives on the note itself, under the red line
-age_yes = (f'<a href="V5MHome.dc.html" class="row" style="position:relative;flex:0 0 auto;height:64px;width:208px;justify-content:center">'
+age_yes = (f'<a href="V5MHome.dc.html" onclick="{{{{adult}}}}" class="row" style="position:relative;flex:0 0 auto;height:64px;width:208px;justify-content:center">'
            f'{circle_scribble(208, 60, RED, wait="2.6s")}<span style="position:relative;{HAND};font-size:23px;color:{INK};white-space:nowrap">I\'m 18 or older →</span></a>')
 mage_note = fcard(f'''<div style="display:flex;flex-direction:column">
 <div class="write" style="--w:.4s;{HAND};font-size:clamp(32px, 9vw, 36px);line-height:1.2;color:{INK};padding-right:clamp(0px, 20vw - 50px, 40px)">Before you go in.</div>
@@ -167,15 +167,15 @@ NAME = 'quiet_otter'
 VEIL = '<div aria-hidden="true" style="position:absolute;inset:0;z-index:60;background:rgba(6,6,7,.78)"></div>'
 
 def name_tag(size):
-    return f'<span style="{TYPE};font-weight:700;font-size:{size}px;letter-spacing:.06em;color:{INK};background:rgba(184,53,42,.12);padding:1px 6px">{NAME}</span>'
+    return f'<span style="{TYPE};font-weight:700;font-size:{size}px;letter-spacing:.06em;color:{INK};background:rgba(184,53,42,.12);padding:1px 6px" data-slot="name">{NAME}</span>'
 
 mrem_note = paper(f'''
 {t_mark('one small thing', 21)}
 <div class="write" style="--w:.6s;--d:1.6s;{HAND};font-size:30px;line-height:1.3;color:{INK};margin-top:6px">you're {name_tag(20)}<br>tonight.</div>
 <div class="rise" style="--w:1.6s;{SERIF};font-size:17.5px;line-height:1.55;color:{INK};margin-top:12px">Want this phone to remember that name next time? It stays on this device. We never keep it.</div>
 <div class="rise" style="--w:2.1s;display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:22px">
-{chip('keep it on this device', 'V5MHome.dc.html', kind='ink', seed=131, w=270)}
-{link('new name every time', 'V5MHome.dc.html', color=INK, size=11.5)}
+{chip('keep it on this device', 'V5MHome.dc.html', kind='ink', seed=131, w=270, onclick='keep')}
+{link('new name every time', 'V5MHome.dc.html', color=INK, size=11.5).replace('<a ', '<a onclick="{{fresh}}" ', 1)}
 </div>''', 334, 386, rot=-1.2, seed=132, pad='30px 30px', tapes=tape(112, -13, 110, 28, rot=-3, seed=33))
 
 mrem = f'''
@@ -191,8 +191,8 @@ drem_note = paper(f'''
 <div class="write" style="--w:.6s;--d:1.6s;{HAND};font-size:44px;line-height:1.3;color:{INK};margin-top:8px;white-space:nowrap">you're {name_tag(30)} tonight.</div>
 <div class="rise" style="--w:1.6s;{SERIF};font-size:20px;line-height:1.6;color:{INK};margin-top:14px;max-width:470px">Want this device to remember that name next time? It stays here, on this device. We never keep it.</div>
 <div class="rise" style="--w:2.1s;display:flex;align-items:center;gap:34px;margin-top:30px">
-{chip('keep it on this device', 'V5Home.dc.html', kind='ink', seed=131, w=300)}
-{link('new name every time', 'V5Home.dc.html', color=INK, size=12)}
+{chip('keep it on this device', 'V5Home.dc.html', kind='ink', seed=131, w=300, onclick='keep')}
+{link('new name every time', 'V5Home.dc.html', color=INK, size=12).replace('<a ', '<a onclick="{{fresh}}" ', 1)}
 </div>''', 680, 340, rot=-1, seed=132, pad='40px 52px', tapes=tape(280, -15, 120, 30, rot=-3, seed=33) + tape(610, 296, 90, 26, rot=35, seed=34))
 
 drem = f'''

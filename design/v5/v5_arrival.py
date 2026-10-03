@@ -136,7 +136,7 @@ age_note = paper(f'''
 <div class="rise" style="--w:1.4s;{SERIF};font-size:22px;line-height:1.6;color:{INK};margin-top:22px;max-width:520px">This place is for grown-ups. You'll meet strangers here, and they'll meet you. Nobody gets a name, a face, or a history.</div>
 <div class="rise" style="--w:1.9s;{MARK};font-size:30px;color:{RED};margin-top:20px;transform:rotate(-1.5deg)">Be the kind of stranger you'd want to meet.</div>
 <div style="display:flex;align-items:center;gap:60px;margin-top:46px">
-<a href="V5Home.dc.html" class="row" style="position:relative;padding:14px 34px">{circle_scribble(370, 92, RED, wait='2.6s')}<span style="{HAND};font-size:36px;color:{INK}">I'm 18 or older →</span></a>
+<a href="V5Home.dc.html" onclick="{{{{adult}}}}" class="row" style="position:relative;padding:14px 34px">{circle_scribble(370, 92, RED, wait='2.6s')}<span style="{HAND};font-size:36px;color:{INK}">I'm 18 or older →</span></a>
 <a href="V5NotYet.dc.html" class="ul" style="{TYPE};font-size:13px;letter-spacing:.16em;color:{PENCIL}">NOT YET</a>
 </div>''', 720, 560, rot=-1, seed=101, pad='58px 64px', tapes=tape(300, -16, 120, 32, rot=-4, seed=13) + tape(640, 510, 100, 28, rot=38, seed=14))
 

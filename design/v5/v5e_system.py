@@ -359,13 +359,13 @@ mpage('V5MStorageBlocked', 'Private window', m4, css=HOME_CSS + EDGE_CSS)
 # ================================================================ X15 · WELCOME BACK (name remembered)
 def welcome_slip(phone=False):
     home = 'V5MHome.dc.html' if phone else 'V5Home.dc.html'
-    nm = f'<span style="{TYPE};font-weight:700;letter-spacing:.05em;background:rgba(184,53,42,.12);padding:1px 6px">{NAME}</span>'
+    nm = f'<span style="{TYPE};font-weight:700;letter-spacing:.05em;background:rgba(184,53,42,.12);padding:1px 6px" data-slot="name">{NAME}</span>'
     if phone:
         w, h = 300, 78
         inner = (f'<div style="height:100%;display:flex;flex-direction:column;justify-content:center">'
                  f'<div class="write" style="--w:1.4s;--d:1.6s;{HAND};font-size:20px;line-height:1.3;color:{INK};white-space:nowrap">welcome back, <span style="font-size:14px">{nm}</span>.</div>'
                  f'<div class="rise" style="--w:3s;margin-top:6px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL};white-space:nowrap">NOT YOU? '
-                 f'<a href="{home}" class="ul" style="color:{INK};font-weight:700">NEW NAME</a></div></div>')
+                 f'<a href="{home}" onclick="{{{{fresh}}}}" class="ul" style="color:{INK};font-weight:700">NEW NAME</a></div></div>')
         note = paper(inner, w, h, rot=-1.5, kind='kraft', seed=6911, pad='12px 18px 10px')
     else:
         w, h = 300, 128
@@ -373,7 +373,7 @@ def welcome_slip(phone=False):
                  f'<div class="write" style="--w:1.4s;--d:1.4s;{HAND};font-size:28px;line-height:1.25;color:{INK};padding-right:6px">welcome back,</div>'
                  f'<div class="write" style="--w:2.3s;--d:.9s;{TYPE};font-size:19px;color:{INK};margin-top:4px">{nm}.</div>'
                  f'<div class="rise" style="--w:3s;margin-top:12px;{TYPE};font-size:10.5px;letter-spacing:.14em;color:{PENCIL};white-space:nowrap">NOT YOU? '
-                 f'<a href="{home}" class="ul" style="color:{INK};font-weight:700">NEW NAME</a></div></div>')
+                 f'<a href="{home}" onclick="{{{{fresh}}}}" class="ul" style="color:{INK};font-weight:700">NEW NAME</a></div></div>')
         note = paper(inner, w, h, rot=3, kind='kraft', seed=6901, pad='20px 26px 16px')
     return (f'<div class="slipdown" role="status" style="--w:.9s;position:relative;width:{w}px">{note}'
             f'<div class="pindrop" style="--w:1.5s;position:absolute;left:{w / 2 - 10:.0f}px;top:-8px;z-index:8">{pushpin(16)}</div></div>')

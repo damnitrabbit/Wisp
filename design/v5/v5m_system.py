@@ -138,7 +138,7 @@ off = fsheet(f'''{middle(f"""
 <div class="fadein" style="--w:3s;margin-top:auto;padding-top:14px;border-top:1px dashed {RULE};{MARK};font-size:20px;line-height:1.2;color:{RED};transform:rotate(-1.5deg);text-align:center">it'll find its way back.<br>you don't have to do anything.</div>''',
     rot=-.6, kind='hi', seed=2302, pad='30px 24px 18px', minh=320, tapes=ctape(110, 28, rot=-3, seed=231))
 mx03 = phone(fitwrap(f'<div class="sway" style="display:flex;flex-direction:column">{off}</div>'),
-             dockwrap(mdock(mcta('try now', '#', 'ink', seed=2301)), wait='2.4s'),
+             dockwrap(mdock(mcta('try now', '#', 'ink', seed=2301, onclick='retry')), wait='2.4s'),
              right=f'<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:#C9BFAE">OFFLINE</span>')
 mpage('V5MOffline', 'Lost the signal', mx03, css=SYS_CSS)
 

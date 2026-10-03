@@ -64,7 +64,7 @@ right_closed = f'''<div style="margin-top:18px;border-top:1px dashed rgba(34,30,
 </div></div>'''
 
 def right_inner(open_):
-    status = (f'<span style="display:flex;align-items:center;gap:8px;{TYPE};font-size:11px;letter-spacing:.16em;color:{INK}"><span class="pulse-dot"></span>OPEN · 37 HERE</span>' if open_
+    status = (f'<span style="display:flex;align-items:center;gap:8px;{TYPE};font-size:11px;letter-spacing:.16em;color:{INK}"><span class="pulse-dot"></span>OPEN<span data-slot="here"> · 37 HERE</span></span>' if open_
               else f'<span style="{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL}">10PM – 2AM</span>')
     return f'''
 <div style="display:flex;justify-content:space-between;align-items:baseline">{t_mark('with real people', 24)}{status}</div>
@@ -85,8 +85,9 @@ def home(open_, capsule=False, focus=False, greeting=''):
     right = paper(right_inner(open_), 520, 412, rot=1.1, kind='kraft', seed=202, pad='34px 40px', cls='sheet',
                   tapes=tape(220, -15, 110, 30, rot=4, seed=22))
     q = polaroid('moon', 220, 200, "What's something you pretend doesn't bother you?", rot=3.5, seed=203, u='hq', capsize=23)
-    cap = letter_arrived() if capsule else ''
-    status = 'PODS OPEN · UNTIL 2AM' if open_ else 'PODS OPEN AT 10PM · 1H 42M'
+    # the letter shows only when a capsule letter is due (site: vals.letter); the board shows it where capsule=True
+    cap = f'<sc-if value="{{{{letter}}}}" hint-placeholder-val="{{{{ {str(capsule).lower()} }}}}">{letter_arrived()}</sc-if>'
+    status = 'PODS OPEN · UNTIL 2AM' if open_ else '<span data-slot="pods">PODS OPEN AT 10PM · 1H 42M</span>'
     qhref, qlabel = ('V5Question.dc.html', 'JOIN THE ROOM →') if open_ else ('V5Asleep.dc.html', 'REMIND ME AT 10 →')
     body = f'''
 {atmos()}

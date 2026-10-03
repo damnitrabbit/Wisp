@@ -100,7 +100,7 @@ off_note = paper(f'''
 <div class="rise" style="--w:1.5s;{SERIF};font-size:21px;line-height:1.6;color:{INK};text-align:center;margin-top:10px">Nothing was saved anyway,<br>so nothing is lost.</div>
 <div class="rise" style="--w:2s;display:flex;justify-content:center;align-items:center;gap:10px;margin-top:22px;{TYPE};font-size:11px;letter-spacing:.16em;color:{PENCIL}">
 <span class="dots"><i></i><i></i><i></i></span>TRYING AGAIN ON ITS OWN</div>
-<div class="rise" style="--w:2.4s;display:flex;justify-content:center;margin-top:24px"><a href="#" class="ul" style="{TYPE};font-weight:700;font-size:12px;letter-spacing:.16em;color:{INK}">TRY NOW</a></div>''',
+<div class="rise" style="--w:2.4s;display:flex;justify-content:center;margin-top:24px"><a href="#" onclick="{{{{retry}}}}" class="ul" style="{TYPE};font-weight:700;font-size:12px;letter-spacing:.16em;color:{INK}">TRY NOW</a></div>''',
     520, 450, rot=-1.2, kind='hi', seed=1302, pad='44px 48px', tapes=tape(205, -14, 110, 30, rot=-3, seed=131))
 x03 = f'''
 {atmos()}
