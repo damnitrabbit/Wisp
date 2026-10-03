@@ -71,14 +71,14 @@ export function createWisp() {
   sweep.unref?.();
 
   const io = new Server(httpServer, {
-    cors: { origin: config.allowedOrigins, methods: ['GET', 'POST'] },
+    cors: { origin: [...config.allowedOrigins, config.previewOrigin], methods: ['GET', 'POST'] },
     pingInterval: 20_000,
     pingTimeout: 20_000, // generous: phones and background tabs answer slowly
     maxHttpBufferSize: 512 * 1024, // room for one ECHOES voice note (capped at ECHO_MAX_BYTES)
     allowRequest(req, done) {
       // Browsers always send Origin; refuse other websites. (Non-browser clients can fake it: the IP caps cover those.)
       const origin = req.headers.origin;
-      if (origin && !config.allowedOrigins.includes(origin)) return done('origin not allowed', false);
+      if (origin && !config.allowedOrigins.includes(origin) && !config.previewOrigin.test(origin)) return done('origin not allowed', false);
       const ip = ipOf(req);
       lastGuard = ip ? 'on' : 'off';
       if (!ip) return done(null, true);
