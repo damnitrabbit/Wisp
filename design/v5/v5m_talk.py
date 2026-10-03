@@ -305,6 +305,8 @@ if __name__ == '__main__':
 <div class="rise" style="--w:1.2s;display:flex;flex-direction:column">{mdock(mcta('join with voice', 'V5MPod.dc.html', 'paper', seed=1543) + mtext('just listen', 'V5MPod.dc.html'))}</div>
 {mfooter()}'''
     mpage('V5MQuestion', "Tonight's question", question, css=group_css)
+    LV.mark('V5MQuestion', slots=[('<div class="rise" style="--w:.6s;flex:1 0 auto;display:flex;flex-direction:column">', 'qroom'), ('<div class="rise" style="--w:1.2s;display:flex;flex-direction:column">', 'qdock')],
+            replace=[("What's something you pretend doesn't bother you?", '{{question}}')])
     board('V5MQuestion', "MT05 — Tonight's question", MH, 'm_talk')
 
     # =====================================================================

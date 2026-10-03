@@ -221,6 +221,8 @@ mr01 = f'''
 </main>
 {mfooter()}'''
 mpage('V5MRooms', 'Open pod, pick a room', mr01, h=MRH, css=POD_CSS + """.rise.chip{animation:rise 1.1s cubic-bezier(.2,.7,.2,1) var(--w,.3s) forwards}""")
+LV.mark('V5MRooms', slots=[(f'<div style="display:grid;grid-template-columns:repeat(2,{SW}px);justify-content:space-between;row-gap:26px;margin-top:26px">', 'grid')],
+        replace=[('25 ROOMS · UNTIL 2AM', '{{roomsLine}}'), ('see all 25 rooms →', '{{moreLabel}}'), ('see all 25 →', '{{moreLabel}}')])
 
 # ================= MR02 / MR03 — inside a room =================
 TW, TH = 160, 112
@@ -319,6 +321,8 @@ def mroom(mod_view):
 
 mpage('V5MRoom', 'Open pod room, mod view', mroom(True), css=POD_CSS)
 mpage('V5MRoomHand', 'Open pod room, invited to stage', mroom(False), css=POD_CSS)
+LV.mark('V5MRoom', slots=[('<div class="rise" style="--w:.1s;padding:0 2px">', 'head'), ('<div class="rise" style="--w:.3s;flex:1 0 auto;display:flex;flex-direction:column">', 'stage'),
+                          ('<div class="pinned" style="--w:1.2s;align-self:center;flex-shrink:0;margin-top:-4px">', 'slip'), ('<div class="rise" style="--w:1s;display:flex;flex-direction:column">', 'bar')])
 
 PHONE = [
     {"file": "V5MVoiceWait.dc.html", "title": "MV01 — You asked for voice", "w": 390, "h": 844, "row": "m_voice"},

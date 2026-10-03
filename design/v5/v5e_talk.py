@@ -302,6 +302,7 @@ qempty = f'''
 </div>
 </main>'''
 page('V5QuestionEmpty', "Tonight's question, first one here", qempty, css=EXTRA_CSS)
+LV.mark('V5QuestionEmpty', replace=[("What's something you pretend doesn't bother you?", '{{question}}')])
 board('V5QuestionEmpty', "T17 — First one in the room", 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -323,6 +324,7 @@ allfull = f'''
 </main>
 {footer()}'''
 page('V5RoomsAllFull', 'Every room is full', allfull, css=VX.rooms_css)
+LV.mark('V5RoomsAllFull', slots=[('<div style="display:grid;grid-template-columns:repeat(5,236px);justify-content:space-between;margin-top:64px">', 'grid')])
 board('V5RoomsAllFull', 'T18 — Every room is full', 1440, 900, 'edge_talk')
 
 # =====================================================================
@@ -535,6 +537,7 @@ mqempty = f'''
 <div class="rise" style="--w:1.8s;display:flex;flex-direction:column">{mdock(mcta('stay a while', '#', 'ink', seed=1962) + mtext('not tonight', 'V5MHomeOpen.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MQuestionEmpty', "Tonight's question, first one here", mqempty, css=EXTRA_CSS)
+LV.mark('V5MQuestionEmpty', replace=[("What's something you pretend doesn't bother you?", '{{question}}')])
 board('V5MQuestionEmpty', "MT17 — First one in the room", 390, 844, 'm_edge_talk')
 
 # ---------- MR04 — Every room is full ----------
@@ -549,6 +552,7 @@ mallfull = f'''
 <div class="rise" style="--w:1.5s;display:flex;flex-direction:column">{mdock(mcta('waiting for a seat' + LDOTS, '#', 'ink', seed=1971) + mtext('try a 1:1', 'V5MMatching.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MRoomsAllFull', 'Every room is full', mallfull, css=POD_CSS + """.rise.chip{animation:rise 1.1s cubic-bezier(.2,.7,.2,1) var(--w,.3s) forwards}""")
+LV.mark('V5MRoomsAllFull', slots=[(f'<div style="flex-shrink:0;display:grid;grid-template-columns:repeat(2,{MSLW}px);justify-content:space-between;row-gap:22px;margin-top:8px">', 'grid')])
 board('V5MRoomsAllFull', 'MT18 — Every room is full', 390, 844, 'm_edge_talk')
 
 # ---------- MR05 / MR06 — room variants ----------

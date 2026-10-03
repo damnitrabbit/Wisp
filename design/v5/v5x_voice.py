@@ -291,6 +291,9 @@ rooms = f'''
 </main>
 {footer()}'''
 page('V5Rooms', 'Open pod, pick a room', rooms, css=rooms_css)
+# site: the live room slips go in data-slot="grid" (templates: v5_rooms_parts.py)
+LV.mark('V5Rooms', slots=[('<div style="display:grid;grid-template-columns:repeat(5,236px);justify-content:space-between;row-gap:22px;margin-top:24px">', 'grid')],
+        replace=[('25 ROOMS TONIGHT · 10 PINNED HERE', '{{roomsLine}}'), ('see all 25 →', '{{moreLabel}}')])
 
 # ================= R02 / R03 — inside a room =================
 def star(size=20, color=RED, uid='s'):
@@ -411,6 +414,8 @@ def room_page(mod_view):
 
 page('V5Room', 'Open pod room, mod view', room_page(True), css=POD_CSS)
 page('V5RoomHand', 'Open pod room, invited to stage', room_page(False), css=POD_CSS)
+# site: one live room board; its three columns are slots filled from v5_rooms_parts.py templates
+LV.mark('V5Room', slots=[('<div class="rise" style="--w:.1s">', 'card'), ('<div class="rise" style="--w:.3s">', 'stage'), ('<div style="padding-top:14px">', 'right')])
 
 # ---------- manifest (merged with the phone module's entries) ----------
 DESK = [

@@ -247,6 +247,8 @@ group = f'''
 <div class="rise" style="--w:.6s">{room}</div>
 </main>'''
 page('V5Question', "Tonight's question", group, css=group_css)
+LV.mark('V5Question', slots=[('<div class="rise" style="--w:.6s">', 'qroom'), ('<div class="rise" style="--w:1.2s;display:flex;align-items:center;gap:30px;margin-left:10px">', 'qbtns')],
+        replace=[("What's something you pretend doesn't bother you?", '{{question}}')])
 
 # ---------------- PODS ASLEEP ----------------
 sr = random.Random(3)
