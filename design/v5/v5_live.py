@@ -54,6 +54,8 @@ def pod(name, voice_href=None):
 
 
 def names(b):
+    # the crumb says "talk pod" or "listen pod" (the same boards serve both pods)
+    b = re.sub(r'(">)talk pod(</span></a)', r'\1{{crumb}}\2', b)
     return (b.replace('moss_byte', '{{partner}}').replace('MOSS_BYTE', '{{PARTNER}}')
              .replace('quiet_otter', '{{me}}').replace('QUIET_OTTER', '{{ME}}'))
 

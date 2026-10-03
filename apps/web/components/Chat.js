@@ -521,6 +521,8 @@ export default function Chat({ role = 'talk' }) {
     meState: muted ? 'MUTED' : call.speaking.has('me') ? 'SPEAKING' : 'LISTENING',
     muteLabel: muted ? 'unmute' : 'mute',
     // matching / requeue / end
+    crumb: role === 'listen' ? 'listen pod' : 'talk pod',
+    whoFirst: role === 'listen' ? "YOU'LL" : "THEY'LL",
     matchTitle: role === 'listen' ? 'Finding someone to listen to…' : "Finding someone who'll listen…",
     awake: role === 'listen'
       ? `${Math.max(0, (lobby?.waiting ?? 0) - (lobby?.listeners ?? 0))} WAITING TO TALK`
