@@ -149,7 +149,7 @@ voice_body = (f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ fals
               f'<div style="margin-top:10px">{wave(250, 48, 61, "mbv", .0, head=False, sw=2)}</div>'
               f'<div style="display:flex;gap:22px;margin-top:12px;{TYPE};font-size:10.5px;letter-spacing:.16em"><button type="button" onClick="{{{{togglePlay}}}}" style="color:inherit;letter-spacing:inherit">{{{{playLabel}}}}</button><button type="button" onClick="{{{{reRecord}}}}" style="color:{PENCIL};letter-spacing:inherit">RE-RECORD</button></div>'
               f'<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.45;color:{PENCIL};margin-top:12px">Only you hear it. When it burns, the recording goes with it.</div></div></sc-if>')
-sheet_inner = (f'<div style="position:relative;{HAND};font-size:19px;color:{PENCIL};padding-left:30px;margin-top:-2px">tonight, 11:48 pm</div>'
+sheet_inner = (f'<div style="position:relative;{HAND};font-size:19px;color:{PENCIL};padding-left:30px;margin-top:-2px" data-slot="stamp">tonight, 11:48 pm</div>'
                f'<div style="position:relative;padding-left:30px">{write_body}{voice_body}</div>')
 
 

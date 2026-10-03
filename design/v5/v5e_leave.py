@@ -393,7 +393,7 @@ def dim_match(size=104):
 
 BW, BH = 600, 320
 bsheet = paper(ruled(92, 38, 66) +
-               f'<div style="position:relative;{HAND};font-size:24px;color:{PENCIL};padding-left:46px;margin-top:-4px">tonight, 11:48 pm</div>'
+               f'<div style="position:relative;{HAND};font-size:24px;color:{PENCIL};padding-left:46px;margin-top:-4px" data-slot="stamp">tonight, 11:48 pm</div>'
                f'<div style="position:relative;padding-left:46px;{SERIF};font-size:22px;line-height:38px;padding-top:16px"><span class="blink" style="color:{RED}">|</span></div>',
                BW, BH, rot=-.8, kind='hi', seed=301, pad='40px 44px 40px 30px', tapes=tape(240, -15, 120, 30, rot=-3, seed=31))
 
@@ -414,7 +414,7 @@ board('V5BurnEmpty', 'L11 — Burn, nothing to burn yet', 1440, 900, 'edge_leave
 
 MBW, MBH = 330, 330
 mbsheet = paper(ruled(72, 30, 44) +
-                f'<div style="position:relative;{HAND};font-size:19px;color:{PENCIL};padding-left:30px;margin-top:-2px">tonight, 11:48 pm</div>'
+                f'<div style="position:relative;{HAND};font-size:19px;color:{PENCIL};padding-left:30px;margin-top:-2px" data-slot="stamp">tonight, 11:48 pm</div>'
                 f'<div style="position:relative;padding-left:30px;{SERIF};font-size:17px;line-height:30px;padding-top:13px"><span class="blink" style="color:{RED}">|</span></div>',
                 MBW, MBH, rot=-.8, kind='hi', seed=301, pad='26px 24px 26px 20px', tapes=tape(115, -13, 100, 26, rot=-3, seed=31))
 mbempty = f'''
@@ -490,7 +490,7 @@ def rec_head(size, tsize):
 
 RBH = 470
 rsheet = paper(f'''
-<div style="{HAND};font-size:24px;color:{PENCIL};margin-top:-4px">tonight, 11:48 pm</div>
+<div style="{HAND};font-size:24px;color:{PENCIL};margin-top:-4px" data-slot="stamp">tonight, 11:48 pm</div>
 <div style="margin-top:18px">{rec_head(30, 18)}</div>
 <div style="margin-top:18px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(512, 80, .78, 404, 'rlw')}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(512, 80)}</sc-if></div>
 <div style="display:flex;justify-content:flex-end;margin-top:10px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>
@@ -516,7 +516,7 @@ page('V5BurnRecording', 'Burn, recording a voice note', brec, css=REC_CSS, scrip
 board('V5BurnRecording', 'L12 — Burn, recording a voice note', 1440, 900, 'edge_leave')
 
 mrsheet = paper(f'''
-<div style="{HAND};font-size:19px;color:{PENCIL};margin-top:-2px">tonight, 11:48 pm</div>
+<div style="{HAND};font-size:19px;color:{PENCIL};margin-top:-2px" data-slot="stamp">tonight, 11:48 pm</div>
 <div style="margin-top:22px">{rec_head(25, 15)}</div>
 <div style="margin-top:22px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(282, 78, .78, 404, 'mrlw', 2)}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(282, 78)}</sc-if></div>
 <div style="display:flex;justify-content:flex-end;margin-top:12px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>

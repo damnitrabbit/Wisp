@@ -53,6 +53,19 @@ function BurnText({ node, store, onEmpty, phone }) {
   );
 }
 
+// "tonight, 11:48 pm" on the sheet, from this device's clock (daytime says "today")
+function stampNow(d = new Date()) {
+  const h = d.getHours(), m = d.getMinutes();
+  const when = h >= 18 || h < 5 ? 'tonight' : 'today';
+  return `${when}, ${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`;
+}
+function Stamp({ node }) {
+  const [t, setT] = useState(() => stampNow());
+  useEffect(() => { const i = setInterval(() => setT(stampNow()), 30_000); return () => clearInterval(i); }, []);
+  const { 'data-slot': _, ...attrs } = node.attribs || {};
+  return <div {...attributesToProps(attrs)}>{t}</div>;
+}
+
 export default function BurnPage() {
   const [stage, setStage] = useState('writing'); // writing | burning | gone
   const [mode, setMode] = useState('write');
@@ -162,7 +175,8 @@ export default function BurnPage() {
 
   const slots = useMemo(
     () => ({
-      burnText: (node) => <BurnText node={node} store={store} onEmpty={onEmpty} phone={pickPhone()} />
+      burnText: (node) => <BurnText node={node} store={store} onEmpty={onEmpty} phone={pickPhone()} />,
+      stamp: (node) => <Stamp node={node} />
     }),
     [onEmpty]
   );
@@ -171,7 +185,7 @@ export default function BurnPage() {
   // speak mode with nothing recorded yet: the recording sheet (L12)
   const recordingScreen = mode === 'speak' && !hasClip && stage === 'writing';
   return recordingScreen ? (
-    <Screen key="rec" desktop={DRec} phone={MRec} vals={vals} links={links} css={CSS} />
+    <Screen key="rec" desktop={DRec} phone={MRec} vals={vals} slots={slots} links={links} css={CSS} />
   ) : (
     <Screen key="burn" desktop={D} phone={M} vals={vals} slots={slots} links={links} css={CSS} />
   );
