@@ -196,3 +196,55 @@ test('notes and their replies are gone after the time limit', async () => {
     await s.stop();
   }
 });
+
+test('V5: a written echo and an unsent letter (heard only, addressed) go on the wall', async () => {
+  const s = await startServer();
+  try {
+    const a = await s.connect();
+    const w = await a.emit('echoes:post', { text: '  I keep rehearsing\n\n\n\nconversations. ', ticket: ticket(3) });
+    assert.ok(w.ok);
+    const b = await s.connect();
+    const u = await b.emit('echoes:post', { kind: 'unsent', text: "I'm sorry I didn't pick up.", to: 'grandpa,', ticket: ticket(4) });
+    assert.ok(u.ok);
+    const list = await a.emit('echoes:list');
+    const echo = list.notes.find((n) => n.id === w.id);
+    const letter = list.notes.find((n) => n.id === u.id);
+    assert.equal(echo.kind, 'echo');
+    assert.equal(echo.mode, 'text');
+    assert.equal(echo.text, 'I keep rehearsing\n\nconversations.');
+    assert.equal(echo.listenOnly, false);
+    assert.equal(echo.tag, null);
+    assert.equal(letter.kind, 'unsent');
+    assert.equal(letter.to, 'grandpa');
+    assert.equal(letter.listenOnly, true);
+    assert.equal((await a.emit('echoes:reply', { id: u.id, text: 'hey' })).error, 'not_allowed');
+    assert.equal((await a.emit('echoes:audio', { id: w.id })).error, 'not_found');
+    const c = await s.connect();
+    assert.equal((await c.emit('echoes:post', { text: 'x'.repeat(401), ticket: ticket(5) })).error, 'too_long');
+    assert.equal((await c.emit('echoes:post', { text: '   ', ticket: ticket(5) })).error, 'empty');
+    assert.equal((await c.emit('echoes:post', { kind: 'letter', text: 'hi', ticket: ticket(5) })).error, 'bad_request');
+    assert.ok((await c.emit('echoes:post', { text: 'x'.repeat(400), ticket: ticket(5) })).ok);
+  } finally {
+    await s.stop();
+  }
+});
+
+test('V5: "heard" counts once per person and can be taken back', async () => {
+  const s = await startServer();
+  try {
+    const a = await s.connect();
+    const { id } = await a.emit('echoes:post', { kind: 'unsent', text: 'you', ticket: ticket(6) });
+    const b = await s.connect();
+    assert.deepEqual(await b.emit('echoes:heard', { id }), { ok: true, heard: true, heardCount: 1 });
+    assert.equal((await b.emit('echoes:heard', { id })).heardCount, 1);
+    assert.equal((await (await s.connect()).emit('echoes:heard', { id })).heardCount, 2);
+    const t = await b.emit('echoes:thread', { id });
+    assert.equal(t.note.heard, true);
+    assert.equal(t.note.heardCount, 2);
+    assert.equal((await b.emit('echoes:heard', { id, on: false })).heardCount, 1);
+    assert.equal((await a.emit('echoes:list')).notes[0].heard, false);
+    assert.equal((await b.emit('echoes:heard', { id: 'nope' })).error, 'not_found');
+  } finally {
+    await s.stop();
+  }
+});

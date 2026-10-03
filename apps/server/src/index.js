@@ -321,6 +321,7 @@ export function createWisp() {
     on('echoes:report', (p) => echoes.report(user, p));
     on('echoes:delete', (p) => echoes.remove(user, p));
     on('echoes:deleteReply', (p) => echoes.removeReply(user, p));
+    on('echoes:heard', (p) => echoes.hear(user, p));
 
     // explicit goodbye (closing the tab cleanly): no grace period
     on('session:end', () => {

@@ -5,6 +5,14 @@
 //   mine:  notes you posted, with the secret ticket that lets you delete them or their replies
 // Both drop entries once the note has expired. Clearing your browser data forgets them.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LIMITS } from '@wisp/shared';
+import { emit, getState, connect } from '@/lib/wisp';
+
+// ---------- limits (mirrors apps/server/src/echoes.js) ----------
+export const NOTE_MAX = LIMITS.ECHO_NOTE_TEXT_MAX ?? 400; // a written echo / unsent letter
+export const REPLY_MAX = LIMITS.ECHO_TEXT_MAX; // a written reply
+export const VOICE_MAX_S = LIMITS.ECHO_MAX_SECONDS;
+export const TO_MAX = 40;
 
 const read = (k) => {
   try {
@@ -236,3 +244,55 @@ export function usePlayer() {
 
   return { playing, progress, toggle, stopAll };
 }
+
+// ---------- the client API (one place every page posts / reads through) ----------
+
+// Wait (briefly) for the socket, so a page opened cold can still post.
+async function online(ms = 6000) {
+  connect();
+  const t0 = Date.now();
+  while (getState().status !== 'online' && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 150));
+  return getState().status === 'online';
+}
+const call = async (event, payload, timeout) => ((await online()) ? emit(event, payload, timeout) : { error: 'offline' });
+
+// postEcho({ kind: 'echo' | 'unsent', text, to? })          a written echo or unsent letter (text ≤ NOTE_MAX)
+// postEcho({ kind: 'echo' | 'unsent', clip, to? })          a voice note; clip = useRecorder().clip ({ blob, mime, duration })
+// Resolves { ok: true, id, expiresAt } or { error: 'cooldown' | 'too_long' | 'empty' | 'offline' | ..., retryInMs? }.
+// On success the note is remembered as yours in this browser (the ticket lets you take it down early).
+// kind 'unsent' = heard only: nobody can reply. `to` (unsent only) is who it's for, e.g. "grandpa" (≤ 40 chars).
+export async function postEcho({ kind = 'echo', text, to, clip, listenOnly } = {}) {
+  const ticket = newTicket();
+  const payload = { kind, ticket };
+  if (to != null && kind === 'unsent') payload.to = String(to);
+  if (listenOnly) payload.listenOnly = true;
+  if (clip) {
+    payload.audio = await clip.blob.arrayBuffer();
+    payload.mime = clip.mime;
+    payload.duration = clip.duration;
+  } else payload.text = text ?? '';
+  const r = await call('echoes:post', payload, 15000);
+  if (r?.ok) mine.add(r.id, ticket, r.expiresAt);
+  return r ?? { error: 'timeout' };
+}
+
+export const listEchoes = () => call('echoes:list');
+export const getThread = (id) => call('echoes:thread', { id });
+export const getAudio = (id, replyId) => call('echoes:audio', replyId ? { id, replyId } : { id }, 15000);
+export const setHeard = (id, on = true) => call('echoes:heard', { id, on });
+export const reportEcho = (id, replyId) => call('echoes:report', replyId ? { id, replyId } : { id });
+export async function replyEcho(id, { text, clip } = {}) {
+  const p = { id };
+  if (clip) Object.assign(p, { audio: await clip.blob.arrayBuffer(), mime: clip.mime, duration: clip.duration });
+  else p.text = text ?? '';
+  return call('echoes:reply', p, 15000);
+}
+// Take your own note down early (needs the ticket this browser kept when you posted).
+export async function takeDown(id) {
+  const m = mine.all()[id];
+  if (!m) return { error: 'not_allowed' };
+  const r = await call('echoes:delete', { id, ticket: m.ticket });
+  if (r?.ok || r?.error === 'not_found') mine.remove(id);
+  return r;
+}
+export const isMine = (id) => Boolean(mine.all()[id]);

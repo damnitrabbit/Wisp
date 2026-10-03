@@ -5,6 +5,11 @@ import { config } from './config.js';
 const L = config.limits;
 const TICKET_RE = /^[A-Za-z0-9_-]{16,128}$/;
 const MIME_RE = /^audio\/[a-z0-9.+-]{1,30}(;\s?codecs=[a-z0-9.,"' -]{1,40})?$/i;
+// A written echo or unsent letter (V5): up to this many characters. "to" is who an unsent letter is for.
+export const NOTE_TEXT_MAX = L.ECHO_NOTE_TEXT_MAX ?? 400;
+export const TO_MAX = 40;
+export const KINDS = Object.freeze(['echo', 'unsent']);
+const clean = (t) => t.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 
 // ECHOES: a public wall of short voice notes that strangers can listen to and answer by voice or text.
 // Everything here lives in this process's memory only. Notes (and their replies) are deleted
@@ -61,12 +66,18 @@ export class Echoes {
     const rk = this.key(user);
     return {
       id: note.id,
+      kind: note.kind, // 'echo' (anyone can reply) | 'unsent' (a letter: heard only)
+      mode: note.text != null ? 'text' : 'voice',
+      text: note.text ?? undefined,
+      to: note.to ?? undefined,
       tag: note.tag,
       createdAt: note.createdAt,
       expiresAt: note.expiresAt,
       duration: note.duration,
       listenOnly: note.listenOnly,
       replyCount: note.replies.length,
+      heardCount: note.heard.size,
+      heard: note.heard.has(rk),
       reported: note.reports.has(rk)
     };
   }
@@ -134,12 +145,29 @@ export class Echoes {
     return wait > 0 ? { error: ERRORS.COOLDOWN, retryInMs: wait } : null;
   }
 
-  // listenOnly: the poster just wants to be heard. People can listen, but nobody can reply.
-  post(user, { audio, mime, duration, tag, ticket, listenOnly = false } = {}) {
-    if (!ECHO_TAGS.includes(tag)) return { error: ERRORS.BAD_REQUEST };
+  // kind 'echo': anyone can listen and reply (unless listenOnly). kind 'unsent': a letter to someone who will
+  // never read it; strangers can only tap "heard", never reply. A note is either written (text) or spoken (audio).
+  post(user, { kind = 'echo', text, to, audio, mime, duration, tag, ticket, listenOnly = false } = {}) {
+    if (!KINDS.includes(kind)) return { error: ERRORS.BAD_REQUEST };
+    if (tag != null && !ECHO_TAGS.includes(tag)) return { error: ERRORS.BAD_REQUEST };
     if (typeof ticket !== 'string' || !TICKET_RE.test(ticket)) return { error: ERRORS.BAD_REQUEST };
-    const a = this.checkAudio({ audio, mime, duration });
-    if (a.error) return a;
+    let body;
+    if (text !== undefined && audio === undefined) {
+      if (typeof text !== 'string') return { error: ERRORS.BAD_REQUEST };
+      const t = clean(text);
+      if (!t) return { error: ERRORS.EMPTY };
+      if (t.length > NOTE_TEXT_MAX) return { error: ERRORS.TOO_LONG, max: NOTE_TEXT_MAX };
+      body = { text: t, duration: 0, mime: null, audio: null };
+    } else {
+      const a = this.checkAudio({ audio, mime, duration });
+      if (a.error) return a;
+      body = { text: null, duration: a.duration, mime: a.mime, audio: a.buf };
+    }
+    let who = null;
+    if (kind === 'unsent' && to != null) {
+      if (typeof to !== 'string') return { error: ERRORS.BAD_REQUEST };
+      who = clean(to).replace(/\n/g, ' ').replace(/,+$/, '').slice(0, TO_MAX) || null;
+    }
     const slow = this.cooldown(this.lastPost, user, L.ECHO_POST_COOLDOWN_MS);
     if (slow) return slow;
     const now = Date.now();
@@ -149,15 +177,16 @@ export class Echoes {
     while (this.notes.size >= L.ECHO_MAX_NOTES) this.notes.delete(this.notes.keys().next().value);
     const note = {
       id: randomUUID(),
-      tag,
+      kind,
+      tag: tag ?? null,
+      to: who,
       createdAt: now,
       expiresAt: now + L.ECHO_TTL_MS,
-      duration: a.duration,
-      mime: a.mime,
-      audio: a.buf,
+      ...body,
       ticket,
-      listenOnly: listenOnly === true,
+      listenOnly: kind === 'unsent' || listenOnly === true,
       replies: [],
+      heard: new Set(),
       reports: new Set()
     };
     this.notes.set(note.id, note);
@@ -165,6 +194,18 @@ export class Echoes {
     if (user.ip) this.ipPosts.set(user.ip, [...recent, now]);
     this.hub.echoesChanged();
     return { ok: true, id: note.id, expiresAt: note.expiresAt };
+  }
+
+  // "heard" is the only reaction: one per person (network), and it can be taken back.
+  hear(user, { id, on = true } = {}) {
+    const note = this.live(id);
+    if (!note) return { error: ERRORS.NOT_FOUND };
+    const k = this.key(user);
+    const had = note.heard.has(k);
+    if (on && !had) note.heard.add(k);
+    if (!on && had) note.heard.delete(k);
+    if (had !== note.heard.has(k)) this.hub.echoesChanged();
+    return { ok: true, heard: note.heard.has(k), heardCount: note.heard.size };
   }
 
   reply(user, { id, audio, mime, duration, text } = {}) {
