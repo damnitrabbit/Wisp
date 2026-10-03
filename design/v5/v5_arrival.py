@@ -57,7 +57,9 @@ def s3(t=0):
 <div class="write" style="--w:{t + 1.5:.1f}s;--d:1.6s;{HAND};font-size:60px;color:{CHALK}">You can put it down here.</div></div>'''
 
 def scrap(text, rot, seed, delay, kind=''):
-    return f'<div class="toss" style="animation-delay:{delay:.1f}s">{paper(f"<div style=\'{HAND};font-size:36px;color:{INK};white-space:nowrap\'>{text}</div>", int(len(text) * 17 + 64), 84, rot=rot, seed=seed, pad="14px 30px", kind=kind)}</div>'
+    # double-quoted style: the font stack itself has single quotes
+    inner = f'<div style="{HAND};font-size:36px;color:{INK};white-space:nowrap">{text}</div>'
+    return f'<div class="toss" style="animation-delay:{delay:.1f}s">{paper(inner, int(len(text) * 17 + 64), 84, rot=rot, seed=seed, pad="14px 30px", kind=kind)}</div>'
 
 def s4(t=0):
     return f'''<div style="display:flex;flex-direction:column;align-items:center;gap:50px">

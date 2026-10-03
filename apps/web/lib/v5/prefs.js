@@ -7,11 +7,15 @@ const ls = {
   set: (k, v) => { try { localStorage.setItem(k, v); } catch {} }
 };
 
+// When the browser blocks storage (some private windows), the age gate is remembered for this page's life only.
+let memOnboarded = false;
+
 // Passed the age gate on this device (localStorage), or at least in this tab (the older sessionStorage flag).
 export function isOnboarded() {
-  return ls.get('nt-onboarded') === '1' || onboarding.done();
+  return memOnboarded || ls.get('nt-onboarded') === '1' || onboarding.done();
 }
 export function markOnboarded() {
+  memOnboarded = true;
   ls.set('nt-onboarded', '1');
   onboarding.confirmAge();
   onboarding.finish();
@@ -26,6 +30,17 @@ export function dueCapsule(now = Date.now()) {
     return Number.isFinite(t) && t <= now ? c : null;
   } catch {
     return null;
+  }
+}
+
+// Can this browser keep anything at all? (false in a storage-blocked private window)
+export function storageWorks() {
+  try {
+    localStorage.setItem('__nt_probe', '1');
+    localStorage.removeItem('__nt_probe');
+    return true;
+  } catch {
+    return false;
   }
 }
 

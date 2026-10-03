@@ -11,11 +11,13 @@ import Open from '@/v5/screens/V5HomeOpen';
 import MOpen from '@/v5/screens/V5MHomeOpen';
 import Remember from '@/v5/screens/V5Remember';
 import MRemember from '@/v5/screens/V5MRemember';
+import Blocked from '@/v5/screens/V5StorageBlocked';
+import MBlocked from '@/v5/screens/V5MStorageBlocked';
 import WelcomeBack from '@/v5/screens/V5WelcomeBack';
 import MWelcomeBack from '@/v5/screens/V5MWelcomeBack';
 import { useWisp, remember } from '@/lib/wisp';
 import { podsInfo } from '@/lib/v5/hours';
-import { isOnboarded, dueCapsule } from '@/lib/v5/prefs';
+import { isOnboarded, dueCapsule, storageWorks } from '@/lib/v5/prefs';
 
 const ss = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
@@ -24,6 +26,8 @@ const ss = {
 
 // keep the designed element (its tag and inline style), swap its text. Names longer than the designed
 // "quiet_otter" are set a little smaller so they still fit the slip on one line.
+let blockedShown = false; // storage-blocked note: once per visit (nothing else can remember it)
+
 const DESIGNED = 11;
 const keepEl = (text) => (node) => {
   const Tag = node.name;
@@ -43,12 +47,14 @@ export default function HomePage() {
   const [info, setInfo] = useState(null);
   const [letter, setLetter] = useState(false);
   const [note, setNote] = useState(null); // 'remember' | 'welcome' | null
+  const [blocked, setBlocked] = useState(false); // this browser keeps nothing (private window): say so once
   const online = useWisp((s) => s.lobby.online);
   const name = useWisp((s) => s.session?.name);
 
   useEffect(() => {
     if (!isOnboarded()) { router.replace('/?next=/home'); return; }
     setOk(true);
+    if (!storageWorks() && !blockedShown) { blockedShown = true; setBlocked(true); }
     const tick = () => { setInfo(podsInfo()); setLetter(Boolean(dueCapsule())); };
     tick();
     const t = setInterval(tick, 60_000);
@@ -69,6 +75,8 @@ export default function HomePage() {
   const open = info?.open ?? false;
   const label = info?.label || '';
   const vals = useMemo(() => ({ letter, noLetter: !letter, keep, fresh }), [letter, keep, fresh]);
+  // the storage note's "got it" goes on to the plain home
+  const blockedLinks = useMemo(() => ({ Home: () => setBlocked(false) }), []);
   const slots = useMemo(() => ({
     here: online == null ? null : <span>{` · ${online} HERE`}</span>,
     // the closed-home status line; the remember note sits on that board, so while pods are open it says so instead
@@ -77,6 +85,7 @@ export default function HomePage() {
   }), [online, label, name, open]);
 
   if (!ok || !info) return <div style={{ minHeight: '100dvh', background: '#0D0D0E' }} />;
+  if (blocked) return <Screen key="blk" desktop={Blocked} phone={MBlocked} vals={vals} slots={slots} links={blockedLinks} />;
   if (note === 'remember') return <Screen key="rem" desktop={Remember} phone={MRemember} vals={vals} slots={slots} />;
   if (note === 'welcome' && !open) return <Screen key="wb" desktop={WelcomeBack} phone={MWelcomeBack} vals={vals} slots={slots} />;
   return open
