@@ -731,3 +731,73 @@ desk = sorted([b for b in BOARDS if b['row'] == 'edge_leave'], key=key)
 mob = sorted([b for b in BOARDS if b['row'] == 'm_edge_leave'], key=key)
 json.dump(desk + mob, open('manifest_edge_leave.json', 'w'), indent=1)
 print('edge leave ok', len(BOARDS))
+
+# ================================================================ C06 — it arrived (before it opens)
+# Someone coming back (from the email, or the envelope on home) first finds the letter still sealed and opens
+# it themselves. The tap is theirs, so the letter's sound plays with the opening, not before it.
+ARRIVED_VALS = "renderVals() { return { agoText: 'two weeks ago', openShort: '5 oct', sealedUp: '21 SEPTEMBER' }; }"
+carr = f'''
+{atmos()}
+{topbar(crumb='time capsule')}
+<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:46px;padding-bottom:40px">
+<a href="V5CapsuleOpen.dc.html" aria-label="Open the letter" class="rise envtap" style="--w:.2s;display:block;transform:rotate(-1.5deg)">{sealed_env(460, 290, 96, 22, 'carr', 463)}</a>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+{t_mark('it arrived.', 30, SOFTRED, 'transform:rotate(-3deg)')}
+{h_hand('A letter from you, {{agoText}}.', 54, color=PAPERHI, wait='.6s')}
+<div class="rise" style="--w:1.6s;{TYPE};font-size:12px;letter-spacing:.18em;color:{BOARDTXT}">SEALED {{{{sealedUp}}}} · ONLY THIS BROWSER COULD KEEP IT</div>
+<div class="rise" style="--w:2s;display:flex;align-items:center;gap:34px;margin-top:22px">{chip('open it', 'V5CapsuleOpen.dc.html', seed=7051, w=180, kind='ink')}{link('not now', 'V5Home.dc.html')}</div>
+</div></main>'''
+ENVTAP_CSS = '.envtap{cursor:pointer;transition:transform .25s ease}.envtap:hover{transform:rotate(-.5deg) translateY(-4px)}'
+page('V5CapsuleArrived', 'Capsule arrived, still sealed', carr, css=ENVTAP_CSS, script=ARRIVED_VALS)
+board('V5CapsuleArrived', 'L20 — Capsule arrived, open it', 1440, 900, 'edge_leave')
+
+mcarr = f'''
+{matmos()}
+{mtopbar(crumb='time capsule', back='V5MHome.dc.html')}
+{mbody(f"""<div style="display:flex;flex-direction:column;align-items:center">
+<a href="V5MCapsuleOpen.dc.html" aria-label="Open the letter" class="rise envtap" style="--w:.2s;display:block;transform:rotate(-1.5deg)">{sealed_env(304, 192, 62, 16, 'mcarr', 1463)}</a>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:44px;text-align:center">
+{t_mark('it arrived.', 24, SOFTRED, 'transform:rotate(-3deg)')}
+{h_hand('A letter from you,<br>{{agoText}}.', 36, color=PAPERHI, wait='.6s')}
+<div class="rise" style="--w:1.6s;{TYPE};font-size:10px;letter-spacing:.16em;line-height:1.8;color:{BOARDTXT};margin-top:4px">SEALED {{{{sealedUp}}}}</div>
+</div></div>""", center=True)}
+<div class="rise" style="--w:2s;display:flex;flex-direction:column">{mdock(mcta('open it', 'V5MCapsuleOpen.dc.html', 'ink', seed=7052) + mtext('not now', 'V5MHome.dc.html'))}</div>
+{mfooter()}'''
+mpage('V5MCapsuleArrived', 'Capsule arrived, still sealed', mcarr, css=ENVTAP_CSS, script=ARRIVED_VALS)
+board('V5MCapsuleArrived', 'ML20 — Capsule arrived, open it', 390, 844, 'm_edge_leave')
+
+# ================================================================ C07 — let it go (the capsule's own ending, not burn's)
+LETGO_CSS = """.foldaway{animation:foldaway 1.5s cubic-bezier(.5,0,.3,1) .2s both;transform-origin:50% 0}
+@keyframes foldaway{0%{opacity:1;transform:none}55%{opacity:1;transform:perspective(900px) rotateX(70deg) scaleY(.6)}100%{opacity:0;transform:perspective(900px) rotateX(88deg) translateY(-30px) scaleY(.2)}}"""
+def letgo_note(w, h, seed):
+    return paper(f'<div style="{HAND};font-size:{h // 6}px;color:{INK}">Dear later me,</div>'
+                 f'<div style="margin-top:14px">{"".join(f"<div style=\'height:2px;background:{RULE};margin:{h // 9}px 0\'></div>" for _ in range(3))}</div>',
+                 w, h, rot=-1, kind='hi', seed=seed, pad='28px 32px')
+cletgo = f'''
+{atmos()}
+{topbar(crumb='time capsule')}
+<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding-bottom:40px">
+<div class="foldaway" aria-hidden="true">{letgo_note(360, 210, 4741)}</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:-150px">
+{h_hand('Let go.', 64, color=PAPERHI, wait='1.6s')}
+<div class="rise" style="--w:2.4s;{SERIF};font-style:italic;font-size:21px;color:rgba(233,233,231,.82)">It came back to you. You read it. Now it's gone from this browser too.</div>
+<div class="rise" style="--w:2.7s;{TYPE};font-size:12px;letter-spacing:.18em;color:{BOARDTXT};margin-top:4px">NOTHING KEPT · NOT A COPY, NOT A TRACE</div>
+<div class="rise" style="--w:3s;display:flex;align-items:center;gap:34px;margin-top:24px">{chip('back home', 'V5Home.dc.html', seed=7061, w=180)}{link('write to a later you', 'V5Capsule.dc.html')}</div>
+</div></main>'''
+page('V5CapsuleLetGo', 'Capsule, let go', cletgo, css=LETGO_CSS)
+board('V5CapsuleLetGo', 'L21 — Capsule, let go', 1440, 900, 'edge_leave')
+
+mcletgo = f'''
+{matmos()}
+{mtopbar(crumb='time capsule', back='V5MHome.dc.html')}
+{mbody(f"""<div style="display:flex;flex-direction:column;align-items:center;text-align:center">
+<div class="foldaway" aria-hidden="true">{letgo_note(270, 160, 4742)}</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-110px">
+{h_hand('Let go.', 46, color=PAPERHI, wait='1.6s')}
+<div class="rise" style="--w:2.4s;{SERIF};font-style:italic;font-size:17px;line-height:1.5;color:rgba(233,233,231,.82);max-width:300px">It came back to you. You read it. Now it's gone from this browser too.</div>
+<div class="rise" style="--w:2.7s;{TYPE};font-size:10px;letter-spacing:.16em;color:{BOARDTXT};margin-top:4px">NOTHING KEPT</div>
+</div></div>""", center=True)}
+<div class="rise" style="--w:3s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHome.dc.html', 'paper', seed=7062) + mtext('write to a<br>later you', 'V5MCapsule.dc.html'))}</div>
+{mfooter()}'''
+mpage('V5MCapsuleLetGo', 'Capsule, let go', mcletgo, css=LETGO_CSS)
+board('V5MCapsuleLetGo', 'ML21 — Capsule, let go', 390, 844, 'm_edge_leave')

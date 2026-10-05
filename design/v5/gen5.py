@@ -473,7 +473,8 @@ def mpage(name, title, body, h=MH, css='', script=None, props='', bg=NIGHT):
 # per board: music (meta), chalk ('all' or headline substrings), cls {class: cue}
 _BURN = {'cls': {'sheet-in': 'burn', 'tapeburn': 'flutter'}, 'chalk': ["It's gone"]}
 _SEAL = {'cls': {'letter-in': 'slide', 'flap': 'fold', 'seal': 'wax'}, 'chalk': ['Sealed'], 'replay': 1}
-_OPEN = {'cls': {'unfold': 'unfold'}, 'chalk': ['arrived', 'from you'], 'replay': 1}
+_OPEN = {'cls': {'unfold': 'slide'}}   # one paper sound as the letter comes out; no chalk on top of it, no replay
+_LETGO = {'cls': {'foldaway': 'fold'}}
 _PIN = {'cls': {'drop': 'rip', 'slap': 'tapepress'}, 'chalk': ['up there now'], 'replay': 1}
 _KNOT = {'cls': {'knot': 'pluck'}, 'music': 'wait', 'kind': 'wait'}
 SOUND = {
@@ -483,7 +484,7 @@ SOUND = {
     'V5Matching': _KNOT, 'V5MMatching': _KNOT, 'V5Requeue': _KNOT, 'V5MRequeue': _KNOT,
     'V5Burn': _BURN, 'V5MBurn': dict(_BURN, pos='br'),
     'V5CapsuleSealed': _SEAL, 'V5MCapsuleSealed': _SEAL,
-    'V5CapsuleOpen': _OPEN, 'V5MCapsuleOpen': _OPEN,
+    'V5CapsuleOpen': _OPEN, 'V5MCapsuleOpen': _OPEN, 'V5CapsuleLetGo': _LETGO, 'V5MCapsuleLetGo': _LETGO,
     'V5EchoPinned': _PIN, 'V5MEchoPinned': _PIN,
     'V5EchoThread': {'cls': {'stamp': 'stamp'}, 'pos': 'dtop'},
     'V5EchoNoReplies': {'cls': {'stamp': 'stamp'}}, 'V5MEchoNoReplies': {'cls': {'stamp': 'stamp'}}, 'V5MEchoThread': {'cls': {'stamp': 'stamp'}},

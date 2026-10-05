@@ -7,7 +7,7 @@ const R = {
   Echoes: '/echoes', EchoesEmpty: '/echoes', EchoWrite: '/echoes/write', EchoPinned: '/echoes/write', EchoTooLong: '/echoes/write',
   EchoThread: '/echoes', EchoNoReplies: '/echoes', EchoYours: '/echoes',
   UnsentWrite: '/echoes/unsent', UnsentPinned: '/echoes/unsent', UnsentOpen: '/echoes',
-  Capsule: '/capsule', CapsuleSealed: '/capsule', CapsuleOpen: '/capsule/open', CapsuleNotYet: '/capsule/open',
+  Capsule: '/capsule', CapsuleSealed: '/capsule', CapsuleOpen: '/capsule/open', CapsuleNotYet: '/capsule/open', CapsuleArrived: '/capsule/open', CapsuleLetGo: '/capsule/open',
   CapsuleLost: '/capsule/open', CapsuleEmailError: '/capsule',
   Matching: '/talk', Pod: '/talk', PodNudge: '/talk', PodEnd: '/talk', Requeue: '/talk', Reported: '/talk',
   VoiceAsk: '/talk', VoiceWait: '/talk', Call: '/talk', VoiceDeclined: '/talk', CallDropped: '/talk', SendFailed: '/talk',

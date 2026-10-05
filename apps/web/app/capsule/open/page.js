@@ -1,7 +1,6 @@
 'use client';
 // TIME CAPSULE, opening day: the letter (if it's due), "not yet" (if it isn't), or "this browser forgot".
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { attributesToProps } from 'html-react-parser';
 import Screen from '@/v5/Screen';
 import DOpen from '@/v5/screens/V5CapsuleOpen';
@@ -9,6 +8,10 @@ import MOpen from '@/v5/screens/V5MCapsuleOpen';
 import DNot from '@/v5/screens/V5CapsuleNotYet';
 import MNot from '@/v5/screens/V5MCapsuleNotYet';
 import DLost from '@/v5/screens/V5CapsuleLost';
+import DArr from '@/v5/screens/V5CapsuleArrived';
+import MArr from '@/v5/screens/V5MCapsuleArrived';
+import DLetGo from '@/v5/screens/V5CapsuleLetGo';
+import MLetGo from '@/v5/screens/V5MCapsuleLetGo';
 import MLost from '@/v5/screens/V5MCapsuleLost';
 import { readCapsule, clearCapsule, longDate, shortDate, upperDate, upperDay, agoText, leftText } from '@/lib/v5/capsule';
 
@@ -28,8 +31,9 @@ function OpenText({ node, text }) {
 }
 
 export default function CapsuleOpenPage() {
-  const router = useRouter();
   const [cap, setCap] = useState(undefined); // undefined while reading, null when there's none
+  // arrived (still sealed: they open it themselves) → open (the letter) → gone (let it go: the capsule's own ending)
+  const [stage, setStage] = useState('arrived');
 
   useEffect(() => {
     setCap(readCapsule());
@@ -48,19 +52,22 @@ export default function CapsuleOpenPage() {
     };
   }, [cap]);
   const slots = useMemo(() => (cap ? { openText: (node) => <OpenText node={node} text={cap.text} /> } : {}), [cap]);
-  // "let it go": the letter leaves this browser for good, then the burn's ending
   const links = useMemo(
     () => ({
-      BurnGone: () => {
-        clearCapsule();
-        router.push('/burn?gone=1');
+      CapsuleOpen: () => { setStage('open'); window.scrollTo(0, 0); },
+      CapsuleLetGo: () => {
+        clearCapsule(); // the letter leaves this browser for good
+        setStage('gone');
+        window.scrollTo(0, 0);
       }
     }),
-    [router]
+    []
   );
 
   if (cap === undefined) return <div style={{ minHeight: '100dvh', background: '#0D0D0E' }} />;
+  if (stage === 'gone') return <Screen key="gone" desktop={DLetGo} phone={MLetGo} css={CSS} />;
   if (!cap) return <Screen desktop={DLost} phone={MLost} css={CSS} />;
   if (!due) return <Screen desktop={DNot} phone={MNot} vals={vals} css={CSS} />;
-  return <Screen desktop={DOpen} phone={MOpen} vals={vals} slots={slots} links={links} css={CSS} />;
+  if (stage === 'arrived') return <Screen key="arrived" desktop={DArr} phone={MArr} vals={vals} links={links} css={CSS} />;
+  return <Screen key="open" desktop={DOpen} phone={MOpen} vals={vals} slots={slots} links={links} css={CSS} />;
 }

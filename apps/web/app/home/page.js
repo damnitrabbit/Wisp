@@ -64,7 +64,9 @@ export default function HomePage() {
   // first home visit after arriving: ask once whether to keep the name; later visits with a kept name get a welcome back
   useEffect(() => {
     if (!ok || !name || note !== null) return;
-    if (!remember.decided()) setNote('remember');
+    // a letter that came back is why they're here: let them get to it first; the name question can wait a visit
+    if (dueCapsule()) setNote('');
+    else if (!remember.decided()) setNote('remember');
     else if (remember.on() && !ss.get('nt-welcomed')) { ss.set('nt-welcomed', '1'); setNote('welcome'); }
     else setNote('');
   }, [ok, name, note]);

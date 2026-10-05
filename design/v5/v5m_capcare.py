@@ -157,7 +157,7 @@ mcopen = f'''
 {h_hand('A note from you, {{agoText}}.', 32, wait='.4s', d='2s', extra='margin-top:4px')}</div>
 <div class="unfold" style="flex:0 0 auto;display:flex;flex-direction:column;margin-top:10px">{mopened}</div>
 <div class="rise" style="--w:1.5s;margin-top:4px;{SERIF};font-size:15px;line-height:1.5;color:{BOARDTXT}">Read it as many times as you like. When you leave this page, it's gone.</div>''', gap=12, center=True)}
-<div class="rise" style="--w:1.9s;display:flex;flex-direction:column">{mdock(mcta('let it go', 'V5MBurnGone.dc.html', 'paper', seed=1472) + mtext('write back', 'V5MCapsule.dc.html'))}</div>
+<div class="rise" style="--w:1.9s;display:flex;flex-direction:column">{mdock(mcta('let it go', 'V5MCapsuleLetGo.dc.html', 'paper', seed=1472) + mtext('write back', 'V5MCapsule.dc.html'))}</div>
 {mfooter()}'''
 mpage('V5MCapsuleOpen', 'Capsule opened', mcopen, css=open_css, script="renderVals() { return { sealedOn: '1 October', agoText: 'two weeks ago' }; }")
 board('V5MCapsuleOpen', 'MC03 — It arrived', MH, 'm_capsule')

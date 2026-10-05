@@ -227,7 +227,7 @@ copen = f'''
 {h_hand('A note from you, {{agoText}}.', 50, wait='.4s', d='2s')}
 <div class="rise" style="--w:1.5s;{SERIF};font-size:19px;line-height:1.55;color:{ASH}">Read it as many times as you like. When you leave this page, it's gone.</div>
 <div class="rise" style="--w:1.9s;display:flex;flex-direction:column;align-items:flex-start;gap:20px;margin-top:10px">
-{chip('let it go', 'V5BurnGone.dc.html', seed=472, w=170)}{link('write back to a later you', 'V5Capsule.dc.html')}</div>
+{chip('let it go', 'V5CapsuleLetGo.dc.html', seed=472, w=170)}{link('write back to a later you', 'V5Capsule.dc.html')}</div>
 </div>
 <div class="unfold">{opened_letter}</div>
 </main>'''
