@@ -380,6 +380,9 @@ def inline_note(text, tone='red', size=19):
 def link(label, href='#', color=CHALK, size=13):
     return f'<a href="{href}" class="ul" style="{TYPE};font-size:{size}px;letter-spacing:.14em;text-transform:uppercase;color:{color}">{label}</a>'
 
+# the 1:1 pod crumb: the hand font drops the colon, so the numbers are typed
+POD11 = f'<span style="{TYPE};font-size:.74em;letter-spacing:.04em">1:1</span> pod'
+
 def topbar(right='', crumb='', dark=True):
     c = CHALK if dark else INK
     cr = f'<span style="{HAND};font-size:20px;color:{ASH if dark else PENCIL};margin-left:18px">{crumb}</span>' if crumb else ''
@@ -489,6 +492,7 @@ SOUND = {
     'V5EchoThread': {'cls': {'stamp': 'stamp'}, 'pos': 'dtop'},
     'V5EchoNoReplies': {'cls': {'stamp': 'stamp'}}, 'V5MEchoNoReplies': {'cls': {'stamp': 'stamp'}}, 'V5MEchoThread': {'cls': {'stamp': 'stamp'}},
     'V5PodEnd': {'chalkcue': 'heardchord', 'chalk': ['heard'], 'replay': True}, 'V5MPodEnd': {'chalkcue': 'heardchord', 'chalk': ['heard'], 'replay': True},
+    'V5PodEndNotes': {'chalkcue': 'heardchord', 'chalk': ['heard'], 'replay': True}, 'V5MPodEndNotes': {'chalkcue': 'heardchord', 'chalk': ['heard'], 'replay': True},
     'V5NotFound': {'chalk': ['already let go'], 'replay': 1}, 'V5MNotFound': {'chalk': ['already let go'], 'replay': 1},
 }
 # every V5 board loads the engine (so sound survives screen changes); only boards with a marker show the switch
@@ -543,7 +547,8 @@ def _root_size(w, h):
     return f'width: {w}px; height: {h}px'
 
 def page(name, title, body, w=1440, h=900, css='', script=None, props='', bg=NIGHT):
-    PAGES[name] = dict(title=title, body=body, w=w, h=h, css=css, script=script, props=props, bg=bg)
+    # canvas = the board as drawn; v5_live may rewrite body for the site ({{partner}}...), flow boards use canvas
+    PAGES[name] = dict(title=title, body=body, canvas=body, w=w, h=h, css=css, script=script, props=props, bg=bg)
     if script is None:
         script = 'renderVals() { return {}; }'
     dp = '{%s"$preview":{"width":%d,"height":%d}}' % ((props + ',') if props else '', w, h)
@@ -592,7 +597,7 @@ def flow(name, stages, title=None, phone=False):
     first = srcs[0]
     parts, css_seen, css_all = [], set(), []
     for i, ((src, links), p) in enumerate(zip(stages, srcs)):
-        frag = p['body']
+        frag = p.get('canvas', p['body'])
         cfg = SOUND.get(src, {})
         frag = tag_sound(cfg, frag) if cfg else frag
         marker = snd_marker(cfg) if cfg else ''

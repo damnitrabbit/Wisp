@@ -60,7 +60,7 @@ def mini_scrap(text, feat, href, rot, seed, kind=''):
     return f'<a href="{href}" class="chip" style="display:block">{paper(inner, 222, 74, rot=rot, seed=seed, kind=kind, pad="13px 18px")}</a>'
 matching = f'''
 {atmos()}
-{topbar(right='PODS OPEN · UNTIL 2AM', crumb='talk pod')}
+{topbar(right='PODS OPEN · UNTIL 2AM', crumb=POD11)}
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center">
 {board}
 <div style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:-6px">
@@ -131,8 +131,8 @@ def pod_btn(label, href, icon, kind, seed=0):
 
 side = paper(f'''
 <div style="{HAND};font-size:34px;line-height:1.2">you &amp; moss_byte</div>
-<div style="display:flex;align-items:center;gap:8px;margin-top:8px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}"><span style="width:7px;height:7px;border-radius:50%;background:#E08A3C"></span>THEY'RE LISTENING</div>
-<div style="{MARK};font-size:23px;color:{RED};line-height:1.25;margin-top:20px;transform:rotate(-1.5deg)">no fixing. no judging.<br>you lead.</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:8px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}"><span style="width:7px;height:7px;border-radius:50%;background:#E08A3C"></span>BOTH HERE</div>
+<div style="{MARK};font-size:23px;color:{RED};line-height:1.25;margin-top:20px;transform:rotate(-1.5deg)">no fixing. no judging.<br>just two people.</div>
 <div style="border-top:1px dashed {RULE};margin-top:22px;padding-top:18px;display:grid;grid-template-columns:1fr auto;row-gap:10px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}">
 <span>CHECK-IN IN</span><span style="color:{INK}">3:48</span><span>KEPT</span><span style="color:{INK}">NOTHING</span></div>
 <div style="display:flex;flex-direction:column;gap:14px;margin-top:24px">
@@ -163,11 +163,16 @@ def line_msg(text, mine=False, who='moss_byte', t='11:52', i=0):
     body = f'<span style="{SERIF};font-size:19px;line-height:30px;color:{INK}">{text}</span>'
     return f'<div class="msg" style="--i:{i};align-self:flex-start;max-width:74%;padding-left:16px;border-left:2px solid rgba(184,53,42,.35)">{head}{body}</div>'
 
-chat_msgs = ''.join([
+def sys_line(text, size=10):
+    """The pod's one opening line (who came to do what), in pencil, centred like the other system lines."""
+    return (f'<div class="msg" data-slot="podOpening" style="--i:0;align-self:center;display:flex;align-items:center;gap:10px;{TYPE};font-size:{size}px;letter-spacing:.16em;color:{PENCIL};text-transform:uppercase;white-space:nowrap">'
+            f'<span style="width:28px;border-top:1px dashed {RULE}"></span><span>{text}</span><span style="width:28px;border-top:1px dashed {RULE}"></span></div>')
+
+chat_msgs = sys_line('moss_byte came to talk.') + ''.join([
     line_msg("hey. I'm here. take your time, there's no rush.", t='11:52', i=0),
     line_msg("I don't even know where to start honestly", True, t='11:53', i=1),
     line_msg("that's okay. start anywhere. the middle is fine too.", t='11:53', i=2),
-    line_msg("my best friend moved away last month and I didn't realise how much of my week was just… her. tuesdays were chai after work, thursdays were whatever stupid show we were watching, and on sundays she'd just show up at my door without texting first. now the week has all these empty holes in it and I keep walking into them.", True, t='11:55', i=3),
+    line_msg("my best friend moved away last month and I didn't realise how much of my week was just… her. tuesdays were chai after work, and on sundays she'd just show up at my door. now the week has all these empty holes in it.", True, t='11:55', i=3),
     line_msg("that sounds really lonely. like the shape of your days changed overnight, and nobody handed you a new one.", t='11:56', i=4),
     line_msg("yeah. exactly that.", True, t='11:56', i=5),
 ])
@@ -188,14 +193,15 @@ def pod(nudge=False):
     ov = f'<div class="veil"></div><div class="nudge">{nudge_card}</div>' if nudge else ''
     return f'''
 {atmos(leak(1150, -240, 520, GLOW, 0) + leak(-240, 640, 460, ROSE, 6))}
-{topbar(right='PODS OPEN · UNTIL 2AM', crumb='talk pod')}
+{topbar(right='PODS OPEN · UNTIL 2AM', crumb=POD11)}
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;gap:56px;padding:0 56px 24px">
 <div class="rise" style="--w:.1s;padding-top:10px">{side}</div>
 <div class="rise" style="--w:.3s;padding-top:8px">{chat_sheet}</div>
 </main>{ov}'''
-page('V5Pod', 'Talk pod', pod(), css=pod_css)
+OPEN_CSS = '.scroll{-webkit-mask-image:none;mask-image:none}'  # the whole talk fits on the board: no top fade, so the opening line reads
+page('V5Pod', 'Talk pod', pod(), css=pod_css + OPEN_CSS)
 LV.pod('V5Pod')
-page('V5PodNudge', 'Talk pod, 10 minute check-in', pod(True), css=pod_css)
+page('V5PodNudge', 'Talk pod, 10 minute check-in', pod(True), css=pod_css + OPEN_CSS)
 LV.pod('V5PodNudge')
 
 # ---------------- POD ENDED ----------------
@@ -207,20 +213,81 @@ end_css = f"""
 .mote{{position:absolute;bottom:-10px;border-radius:50%;background:#CFCFCC;box-shadow:none;opacity:0;animation-name:mote;animation-iteration-count:infinite;animation-timing-function:linear;z-index:3}}
 @keyframes mote{{0%{{opacity:0;transform:translate(0,0)}}15%{{opacity:.45}}100%{{opacity:0;transform:translate(var(--dx),-760px)}}}}
 """
-last = paper(f'<div style="height:100%;display:flex;flex-direction:column;justify-content:center"><div style="{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL};margin-bottom:12px">MOSS_BYTE\'S LAST WORDS</div><div style="{HAND};font-size:27px;line-height:1.35;color:{INK}">take care of yourself, okay? you\'re easier to talk to than you think.</div></div>',
-             470, 196, rot=2, seed=551, pad='30px 38px 34px', tapes=tape(160, -13, 100, 26, rot=-3, seed=55))
-podend = f'''
+# the end: two slips side by side. Yours to write on (optional), theirs an empty pin spot until a note lands.
+# Both people see this at the same moment; each sends or skips on their own, and the notes cross.
+note_css = f"""
+.stampx{{position:absolute;{MARK};color:{RED};border:3px solid {RED};border-radius:6px;padding:2px 12px 0;letter-spacing:.06em;transform:rotate(-12deg);opacity:0;animation:stampin .5s cubic-bezier(.3,1.6,.5,1) var(--sw,1.6s) forwards;mix-blend-mode:multiply}}
+@keyframes stampin{{from{{opacity:0;transform:rotate(-12deg) scale(1.7)}}to{{opacity:.88;transform:rotate(-12deg) scale(1)}}}}
+.landed{{animation:landed .8s cubic-bezier(.2,.9,.3,1.2) var(--w,2.6s) both}}
+@keyframes landed{{from{{opacity:0;transform:translateY(-18px) rotate(-4deg)}}to{{opacity:1;transform:none}}}}
+"""
+RULED_NOTE = 'background-image:repeating-linear-gradient(to bottom,transparent 0 33px,rgba(96,120,150,.18) 33px 34px)'
+def lbl(t, c=PENCIL, size=10):
+    return f'<div style="{TYPE};font-size:{size}px;letter-spacing:.16em;color:{c}">{t}</div>'
+
+def your_slip(sent=False, w=440, h=262):
+    if sent:
+        body = (f'{lbl("YOUR NOTE · PINNED FOR THEM")}'
+                f'<div style="position:relative;margin-top:14px;flex-grow:1;{RULED_NOTE};padding-top:2px">'
+                f'<div style="{HAND};font-size:27px;line-height:34px;color:{INK}">thank you for not rushing me. i needed that tonight.</div></div>'
+                f'<div style="{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL};margin-top:10px">SENT · GONE WHEN THEY LEAVE</div>'
+                f'<span class="stampx" style="right:26px;bottom:40px;font-size:30px">SENT</span>')
+        tp = tape(w / 2 - 55, -14, 110, 28, rot=-3, red=True, seed=557)
+    else:
+        body = (f'{lbl("LEAVE THEM A NOTE · OPTIONAL")}'
+                f'<div data-slot="noteWrite" style="position:relative;margin-top:14px;flex-grow:1;display:flex;flex-direction:column">'
+                f'<div style="flex-grow:1;{RULED_NOTE};padding-top:2px;{HAND};font-size:26px;line-height:34px;color:{PENCIL}">say thanks, or anything…<span class="blink" style="color:{INK}">|</span></div>'
+                f'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'
+                f'<span style="display:flex;align-items:center;gap:22px">{tchip("pin it", "#", "ink", 120, 44, 556, fs=12)}'
+                f'<a href="#" class="ul" style="{TYPE};font-size:11px;letter-spacing:.16em;color:{INK}">SKIP</a></span>'
+                f'<span style="{TYPE};font-size:10px;letter-spacing:.14em;color:{PENCIL}">0 / 140</span></div></div>')
+        tp = tape(w / 2 - 50, -13, 100, 26, rot=3, seed=555)
+    return paper(f'<div style="height:100%;display:flex;flex-direction:column">{body}</div>', w, h, rot=-1.4, kind='hi', seed=553, pad='26px 32px 24px', tapes=tp)
+
+PIN = ('<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:50%;top:-13px;margin-left:-12px;overflow:visible">'
+       '<ellipse cx="15" cy="18" rx="9" ry="5" fill="#000" opacity=".45"/><circle cx="12" cy="12" r="8" fill="#3a3a3d"/>'
+       '<circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35"/><circle cx="9.4" cy="9.4" r="2.3" fill="#fff" opacity=".28"/></svg>')
+
+def their_spot(landed=False, w=440, h=262):
+    if landed:
+        inner = (f'<div style="height:100%;display:flex;flex-direction:column">{lbl("MOSS_BYTE&#39;S NOTE")}'
+                 f'<div data-slot="theirNote" style="margin-top:14px;flex-grow:1;{RULED_NOTE};padding-top:2px;{HAND};font-size:27px;line-height:34px;color:{INK}">thanks for staying with me tonight. i feel lighter.</div>'
+                 f'<div style="{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL};margin-top:10px">ONLY YOU SEE THIS · GONE WHEN YOU LEAVE</div></div>')
+        return (f'<div class="landed" style="--w:2.8s">'
+                f'{paper(inner, w, h, rot=1.6, seed=558, pad="26px 32px 24px", tapes=tape(w / 2 - 50, -13, 100, 26, rot=-4, seed=559))}</div>')
+    # an empty pin spot on the board: dashed outline, a pin waiting, pencil words
+    return (f'<div style="position:relative;width:{w}px;height:{h}px;flex-shrink:0;border:2px dashed rgba(163,154,140,.45);border-radius:3px;transform:rotate(1.2deg);'
+            f'padding:26px 32px 22px;display:flex;flex-direction:column;background:rgba(0,0,0,.2)">{PIN}'
+            f'{lbl("MOSS_BYTE&#39;S NOTE", BOARDTXT)}'
+            f'<div data-slot="theirNote" style="flex-grow:1;display:flex;align-items:center;justify-content:center;text-align:center;{HAND};font-size:26px;line-height:1.35;color:{BOARDTXT}">if they leave you one,<br>it lands here.</div>'
+            f'<div style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{BOARDTXT};text-align:center">THEY CAN WRITE OR SKIP, SAME AS YOU</div></div>')
+
+ask = paper(f'''<div style="height:100%;display:flex;align-items:center;justify-content:space-between;gap:28px">
+<div style="{HAND};font-size:28px;line-height:1.25;color:{INK}">someone's waiting to be heard.<br>stay and listen?</div>
+<div style="display:flex;align-items:center;gap:24px;flex-shrink:0">{tchip('stay and listen', 'V5Matching.dc.html', 'ink', 214, 50, 561, fs=12)}<a href="#" class="ul" style="{TYPE};font-size:11px;letter-spacing:.16em;color:{INK}">NOT TONIGHT</a></div></div>''',
+    908, 112, rot=-.6, kind='kraft', seed=562, pad='0 34px 0 38px', tapes=tape(70, -12, 96, 24, rot=-5, seed=563))
+
+def podend_body(notes=False):
+    wait = '' if notes else (f'<sc-if value="{{{{someoneWaiting}}}}" hint-placeholder-val="{{{{ true }}}}">'
+                             f'<div class="rise" style="--w:3.4s;margin-top:14px">{ask}</div></sc-if>')
+    return f'''
 <div class="dawnrise"></div><div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none">{motes}</div>
 {atmos(leak(-200, -220, 520, ROSE, 2))}
-{topbar(crumb='talk pod')}
-<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding-bottom:70px">
-{h_hand('You were heard tonight.', 86, color=PAPERHI, wait='1s', d='2s')}
-<div class="rise" style="--w:2.4s;{TYPE};font-size:12px;letter-spacing:.2em;color:rgba(233,233,231,.8);">18 MINUTES · 42 MESSAGES · 0 KEPT</div>
-<div class="rise" style="--w:3s;margin-top:26px">{last}</div>
-<div class="rise" style="--w:3.6s;display:flex;align-items:center;gap:34px;margin-top:30px">{chip('back home', 'V5Home.dc.html', seed=552, w=180)}{link('talk to someone new', 'V5Matching.dc.html')}</div>
+{topbar(crumb=POD11)}
+<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding-bottom:24px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+{h_hand('You were heard tonight.', 66, color=PAPERHI, wait='1s', d='2s')}
+<div class="rise" style="--w:2.2s;{TYPE};font-size:12px;letter-spacing:.2em;color:rgba(233,233,231,.8);">18 MINUTES · 42 MESSAGES · 0 KEPT</div></div>
+<div class="rise" style="--w:2.6s;display:flex;align-items:flex-start;gap:28px;margin-top:22px">{your_slip(notes)}{their_spot(notes)}</div>
+{wait}
+<div class="rise" style="--w:3.8s;display:flex;align-items:center;justify-content:space-between;width:908px;margin-top:{18 if notes else 8}px">
+<div style="{TYPE};font-size:11px;letter-spacing:.16em;color:{BOARDTXT}">YOU'VE HEARD 4 PEOPLE · THIS BROWSER REMEMBERS, WE DON'T</div>
+<div style="display:flex;align-items:center;gap:30px">{link('talk to someone new', 'V5Matching.dc.html')}{chip('back home', 'V5Home.dc.html', seed=552, w=180)}</div></div>
 </main>'''
-page('V5PodEnd', 'Pod ended', podend, css=end_css)
-LV.mark('V5PodEnd', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}'), ("MOSS_BYTE'S LAST WORDS", '{{lastLabel}}'), ("take care of yourself, okay? you're easier to talk to than you think.", '{{lastWords}}')])
+page('V5PodEnd', 'Pod ended', podend_body(), css=end_css + note_css, script='renderVals() { return { someoneWaiting: true }; }')
+LV.mark('V5PodEnd', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+page('V5PodEndNotes', 'Pod ended, notes crossed', podend_body(True), css=end_css + note_css)
+LV.mark('V5PodEndNotes', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}')])
 
 # ---------------- GROUP ROOM (tonight's question) ----------------
 def person(name, state, me=False):

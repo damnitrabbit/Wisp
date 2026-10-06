@@ -12,14 +12,14 @@ for m in MODS:
 F = gen5.flow
 # desktop
 F('V5Boot', [('V5Boot', {'V5Story.dc.html': 1}), ('V5Story', {'V5Age.dc.html': 2}), ('V5Age', {})])
-F('V5HomeOpen', [('V5HomeOpen', {'V5CapsuleOpen.dc.html': 1, 'V5Matching.dc.html': 2}), ('V5CapsuleOpen', {}), ('V5Matching', {})])
+F('V5HomeOpen', [('V5HomeOpen', {'V5CapsuleOpen.dc.html': 1, 'V5Lean.dc.html': 2}), ('V5CapsuleOpen', {}), ('V5Lean', {'V5Matching.dc.html': 3}), ('V5Matching', {})])
 F('V5Capsule', [('V5Capsule', {'V5CapsuleSealed.dc.html': 1}), ('V5CapsuleSealed', {'V5Capsule.dc.html': 0})])
 F('V5EchoWrite', [('V5EchoWrite', {'V5EchoPinned.dc.html': 1}), ('V5EchoPinned', {})])
 F('V5Pod', [('V5Pod', {'V5PodEnd.dc.html': 1}), ('V5PodEnd', {})])
 F('V5PodNudge', [('V5PodNudge', {'V5PodEnd.dc.html': 1}), ('V5PodEnd', {})])
 # phone
 F('V5MBoot', [('V5MBoot', {'V5MStory.dc.html': 1}), ('V5MStory', {'V5MAge.dc.html': 2}), ('V5MAge', {})])
-F('V5MHomeOpen', [('V5MHomeOpen', {'V5MCapsuleOpen.dc.html': 1, 'V5MMatching.dc.html': 2}), ('V5MCapsuleOpen', {}), ('V5MMatching', {})])
+F('V5MHomeOpen', [('V5MHomeOpen', {'V5MCapsuleOpen.dc.html': 1, 'V5MLean.dc.html': 2}), ('V5MCapsuleOpen', {}), ('V5MLean', {'V5MMatching.dc.html': 3}), ('V5MMatching', {})])
 F('V5MCapsule', [('V5MCapsule', {'V5MCapsuleSealed.dc.html': 1}), ('V5MCapsuleSealed', {'V5MCapsule.dc.html': 0})])
 F('V5MEchoWrite', [('V5MEchoWrite', {'V5MEchoPinned.dc.html': 1}), ('V5MEchoPinned', {})])
 F('V5MPod', [('V5MPod', {'V5MPodEnd.dc.html': 1}), ('V5MPodEnd', {})])

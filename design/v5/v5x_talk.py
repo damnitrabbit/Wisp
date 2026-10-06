@@ -1,4 +1,4 @@
-"""N0TRACE V5 desktop: new talk boards. T07 V5Listener, T08 V5Requeue, T09 V5Paused."""
+"""N0TRACE V5 desktop: new talk boards. T00 V5Lean, T00b V5LeanListen, T07 V5Listener (retired), T08 V5Requeue, T09 V5Paused."""
 from gen5 import *
 import v5_live as LV
 from v5m_talk import (board, write_manifest, thread_loader, you_note, closed_sign, SIGN_CSS, LRED, SOFTRED, tchip)
@@ -42,7 +42,82 @@ listener = f'''
 </main>
 {footer()}'''
 page('V5Listener', 'Before you listen', listener)
-board('V5Listener', 'T07 — Before you listen', 900, 'talk', 1440)
+board('V5Listener', 'T07 — Before you listen (retired → V5LeanListen)', 900, 'talk', 1440)
+
+# =====================================================================
+# T00 — Tonight, I mostly want to… (one door, three slips; the lean only decides who we look for first)
+# =====================================================================
+LEAN_CSS = """.lslip{display:block;transition:transform .25s ease,opacity .4s ease,filter .4s ease}
+.lslip:hover{transform:translateY(-6px) rotate(-.6deg)}
+.lslip.dim{opacity:.42;filter:saturate(.5) brightness(.9)}
+.lslip.dim:hover{opacity:.7}
+.unfold{animation:unfold .9s cubic-bezier(.2,.8,.25,1) .35s both;transform-origin:50% 0}
+@keyframes unfold{from{opacity:0;transform:scaleY(.32) rotate(-2deg)}to{opacity:1;transform:none}}
+.crease{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,transparent calc(33% - 1px),rgba(90,70,40,.10) 33%,rgba(255,255,255,.22) calc(33% + 1px),transparent calc(33% + 3px),transparent calc(66% - 1px),rgba(90,70,40,.10) 66%,rgba(255,255,255,.22) calc(66% + 1px),transparent calc(66% + 3px))}
+"""
+LEANS = [  # (word, hint, kind, rot, seed)
+    ('talk', "I'VE GOT SOMETHING ON MY MIND", '', -2.2, 1741),
+    ('listen', "I'VE GOT ROOM FOR SOMEONE", 'hi', 1.4, 1742),
+    ("either's fine", 'I JUST WANT SOME COMPANY', 'kraft', -1, 1743),
+]
+def lean_slip(i, href, picked=False, dim=False, w=290, h=176):
+    word, hint, kind, rot, seed = LEANS[i]
+    small = w < 280
+    circ = f'<span style="position:absolute;inset:0">{circle_scribble(160 if i == 0 else 250, 78, wait="1.4s")}</span>' if picked else ''
+    last = (f'<div style="position:absolute;right:20px;top:18px;{MARK};font-size:19px;color:{RED};transform:rotate(4deg)">last time</div>' if picked else '')
+    size = (34 if i < 2 else 30) if small else (48 if i < 2 else 40)
+    hint_ = '' if small else f'<span style="{TYPE};font-size:10px;font-weight:700;letter-spacing:.16em;color:{PENCIL};padding-left:10px">{hint}</span>'
+    inner = (f'{last}<div style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:24px">'
+             f'<span style="position:relative;display:inline-block;padding:0 10px;{HAND};font-size:{size}px;line-height:1.1;color:{INK};white-space:nowrap">{word}{circ}</span>{hint_}</div>')
+    tp = tape(w / 2 - 45, -12, 90, 24, rot=-rot * 2, seed=seed + 10)
+    return (f'<a href="{href}" class="lslip{" dim" if dim else ""}" aria-label="{word}">'
+            f'{paper(inner, w, h, rot=rot, kind=kind, seed=seed, pad="22px 26px", tapes=tp)}</a>')
+
+lean_line = (f'<div class="rise" style="--w:1.6s;{SERIF};font-style:italic;font-size:21px;line-height:1.5;color:{BOARDTXT};text-align:center">'
+             f'it only decides who we look for first. once you\'re in, you\'re just two people.</div>')
+lean = f'''
+{atmos()}
+{topbar(right='PODS OPEN · UNTIL 2AM', crumb=POD11)}
+<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding:0 56px 50px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+{h_hand('Tonight, I mostly want to…', 62, d='1.8s')}
+<div class="rise" style="--w:1.1s;{TYPE};font-size:12px;letter-spacing:.16em;color:{BOARDTXT}">TAP ONE · WE START LOOKING STRAIGHT AWAY</div></div>
+<div class="rise" style="--w:.6s;display:flex;align-items:flex-start;gap:44px;margin-top:6px">
+{lean_slip(0, 'V5Matching.dc.html', picked=True)}<div style="margin-top:26px">{lean_slip(1, 'V5LeanListen.dc.html')}</div>{lean_slip(2, 'V5Matching.dc.html')}</div>
+{lean_line}
+<div class="rise" style="--w:2s">{link('not tonight', 'V5HomeOpen.dc.html')}</div>
+</main>
+{footer()}'''
+page('V5Lean', 'Tonight, I mostly want to', lean, css=LEAN_CSS)
+board('V5Lean', 'T00 — Tonight, I mostly want to… (tap a slip)', 900, 'talk', 1440)
+
+# =====================================================================
+# T00b — the first time you tap "listen": the slip unfolds into the three small promises
+# =====================================================================
+unfolded = paper(f'''<div class="crease"></div>
+<div style="position:relative;display:flex;justify-content:space-between;align-items:baseline">
+<span style="position:relative;display:inline-block;{HAND};font-size:44px;line-height:1.1;color:{INK}">listen</span>{t_mark('three small promises', 25)}</div>
+<div style="position:relative;margin-top:2px">
+{promise('1', 'No fixing.', "They don't need a plan. They need someone there.")}
+{promise('2', 'No judging.', 'Whatever they say, it stays small and safe here.')}
+{promise('3', 'Let them lead.', 'Ask, follow, leave room for quiet.', True)}</div>
+<div style="position:relative;display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+{tchip('okay, find someone', 'V5Matching.dc.html', 'ink', 252, 54, 1745)}
+<span style="{TYPE};font-size:10px;letter-spacing:.16em;color:{PENCIL}">YOU'LL ONLY SEE THIS ONCE.</span></div>''',
+    540, 478, rot=.8, kind='hi', seed=1742, pad='28px 38px 26px', tapes=tape(215, -14, 110, 28, rot=-3, seed=1752))
+lean_listen = f'''
+{atmos()}
+{topbar(right='PODS OPEN · UNTIL 2AM', crumb=POD11)}
+<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 56px 34px">
+{h_hand('Tonight, I mostly want to…', 52, d='1.4s')}
+<div style="display:flex;align-items:flex-start;gap:40px">
+<div class="rise" style="--w:.2s;margin-top:70px">{lean_slip(0, 'V5Matching.dc.html', dim=True, w=230, h=120)}</div>
+<div class="unfold">{unfolded}</div>
+<div class="rise" style="--w:.3s;margin-top:110px">{lean_slip(2, 'V5Matching.dc.html', dim=True, w=230, h=120)}</div></div>
+</main>
+{footer()}'''
+page('V5LeanListen', 'Tonight, I mostly want to listen', lean_listen, css=LEAN_CSS)
+board('V5LeanListen', 'T00b — First "listen": the slip unfolds (shown once)', 900, 'talk', 1440)
 
 # =====================================================================
 # T08 — They left. Finding someone new.
@@ -58,7 +133,7 @@ left_note = paper(f'''
     480, 252, rot=-1.4, kind='hi', seed=1711, pad='34px 40px', torn='bottom', tapes=tape(185, -14, 110, 28, rot=-2, seed=172))
 requeue = f'''
 {atmos()}
-{topbar(right='PODS OPEN · UNTIL 2AM', crumb='talk pod')}
+{topbar(right='PODS OPEN · UNTIL 2AM', crumb=POD11)}
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;align-items:center;justify-content:center;gap:90px;padding-bottom:40px">
 <div style="display:flex;flex-direction:column;gap:30px">
 {h_hand('They left.', 72)}

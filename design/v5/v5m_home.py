@@ -51,9 +51,8 @@ def mhome(open_, capsule=False, sub=None, strip=True):
 </nav>''', seed=801, pad=cpad, rot=-1.2, grow=0, tapes=ctape(100, -12, 26, rot=-3, seed=81, dx=-30))
     if open_:
         rinner = f'''<nav aria-label="Talk to someone" style="display:flex;flex-direction:column;margin-top:4px;border-top:1px dashed rgba(34,30,26,.25)">
-{mrow('I need to talk', 'TALK POD', 'V5MMatching.dc.html')}
-{mrow('I can listen', 'LISTEN POD', 'V5MListener.dc.html')}
-{mrow('Just talk', 'OPEN POD', 'V5MRooms.dc.html', True)}</nav>'''
+{mrow('Someone, one on one', '1:1 POD', 'V5MLean.dc.html')}
+{mrow('A room, just listening in', 'OPEN POD', 'V5MRooms.dc.html', True)}</nav>'''
         # the small group is tonight's question: it lives in the strip below, not as a fourth row
         status = f'<span style="display:flex;align-items:center;gap:6px;{TYPE};font-size:9.5px;letter-spacing:.16em;color:{INK}"><span class="pulse-dot"></span>OPEN<span data-slot="here"> · 37 HERE</span></span>'
         rg = 4

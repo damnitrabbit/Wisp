@@ -1,11 +1,11 @@
 from gen5 import *
 
-def hrow(activity, feature, href, last=False, sw=260):
+def hrow(activity, feature, href, last=False, sw=260, size=30):
     bb = '' if last else f'border-bottom:1px dashed {RULE};'
     return (f'<a href="{href}" class="row" style="height:64px;{bb}--sw:{sw}px">'
-            f'<span style="position:relative"><span style="{HAND};font-size:30px;color:{INK}">{activity}</span>'
+            f'<span style="position:relative"><span style="{HAND};font-size:{size}px;color:{INK};white-space:nowrap">{activity}</span>'
             f'<span class="scribble">{underline(sw, RED, 2.5, cls="", seed=len(activity))}</span></span>'
-            f'<span class="go" style="display:flex;align-items:center;gap:12px;{TYPE};font-weight:700;font-size:12px;letter-spacing:.18em;color:{PENCIL}">{feature}<span style="color:{INK};font-size:15px">→</span></span></a>')
+            f'<span class="go" style="display:flex;align-items:center;gap:12px;white-space:nowrap;{TYPE};font-weight:700;font-size:12px;letter-spacing:.18em;color:{PENCIL}">{feature}<span style="color:{INK};font-size:15px">→</span></span></a>')
 
 
 # ---------- a small sealed letter (the capsule envelope, pocket-sized) ----------
@@ -50,9 +50,8 @@ left_inner = f'''
 </nav>'''
 
 right_open = f'''<nav aria-label="Talk to someone" style="margin-top:18px;border-top:1px dashed rgba(34,30,26,.25)">
-{hrow('I need to talk', 'TALK POD', 'V5Matching.dc.html', sw=190)}
-{hrow('I can listen', 'LISTEN POD', 'V5Listener.dc.html', sw=170)}
-{hrow('Just talk', 'OPEN POD', 'V5Rooms.dc.html', sw=120)}
+{hrow('Someone, one on one', '1:1 POD', 'V5Lean.dc.html', sw=250)}
+{hrow('A room, just listening in', 'OPEN POD', 'V5Rooms.dc.html', sw=300, size=28)}
 {hrow('Join a small group', 'GROUP POD', 'V5Question.dc.html', True, sw=250)}
 </nav>'''
 right_closed = f'''<div style="margin-top:18px;border-top:1px dashed rgba(34,30,26,.25);padding-top:30px;display:flex;align-items:center;gap:26px">

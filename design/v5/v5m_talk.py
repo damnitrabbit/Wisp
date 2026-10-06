@@ -5,8 +5,8 @@ import v5_live as LV
 import json, os
 
 MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'manifest_talk.json')
-ORDER = ['V5Listener', 'V5Requeue', 'V5Paused',
-         'V5MMatching', 'V5MPod', 'V5MPodNudge', 'V5MPodEnd', 'V5MQuestion', 'V5MAsleep', 'V5MListener', 'V5MRequeue', 'V5MPaused']
+ORDER = ['V5Lean', 'V5LeanListen', 'V5Listener', 'V5Requeue', 'V5Paused',
+         'V5MLean', 'V5MLeanListen', 'V5MMatching', 'V5MPod', 'V5MPodNudge', 'V5MPodEnd', 'V5MPodEndNotes', 'V5MQuestion', 'V5MAsleep', 'V5MListener', 'V5MRequeue', 'V5MPaused']
 BOARDS = []
 def board(name, title, h, row, w=MW):
     BOARDS.append({"file": name + '.dc.html', "title": title, "w": w, "h": h, "row": row})
@@ -209,7 +209,7 @@ if __name__ == '__main__':
 <span style="color:{PENCIL}">KEPT</span><span>NOTHING</span></div>''', W, 128, rot=-1.2, seed=1501, pad='22px 24px', tapes=tape(W / 2 - 50, -12, 100, 26, rot=3, seed=150))
     matching = f'''
 {matmos()}
-{mtopbar(crumb='talk pod', back='V5MHomeOpen.dc.html')}
+{mtopbar(crumb=POD11, back='V5MHomeOpen.dc.html')}
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center">
 {loader_html}
 <div style="width:100%;padding:0 {MPAD}px;margin-top:-4px">
@@ -231,11 +231,18 @@ if __name__ == '__main__':
     # =====================================================================
     # MT02 — Talk pod: same layout as the voice boards (back + "talk pod", name strip, composer in the paper)
     # =====================================================================
-    from v5m_voice import pod_strip, mchat_sheet, mpod as vpod, mmsg, mtyping, mchip, mlink as vlink, POD_CSS as VPOD_CSS
+    from v5m_voice import pod_strip, mchat_sheet, mpod as vpod, mmsg, mtyping, mchip, mlink as vlink, POD_CSS as VPOD_CSS, mchat, MCONVO
     pod_note = (f'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px">'
                 f'{mchip("ask for voice", "V5MVoiceWait.dc.html", "kraft", 176, seed=1514, icon=MIC, h=44)}'
                 f'<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.5;color:{PENCIL};text-align:right">CHECK-IN<br>IN 3:48</span></div>')
-    pod_sheet = mchat_sheet(mmsg("yeah. exactly that.", True, t='11:56', i=5))
+    def m_sys_line(text):
+        """The pod's one opening line (who came to do what): pencil, centred, like the other system lines."""
+        return (f'<div class="msg" data-slot="podOpening" style="--i:0;align-self:center;display:flex;align-items:center;gap:8px;{TYPE};font-size:9px;letter-spacing:.16em;color:{PENCIL};text-transform:uppercase;white-space:nowrap">'
+                f'<span style="width:22px;border-top:1px dashed {RULE}"></span><span>{text}</span><span style="width:22px;border-top:1px dashed {RULE}"></span></div>')
+    # the opening line is the first thing in the message list (it scrolls away like any message)
+    # (one exchange fewer than the voice boards, so the opening line is on screen at 390x844)
+    pod_msgs = m_sys_line('moss_byte came to talk.') + ''.join(mmsg(t, m, t=tt, i=i) for i, (t, m, tt) in enumerate(MCONVO) if i != 2)
+    pod_sheet = mchat(pod_msgs, mtyping())
 
     def mpod(nudge=False):
         ov = ''
@@ -247,37 +254,88 @@ if __name__ == '__main__':
 <div style="{TYPE};font-size:9px;letter-spacing:.14em;line-height:1.6;color:{PENCIL};margin-top:16px">THEY GET THE SAME QUESTION. NOBODY SEES WHAT THE OTHER PICKED.</div>''',
                          W - 8, 296, rot=-1, seed=1522, pad='30px 26px', tapes=tape((W - 8) / 2 - 50, -13, 100, 26, rot=3, seed=152))
             ov = f'<div class="veil"></div><div class="nudge">{card}</div>'
-        return vpod(pod_sheet, overlay=ov)
-    mpage('V5MPod', 'Talk pod', mpod(), css=VPOD_CSS)
+        return vpod(pod_sheet, overlay=ov, status='BOTH HERE', crumb=POD11)
+    OPEN_CSS = '.scroll{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px);mask-image:linear-gradient(to bottom,transparent 0,#000 18px)}'
+    mpage('V5MPod', 'Talk pod', mpod(), css=VPOD_CSS + OPEN_CSS)
     LV.pod('V5MPod')
     board('V5MPod', 'MT02 — Talk pod', MH, 'm_talk')
-    mpage('V5MPodNudge', 'Talk pod, 10 minute check-in', mpod(True), css=VPOD_CSS)
+    mpage('V5MPodNudge', 'Talk pod, 10 minute check-in', mpod(True), css=VPOD_CSS + OPEN_CSS)
     LV.pod('V5MPodNudge')
     board('V5MPodNudge', 'MT03 — 10 minute check-in', MH, 'm_talk')
 
     # =====================================================================
-    # MT04 — Pod ended
+    # MT04 — Pod ended: you were heard · two slips (yours to write, theirs to land) · stay and listen?
+    # Both people see this at the same moment; each sends or skips on their own, and the notes cross.
     # =====================================================================
     pr = random.Random(19)
     motes = ''.join(f'<i class="mote" style="left:{pr.uniform(5, 95):.0f}%;width:{(s := pr.uniform(2, 4)):.1f}px;height:{s:.1f}px;animation-delay:{pr.uniform(0, 8):.1f}s;animation-duration:{pr.uniform(8, 13):.1f}s;--dx:{pr.uniform(-30, 30):.0f}px"></i>' for _ in range(18))
-    end_css = """.mote{position:absolute;bottom:-10px;border-radius:50%;background:#CFCFCC;opacity:0;animation-name:mote;animation-iteration-count:infinite;animation-timing-function:linear;z-index:3}
-@keyframes mote{0%{opacity:0;transform:translate(0,0)}15%{opacity:.4}100%{opacity:0;transform:translate(var(--dx),-760px)}}"""
-    last = paper(f'<div style="height:100%;display:flex;flex-direction:column;justify-content:center"><div style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{PENCIL};margin-bottom:10px">MOSS_BYTE\'S LAST WORDS</div>'
-                 f'<div style="{HAND};font-size:23px;line-height:1.35;color:{INK}">take care of yourself, okay? you\'re easier to talk to than you think.</div></div>',
-                 W - 16, 176, rot=2, seed=1531, pad='24px 26px 26px', tapes=tape((W - 16) / 2 - 50, -12, 100, 26, rot=-3, seed=153))
-    podend = f'''
+    end_css = f""".mote{{position:absolute;bottom:-10px;border-radius:50%;background:#CFCFCC;opacity:0;animation-name:mote;animation-iteration-count:infinite;animation-timing-function:linear;z-index:3}}
+@keyframes mote{{0%{{opacity:0;transform:translate(0,0)}}15%{{opacity:.4}}100%{{opacity:0;transform:translate(var(--dx),-760px)}}}}
+.stampx{{position:absolute;{MARK};color:{RED};border:2.5px solid {RED};border-radius:5px;padding:1px 9px 0;letter-spacing:.06em;transform:rotate(-12deg);opacity:0;animation:stampin .5s cubic-bezier(.3,1.6,.5,1) var(--sw,1.6s) forwards;mix-blend-mode:multiply}}
+@keyframes stampin{{from{{opacity:0;transform:rotate(-12deg) scale(1.7)}}to{{opacity:.88;transform:rotate(-12deg) scale(1)}}}}
+.landed{{animation:landed .8s cubic-bezier(.2,.9,.3,1.2) var(--w,2.6s) both}}
+@keyframes landed{{from{{opacity:0;transform:translateY(-14px) rotate(-3deg)}}to{{opacity:1;transform:none}}}}"""
+    MRULED = 'background-image:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(96,120,150,.18) 27px 28px)'
+    def mlbl(t, c=PENCIL):
+        return f'<div style="{TYPE};font-size:9.5px;letter-spacing:.16em;color:{c}">{t}</div>'
+    def m_your_slip(sent=False):
+        if sent:
+            inner = (f'{mlbl("YOUR NOTE · PINNED FOR THEM")}'
+                     f'<div style="position:relative;margin-top:10px;{MRULED};{HAND};font-size:21px;line-height:28px;color:{INK};padding-right:56px">thank you for not rushing me. i needed that tonight.</div>'
+                     f'<div style="{TYPE};font-size:9px;letter-spacing:.14em;color:{PENCIL};margin-top:10px">SENT · GONE WHEN THEY LEAVE</div>'
+                     f'<span class="stampx" style="right:16px;bottom:30px;font-size:22px">SENT</span>')
+            tp = ctape(100, 26, -3, 1534, red=True)
+        else:
+            inner = (f'{mlbl("LEAVE THEM A NOTE · OPTIONAL")}'
+                     f'<div data-slot="noteWrite" style="margin-top:10px">'
+                     f'<div style="{MRULED};height:84px;{HAND};font-size:20px;line-height:28px;color:{PENCIL}">say thanks, or anything…<span class="blink" style="color:{INK}">|</span></div>'
+                     f'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'
+                     f'<span style="display:flex;align-items:center;gap:16px">{tchip("pin it", "#", "ink", 104, 44, 1536, fs=12)}'
+                     f'<a href="#" class="ul" style="display:inline-flex;align-items:center;min-height:44px;{TYPE};font-size:10.5px;letter-spacing:.16em;color:{INK}">SKIP</a></span>'
+                     f'<span style="{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}">0 / 140</span></div></div>')
+            tp = ctape(100, 26, 3, 1535)
+        return apaper(inner, -1.2, 'hi', 1533, '20px 22px 16px', tapes=tp)
+    MPIN = ('<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:50%;top:-12px;margin-left:-11px;overflow:visible">'
+            '<ellipse cx="15" cy="18" rx="9" ry="5" fill="#000" opacity=".45"/><circle cx="12" cy="12" r="8" fill="#3a3a3d"/>'
+            '<circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35"/><circle cx="9.4" cy="9.4" r="2.3" fill="#fff" opacity=".28"/></svg>')
+    def m_their_spot(landed=False):
+        if landed:
+            inner = (f'{mlbl("MOSS_BYTE&#39;S NOTE")}'
+                     f'<div data-slot="theirNote" style="margin-top:10px;{MRULED};{HAND};font-size:21px;line-height:28px;color:{INK}">thanks for staying with me tonight. i feel lighter.</div>'
+                     f'<div style="{TYPE};font-size:9px;letter-spacing:.14em;color:{PENCIL};margin-top:10px">ONLY YOU SEE THIS · GONE WHEN YOU LEAVE</div>')
+            return f'<div class="landed" style="--w:2.8s">{apaper(inner, 1.4, "", 1537, "20px 22px 16px", tapes=ctape(96, 26, -4, 1538))}</div>'
+        return (f'<div style="position:relative;transform:rotate(1deg);border:2px dashed rgba(163,154,140,.45);border-radius:3px;background:rgba(0,0,0,.2);padding:18px 20px 14px;display:flex;flex-direction:column;gap:10px">{MPIN}'
+                f'{mlbl("MOSS_BYTE&#39;S NOTE", BOARDTXT)}'
+                f'<div data-slot="theirNote" style="text-align:center;{HAND};font-size:20px;line-height:1.35;color:{BOARDTXT};padding:6px 0">if they leave you one,<br>it lands here.</div>'
+                f'<div style="{TYPE};font-size:9px;letter-spacing:.14em;color:{BOARDTXT};text-align:center">THEY CAN WRITE OR SKIP, SAME AS YOU</div></div>')
+    m_ask = apaper(f'''<div style="{HAND};font-size:22px;line-height:1.25;color:{INK}">someone's waiting to be heard. stay and listen?</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">{tchip('stay and listen', 'V5MMatching.dc.html', 'ink', 180, 48, 1541, fs=11.5, pad=12)}<a href="#" class="ul" style="display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;{TYPE};font-size:10.5px;letter-spacing:.16em;color:{INK}">NOT TONIGHT</a></div>''',
+        -.8, 'kraft', 1539, '18px 22px 14px', tapes=ctape(90, 24, -5, 1540))
+
+    def mpodend(notes=False):
+        wait = '' if notes else (f'<sc-if value="{{{{someoneWaiting}}}}" hint-placeholder-val="{{{{ true }}}}">'
+                                 f'<div class="rise" style="--w:3.4s;flex-shrink:0;margin-top:6px">{m_ask}</div></sc-if>')
+        return f'''
 <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none">{motes}</div>
-{matmos()}
-{mtopbar(crumb='talk pod')}
-{mbody(f'''<div style="display:flex;flex-direction:column;align-items:center;gap:16px;margin:auto 0">
-{h_hand('You were heard<br>tonight.', 44, color=PAPERHI, wait='1s', d='2s', extra='text-align:center')}
-<div class="rise" style="--w:2.4s;{TYPE};font-size:10.5px;letter-spacing:.18em;color:rgba(233,233,231,.8);">18 MIN · 42 MESSAGES · 0 KEPT</div>
-<div class="rise" style="--w:3s;margin-top:26px">{last}</div></div>''')}
+{matmos(MPODEND_H if not notes else MPODEND_NOTES_H)}
+{mtopbar(crumb=POD11)}
+{mbody(f"""<div style="margin:auto 0;display:flex;flex-direction:column;gap:14px;flex-shrink:0">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0;padding-top:6px">
+{h_hand('You were heard<br>tonight.', 40, color=PAPERHI, wait='1s', d='2s', extra='text-align:center')}
+<div class="rise" style="--w:2.2s;{TYPE};font-size:10.5px;letter-spacing:.18em;color:rgba(233,233,231,.8);">18 MIN · 42 MESSAGES · 0 KEPT</div></div>
+<div class="rise" style="--w:2.6s;flex-shrink:0;margin-top:14px">{m_your_slip(notes)}</div>
+<div class="rise" style="--w:2.9s;flex-shrink:0;margin-top:{16 if notes else 10}px">{m_their_spot(notes)}</div>
+{wait}
+<div class="rise" style="--w:3.8s;flex-shrink:0;{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.6;color:{BOARDTXT};text-align:center;margin-top:4px">YOU'VE HEARD 4 PEOPLE<br>THIS BROWSER REMEMBERS, WE DON'T</div></div>""", gap=14)}
 <div class="rise" style="--w:3.6s;display:flex;flex-direction:column">{mdock(mcta('back home', 'V5MHomeOpen.dc.html', 'paper', seed=1532) + mtext('talk to someone new', 'V5MMatching.dc.html'))}</div>
 {mfooter()}'''
-    mpage('V5MPodEnd', 'Pod ended', podend, css=end_css)
-    LV.mark('V5MPodEnd', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}'), ("MOSS_BYTE'S LAST WORDS", '{{lastLabel}}'), ("take care of yourself, okay? you're easier to talk to than you think.", '{{lastWords}}')])
-    board('V5MPodEnd', 'MT04 — You were heard tonight', MH, 'm_talk')
+    MPODEND_H, MPODEND_NOTES_H = 950, MH
+    mpage('V5MPodEnd', 'Pod ended', mpodend(), h=MPODEND_H, css=end_css, script='renderVals() { return { someoneWaiting: true }; }')
+    LV.mark('V5MPodEnd', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+    board('V5MPodEnd', 'MT04 — You were heard tonight · leave a note (scrolls)', MPODEND_H, 'm_talk')
+    mpage('V5MPodEndNotes', 'Pod ended, notes crossed', mpodend(True), h=MPODEND_NOTES_H, css=end_css)
+    LV.mark('V5MPodEndNotes', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+    board('V5MPodEndNotes', 'MT04b — Notes crossed', MPODEND_NOTES_H, 'm_talk')
 
     # =====================================================================
     # MT05 — Tonight's question (group pod)
@@ -368,7 +426,72 @@ if __name__ == '__main__':
 <div class="rise" style="--w:1.6s;display:flex;flex-direction:column">{mdock(mcta("I'm ready", 'V5MMatching.dc.html', 'ink', seed=1573) + mtext('not tonight', 'V5MHomeOpen.dc.html'))}</div>
 {mfooter()}'''
     mpage('V5MListener', 'Before you listen', listener)
-    board('V5MListener', 'MT07 — Before you listen', MH, 'm_talk')
+    board('V5MListener', 'MT07 — Before you listen (retired → V5MLeanListen)', MH, 'm_talk')
+
+    # =====================================================================
+    # MT00 — Tonight, I mostly want to… (one door, three slips, stacked)
+    # =====================================================================
+    from v5m_home import fcard
+    MLEAN_CSS = """.lslip{display:block;transition:transform .25s ease,opacity .4s ease,filter .4s ease}
+.lslip:active{transform:translateY(1px) scale(.99)}
+.lslip.dim{opacity:.42;filter:saturate(.5) brightness(.9)}
+.unfold{animation:unfold .9s cubic-bezier(.2,.8,.25,1) .35s both;transform-origin:50% 0}
+@keyframes unfold{from{opacity:0;transform:scaleY(.3) rotate(-2deg)}to{opacity:1;transform:none}}
+.crease{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,transparent calc(33% - 1px),rgba(90,70,40,.10) 33%,rgba(255,255,255,.22) calc(33% + 1px),transparent calc(33% + 3px),transparent calc(66% - 1px),rgba(90,70,40,.10) 66%,rgba(255,255,255,.22) calc(66% + 1px),transparent calc(66% + 3px))}"""
+    MLEANS = [  # (word, hint, kind, rot, seed, align)
+        ('talk', "I'VE GOT SOMETHING ON MY MIND", '', -1.6, 1761, 'flex-start'),
+        ('listen', "I'VE GOT ROOM FOR SOMEONE", 'hi', 1.2, 1762, 'flex-end'),
+        ("either's fine", 'I JUST WANT SOME COMPANY', 'kraft', -.8, 1763, 'flex-start'),
+    ]
+    def m_lean_slip(i, href, picked=False, dim=False, small=False):
+        word, hint, kind, rot, seed, al = MLEANS[i]
+        circ = f'<span style="position:absolute;inset:0">{circle_scribble(112 if i == 0 else 190, 54, sw=2.2, wait="1.4s")}</span>' if picked else ''
+        last = f'<span style="{MARK};font-size:17px;color:{RED};transform:rotate(4deg);flex-shrink:0">last time</span>' if picked else ''
+        size = 24 if small else (34 if i < 2 else 30)
+        hint_ = '' if small else f'<div style="{TYPE};font-size:9px;font-weight:700;letter-spacing:.14em;color:{PENCIL};padding-left:8px;margin-top:12px">{hint}</div>'
+        inner = (f'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+                 f'<span style="position:relative;display:inline-block;padding:0 8px;{HAND};font-size:{size}px;line-height:1.15;color:{INK};white-space:nowrap">{word}{circ}</span>{last}</div>{hint_}')
+        pad = '10px 18px 8px' if small else '16px 20px 14px'
+        return (f'<a href="{href}" class="lslip{" dim" if dim else ""}" aria-label="{word}" style="width:{80 if small else 90}%;align-self:{al}">'
+                f'{fcard(inner, kind, seed, pad, rot=rot, tapes="" if small else ctape(80, 22, -rot * 2, seed + 10))}</a>')
+
+    mlean = f'''
+{matmos()}
+{mtopbar(crumb=POD11, back='V5MHomeOpen.dc.html')}
+{mbody(f"""<div style="flex-shrink:0;margin:0 -{MPAD}px">{mhead('Tonight, I mostly<br>want to…', 34)}
+<div class="rise" style="--w:1.1s;padding:6px {MPAD}px 0;{TYPE};font-size:10px;letter-spacing:.16em;color:{BOARDTXT}">PODS OPEN UNTIL 2AM</div></div>
+<div class="rise" style="--w:.6s;margin:auto 0;padding:10px 0;display:flex;flex-direction:column;gap:22px;flex-shrink:0">
+{m_lean_slip(0, 'V5MMatching.dc.html', picked=True)}{m_lean_slip(1, 'V5MLeanListen.dc.html')}{m_lean_slip(2, 'V5MMatching.dc.html')}</div>
+<div class="rise" style="--w:1.6s;flex-shrink:0;{SERIF};font-style:italic;font-size:16px;line-height:1.5;color:{BOARDTXT};padding:0 4px">it only decides who we look for first. once you're in, you're just two people.</div>""", gap=14)}
+<div class="rise" style="--w:2s;display:flex;flex-direction:column">{mdock(mtext('not tonight', 'V5MHomeOpen.dc.html') + mnote('TAP ONE · WE START<br>LOOKING STRAIGHT AWAY'))}</div>
+{mfooter()}'''
+    mpage('V5MLean', 'Tonight, I mostly want to', mlean, css=MLEAN_CSS)
+    board('V5MLean', 'MT00 — Tonight, I mostly want to… (tap a slip)', MH, 'm_talk')
+
+    # =====================================================================
+    # MT00b — first "listen": the slip unfolds into the three small promises (shown once)
+    # =====================================================================
+    m_unfolded = apaper(f'''<div class="crease"></div>
+<div style="position:relative;display:flex;justify-content:space-between;align-items:baseline">
+<span style="{HAND};font-size:32px;line-height:1.1;color:{INK}">listen</span>{t_mark('three small promises', 19)}</div>
+<div style="position:relative;margin-top:2px">
+{promise('1', 'No fixing.', "They don't need a plan. They need someone there.")}
+{promise('2', 'No judging.', 'Whatever they say, it stays small and safe here.')}
+{promise('3', 'Let them lead.', 'Ask, follow, leave room for quiet.', True)}</div>''',
+        .8, 'hi', 1762, '18px 22px 10px', tapes=ctape(96, 26, -3, 1772), extra='position:relative')
+    mlean_listen = f'''
+{matmos()}
+{mtopbar(crumb=POD11, back='V5MHomeOpen.dc.html')}
+{mbody(f"""<div style="flex-shrink:0;margin:0 -{MPAD}px">{mhead('Tonight, I mostly<br>want to…', 30)}</div>
+<div style="margin:auto 0;display:flex;flex-direction:column;gap:16px;flex-shrink:0;padding:4px 0">
+<div class="rise" style="--w:.2s;display:flex;flex-direction:column">{m_lean_slip(0, 'V5MMatching.dc.html', dim=True, small=True)}</div>
+<div class="unfold">{m_unfolded}</div>
+<div class="rise" style="--w:.3s;display:flex;flex-direction:column">{m_lean_slip(2, 'V5MMatching.dc.html', dim=True, small=True)}</div></div>""", gap=12)}
+<div class="rise" style="--w:1.4s;display:flex;flex-direction:column">{mdock(mcta('okay, find someone', 'V5MMatching.dc.html', 'ink', seed=1773) + mnote("YOU'LL ONLY<br>SEE THIS ONCE."))}</div>
+{mfooter()}'''
+    mpage('V5MLeanListen', 'Tonight, I mostly want to listen', mlean_listen, css=MLEAN_CSS)
+    board('V5MLeanListen', 'MT00b — First "listen": the slip unfolds (shown once)', MH, 'm_talk')
+
 
     # =====================================================================
     # MT08 — They left. Finding someone new.
@@ -384,7 +507,7 @@ if __name__ == '__main__':
         -1.2, 'hi', 1581, '22px 24px', torn='bottom', tapes=ctape(100, 26, -2, 158))
     requeue = f'''
 {matmos()}
-{mtopbar(crumb='talk pod', back='V5MHomeOpen.dc.html')}
+{mtopbar(crumb=POD11, back='V5MHomeOpen.dc.html')}
 {mbody(f'''<div style="flex-shrink:0;margin:0 -{MPAD}px">{mhead('They left.', 40)}</div>
 <div class="rise" style="--w:.6s;margin-top:8px;flex-shrink:0">{left_scrap}</div>
 <div class="rise" style="--w:1.4s;width:100%;padding:12px 0 0;flex-shrink:0">
