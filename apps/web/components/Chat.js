@@ -1,82 +1,285 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import TopBar from './TopBar';
-import Footer from './Footer';
-import Rabbit from './Rabbit';
-import Modal from './Modal';
-import MicModals from './MicModals';
-import ReportConfirm from './ReportConfirm';
-import { emit, on, bus, toast, syncClock, useWisp } from '@/lib/wisp';
+// The talk pod (and the listen pod): 1:1 text with an optional voice upgrade, drawn with the V5 screens.
+// Logic (queue, voice consent, WebRTC) is the same as before; only the UI is new.
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { domToReact } from 'html-react-parser';
+import Screen from '@/v5/Screen';
+import Part, { Acts, fill } from '@/app/talk/_pods/Part';
+import P, { CSS as PART_CSS } from '@/app/talk/_pods/parts.gen';
+import { emit, on, bus, syncClock, serverNow, useWisp } from '@/lib/wisp';
 import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
 import { usePairCall } from '@/lib/call';
-import { useNow, mmss, hhmmss } from '@/lib/time';
+import { podsOpen as clientPodsOpen } from '@/lib/v5/hours';
+import { podMinsToClose, POD_CLOSING_WARN_MIN } from '@wisp/shared/pods.js';
 
-let msgId = 0;
-const sysMsg = (text) => ({ id: `s${++msgId}`, from: 'sys', text });
+import DMatching from '@/v5/screens/V5Matching';
+import MMatching from '@/v5/screens/V5MMatching';
+import DPod from '@/v5/screens/V5Pod';
+import MPod from '@/v5/screens/V5MPod';
+import DNudge from '@/v5/screens/V5PodNudge';
+import MNudge from '@/v5/screens/V5MPodNudge';
+import DEnd from '@/v5/screens/V5PodEnd';
+import MEnd from '@/v5/screens/V5MPodEnd';
+import DRequeue from '@/v5/screens/V5Requeue';
+import MRequeue from '@/v5/screens/V5MRequeue';
+import DReported from '@/v5/screens/V5Reported';
+import MReported from '@/v5/screens/V5MReported';
+import DVoiceWait from '@/v5/screens/V5VoiceWait';
+import MVoiceWait from '@/v5/screens/V5MVoiceWait';
+import DVoiceAsk from '@/v5/screens/V5VoiceAsk';
+import MVoiceAsk from '@/v5/screens/V5MVoiceAsk';
+import DCall from '@/v5/screens/V5Call';
+import MCall from '@/v5/screens/V5MCall';
+import DDropped from '@/v5/screens/V5CallDropped';
+import MDropped from '@/v5/screens/V5MCallDropped';
+import DClosing from '@/v5/screens/V5PodsClosing';
+import MClosing from '@/v5/screens/V5MPodsClosing';
+import DClosedMid from '@/v5/screens/V5PodsClosedMidChat';
+import MClosedMid from '@/v5/screens/V5MPodsClosedMidChat';
+import DNoOne from '@/v5/screens/V5NoOneFree';
+import MNoOne from '@/v5/screens/V5MNoOneFree';
+import DListener from '@/v5/screens/V5Listener';
+import MListener from '@/v5/screens/V5MListener';
+import DPaused from '@/v5/screens/V5Paused';
+import MPaused from '@/v5/screens/V5MPaused';
+import DReconnect from '@/v5/screens/V5Reconnect';
+import MReconnect from '@/v5/screens/V5MReconnect';
+import DMicAsk from '@/v5/screens/V5MicAsk';
+import MMicAsk from '@/v5/screens/V5MMicAsk';
+import DMicBlocked from '@/v5/screens/V5MicBlocked';
+import MMicBlocked from '@/v5/screens/V5MMicBlocked';
+import DNoVoice from '@/v5/screens/V5NoVoice';
+import MNoVoice from '@/v5/screens/V5MNoVoice';
 
-export default function Chat() {
+// Dev only: /talk?dev=nudge (check-in after 15s), ?dev=closing (10-minute slip at once), ?dev=closed (2am close
+// 15s into a pod), ?dev=nobody (nobody's free after 10s). Ignored in production.
+const DEV = (() => {
+  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return '';
+  try { return new URLSearchParams(window.location.search).get('dev') || ''; } catch { return ''; }
+})();
+const NOBODY_AFTER_MS = DEV === 'nobody' ? 10_000 : 3 * 60_000; // "nobody's free right now" after this long looking
+const NUDGE_EVERY_MS = DEV === 'nudge' ? 15_000 : 10 * 60_000; // the 10 minute check-in
+
+let seq = 0;
+const nid = () => `l${++seq}`;
+const clock = (t = Date.now()) => {
+  const d = new Date(t);
+  return `${d.getHours() % 12 || 12}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+const clockAmPm = (t = Date.now()) => `${clock(t)} ${new Date(t).getHours() < 12 ? 'AM' : 'PM'}`;
+const mmss = (ms) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
+const m_ss = (ms) => {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
+export function styleObj(css = '') {
+  const o = {};
+  for (const decl of css.split(';')) {
+    const i = decl.indexOf(':');
+    if (i < 0) continue;
+    const k = decl.slice(0, i).trim();
+    if (!k) continue;
+    const key = k.startsWith('--') ? k : k.replace(/^-(webkit|moz|ms)-/, (m, p) => `${p[0].toUpperCase()}${p.slice(1)}-`).replace(/-([a-z])/g, (m, c) => c.toUpperCase());
+    o[key] = decl.slice(i + 1).trim();
+  }
+  return o;
+}
+const tags = (node) => (node.children || []).filter((c) => c.type === 'tag');
+
+// ---------- live slots (they read the pod from context, so the screen itself doesn't re-parse) ----------
+const PodCtx = createContext(null);
+
+function Msgs(node) {
+  return <MsgList base={node.attribs.style} />;
+}
+function MsgList({ base }) {
+  const c = useContext(PodCtx);
+  const ref = useRef(null);
+  const pin = useRef(true);
+  const k = c.phone ? 'm' : 'd';
+  useEffect(() => {
+    const el = ref.current;
+    if (el && pin.current) el.scrollTop = el.scrollHeight;
+  }, [c.items, c.typing]);
+  const style = { ...styleObj(base), overflowY: 'auto', overflowX: 'hidden', justifyContent: 'flex-start', scrollbarWidth: 'none', overscrollBehavior: 'contain' };
+  const pv = { partner: c.partner, PARTNER: c.partner.toUpperCase() };
+  return (
+    <div className="scroll" ref={ref} style={style} role="log" aria-label="Conversation" aria-live="polite"
+      onScroll={(e) => { const el = e.currentTarget; pin.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
+      <div style={{ marginTop: 'auto' }} />
+      {c.items.map((m) => {
+        const tpl = m.kind === 'me' ? P[k + 'Mine'] : m.kind === 'them' ? P[k + 'Theirs'] : m.kind === 'sys' ? P[k + 'Sys'] : m.kind === 'fail' ? P[k + 'Fail'] : P[k + 'Pencil'];
+        return <Part key={m.id} html={tpl} vals={{ ...pv, text: m.text, t: m.t }} acts={m.kind === 'fail' ? { retry: () => c.retry(m) } : undefined} />;
+      })}
+      {c.typing && <Part html={P[k + 'Typing']} vals={pv} />}
+    </div>
+  );
+}
+
+function Composer(node) {
+  return <ComposerRow node={node} />;
+}
+function ComposerRow({ node }) {
+  const c = useContext(PodCtx);
+  const kids = tags(node);
+  const ph = kids[0];
+  const right = kids[kids.length - 1];
+  const input = useRef(null);
+  const phStyle = styleObj(ph?.attribs?.style);
+  const submit = (e) => {
+    e?.preventDefault();
+    c.send();
+    input.current?.focus();
+  };
+  return (
+    <form data-slot-live="composer" style={styleObj(node.attribs.style)} onSubmit={submit}>
+      <input ref={input} value={c.draft} onChange={(e) => c.onDraft(e.target.value)} maxLength={500} autoComplete="off" enterKeyHint="send"
+        aria-label="Message" placeholder="say it however it comes out…" className="pod-input"
+        style={{ ...phStyle, flex: '1 1 auto', minWidth: 0, background: 'transparent', border: 0, outline: 'none', padding: '6px 0', color: '#221E1A', fontStyle: c.draft ? 'normal' : 'italic' }} />
+      <span style={{ display: 'contents' }} onClickCapture={(e) => { if (e.target.closest('a')) submit(e); }}>
+        {right && right !== ph ? domToReact([right]) : null}
+      </span>
+    </form>
+  );
+}
+
+function Checkin() {
+  const c = useContext(PodCtx);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <span>{c.nudgeAt ? m_ss(c.nudgeAt - Date.now()) : '—'}</span>;
+}
+function CallTimer() {
+  const c = useContext(PodCtx);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <span>{c.callSince ? mmss(Date.now() - c.callSince) : '00:00'}</span>;
+}
+// 2am: the last few lines fade on the page, then "2:00 · pods are asleep"
+function LastLines(node) {
+  return <LastList base={node.attribs.style} />;
+}
+function LastList({ base }) {
+  const c = useContext(PodCtx);
+  const k = c.phone ? 'm' : 'd';
+  const pv = { partner: c.partner, PARTNER: c.partner.toUpperCase() };
+  const last = c.items.filter((m) => m.kind === 'me' || m.kind === 'them').slice(c.phone ? -3 : -6);
+  return (
+    <div className="scroll" style={styleObj(base)}>
+      {last.map((m, i) => {
+        const line = fill(P[k + (m.kind === 'me' ? 'Mine' : 'Theirs')], { ...pv, text: m.text, t: m.t });
+        const o = (0.16 + (0.34 * i) / Math.max(1, last.length - 1)).toFixed(2);
+        return <Part key={m.id} html={P.fade} vals={{ w: `${(1.4 + i * 0.25).toFixed(2)}s`, o, line }} />;
+      })}
+      <Part html={P[k + 'Asleep']} />
+    </div>
+  );
+}
+const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer /> };
+const POD_EXTRA_CSS = PART_CSS + `
+.pod-input::placeholder{color:#5F584E;font-style:italic;opacity:1}
+.pod-input:focus-visible{outline:none;box-shadow:none}
+[data-slot-live="composer"] .blink{display:none}`;
+
+// ---------- the pod ----------
+export default function Chat({ role = 'talk' }) {
+  const router = useRouter();
   const session = useWisp((s) => s.session);
-  const [phase, setPhase] = useState('idle'); // idle | searching | chat | blocked
-  const [since, setSince] = useState(null); // when we started looking
-  const [pair, setPair] = useState(null); // { pairId, partner, startedAt }
-  const [msgs, setMsgs] = useState([]);
+  const status = useWisp((s) => s.status);
+  const lobby = useWisp((s) => s.lobby);
+  const me = session?.name ?? 'you';
+
+  const [phase, setPhase] = useState(role === 'listen' ? 'intro' : 'matching');
+  // intro | matching | requeue | nobody | chat | ended | reported | closed | paused
+  const [since, setSince] = useState(() => Date.now());
+  const [pair, setPair] = useState(null);
+  const [items, setItems] = useState([]);
+  const [typing, setTyping] = useState(false);
+  const [draft, setDraft] = useState('');
   const [voice, setVoice] = useState('off'); // off | asked | incoming | on
-  const [incoming, setIncoming] = useState(null);
   const [polite, setPolite] = useState(true);
   const [track, setTrack] = useState(null);
   const [muted, setMuted] = useState(false);
   const [away, setAway] = useState(false);
-  const [typing, setTyping] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [confirmReport, setConfirmReport] = useState(false);
+  const [dropped, setDropped] = useState(null); // time the voice line dropped
+  const [callSince, setCallSince] = useState(null);
+  const [nudgeAt, setNudgeAt] = useState(null);
+  const [nudge, setNudge] = useState(false);
+  const [noVoice, setNoVoice] = useState(false);
+  const [left, setLeft] = useState(null); // { name, at } when they left
+  const [ended, setEnded] = useState(null); // PodEnd numbers
+  const [closingAt, setClosingAt] = useState(null);
   const mic = useMicFlow();
-  const escAt = useRef(0);
-  const typingTimer = useRef(null);
   const sentTyping = useRef(0);
+  const droppedRef = useRef(false);
+  const typingTimer = useRef(null);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
 
-  const resetChat = () => {
-    setConfirmReport(false);
+  const open = lobby?.pods ? lobby.pods.open : clientPodsOpen();
+
+  // Outside pod hours, go to the asleep page straight away — even before (or without) the server answering.
+  useEffect(() => {
+    if (!lobby?.pods && !clientPodsOpen() && !['chat', 'closed', 'ended', 'reported'].includes(phaseRef.current)) router.replace('/asleep');
+  }, [lobby?.pods, router]);
+
+  const add = (kind, text, t) => setItems((l) => [...l, { id: nid(), kind, text, t: t ?? clock() }]);
+
+  const resetChat = useCallback(() => {
     setPair(null);
-    setMsgs([]);
-    setVoice('off');
-    setIncoming(null);
-    setAway(false);
+    setItems([]);
     setTyping(false);
-    setMuted(false);
+    setVoice('off');
     setTrack(null);
+    setMuted(false);
+    setAway(false);
+    setDropped(null);
+    setCallSince(null);
+    setNudge(false);
+    setNudgeAt(null);
+    setClosingAt(null);
     closeMic();
-  };
+  }, []);
 
-  const startLooking = useCallback(async () => {
-    const r = await emit('pair:join');
-    if (r.error === 'blocked') return setPhase('blocked');
+  const startLooking = useCallback(async (next = 'matching') => {
+    const r = await emit('pair:join', { role });
+    if (r.error === 'blocked') return setPhase('paused');
+    if (r.error === 'closed') return router.replace('/asleep');
     if (r.error) return;
     if (!r.pairId) {
       setSince(Date.now());
-      setPhase((p) => (p === 'chat' ? p : 'searching'));
+      setPhase((p) => (p === 'chat' ? p : next));
     }
-  }, []);
+  }, [role, router]);
 
   // ---------- server events ----------
-
   useEffect(() => {
-    document.title = '1:1 chat · NoTrace';
+    document.title = role === 'listen' ? 'Listen pod · NoTrace' : 'Talk pod · NoTrace';
     const offs = [
-      on('pair:waiting', () => {
-        setPhase('searching');
-        setSince((s) => s ?? Date.now());
-      }),
+      on('pair:waiting', () => setSince((s) => s ?? Date.now())),
       on('pair:matched', (p) => {
         syncClock(p.serverNow);
         resetChat();
         setPair(p);
+        setNudgeAt(Date.now() + NUDGE_EVERY_MS - (serverNow() - p.startedAt));
         setPhase('chat');
-        setSince(null);
       }),
       on('pair:message', (m) => {
         setTyping(false);
-        setMsgs((l) => [...l, { id: m.id, from: 'them', text: m.text }]);
+        setItems((l) => [...l, { id: m.id, kind: 'them', text: m.text, t: clock(m.at) }]);
       }),
       on('pair:typing', ({ on: t }) => {
         setTyping(t);
@@ -85,445 +288,325 @@ export default function Chat() {
       }),
       on('pair:partnerLeft', (p) => {
         resetChat();
-        setPhase('searching');
+        setLeft({ name: p.name, at: Date.now() });
         setSince(Date.now());
-        toast({ kind: 'solid', tag: '[ STRANGER LEFT ]', text: <><span className="nc">{p.name}</span> {p.reason === 'skip' ? 'SKIPPED' : 'LEFT'}. THE CHAT IS GONE. YOU&apos;RE BACK IN LINE AUTOMATICALLY.</> });
+        setPhase('requeue'); // the server already put us back in line
       }),
       on('pair:partnerAway', () => setAway(true)),
       on('pair:partnerBack', () => setAway(false)),
       on('pair:blocked', () => {
         resetChat();
-        setPhase('blocked');
+        setPhase('paused');
       }),
       on('pair:voiceRequested', (p) => {
         syncClock(p.serverNow);
-        setIncoming(p);
         setVoice('incoming');
+        add('sys', `${clock()} · ${p.name} asked for voice`);
       }),
-      on('pair:voiceWithdrawn', () => {
-        setIncoming(null);
-        setVoice('off');
-      }),
+      on('pair:voiceWithdrawn', () => setVoice((v) => (v === 'incoming' ? 'off' : v))),
       on('pair:voiceDeclined', (p) => {
         setVoice('off');
-        setMsgs((l) => [...l, sysMsg(p.reason === 'expired' ? 'NO ANSWER, SO THE VOICE REQUEST EXPIRED. YOU CAN ASK AGAIN.' : 'THEY WOULD RATHER KEEP IT TEXT FOR NOW.')]);
+        add('pencil', p.reason === 'expired' ? "no answer this time. you can ask again later." : "they'd like to keep it to text. that's okay.");
         closeMic();
         setTrack(null);
       }),
       on('pair:voiceStarted', ({ polite: pol }) => {
         setPolite(pol);
-        setIncoming(null);
         setVoice('on');
-        setMsgs((l) => [...l, sysMsg('CALL STARTED. TEXT STILL WORKS. END THE CALL ANYTIME TO GO BACK TO TEXT ONLY.')]);
+        setDropped(null);
+        setCallSince(Date.now());
       }),
-      on('pair:voiceEnded', () => {
+      on('pair:voiceEnded', ({ by }) => {
         setVoice('off');
         setMuted(false);
+        setCallSince(null);
         closeMic();
         setTrack(null);
-        setMsgs((l) => [...l, sysMsg('CALL ENDED. YOU’RE BACK TO TEXT ONLY.')]);
+        if (droppedRef.current) droppedRef.current = false;
+        else add('sys', `${clock()} · ${by === 'you' ? 'back to text' : 'they went back to text'}`);
+      }),
+      on('pods:closed', () => {
+        closeMic();
+        setPhase((p) => (p === 'chat' ? 'closed' : p));
+        if (phaseRef.current !== 'chat') router.replace('/asleep');
       }),
       bus.on('session', ({ fresh }) => {
-        // The server forgot us (long drop): whatever chat we had is gone.
-        setPhase((p) => {
-          if (fresh && (p === 'chat' || p === 'searching')) {
-            if (p === 'chat') toast({ kind: 'solid', tag: '[ CHAT LOST ]', text: 'THE CONNECTION DROPPED, SO THAT CHAT IS GONE. PICK UP WITH SOMEONE NEW.' });
-            resetChat();
-            startLooking();
-            return 'searching';
-          }
-          return p;
-        });
+        // The server forgot us (a long drop): whatever pod we had is gone. Look again.
+        if (fresh && ['chat', 'matching', 'requeue', 'nobody'].includes(phaseRef.current)) {
+          resetChat();
+          startLooking();
+        }
       })
     ];
     return () => offs.forEach((f) => f());
-  }, [startLooking]);
+  }, [role, resetChat, startLooking, router]);
 
-  // Came back to the page mid-chat (resumed session)?
+  // First visit: start looking (talk), or wait for "I'm ready" (listen). Resume a live pod after a reload.
+  const started = useRef(false);
   useEffect(() => {
-    if (session?.pair && phase === 'idle') {
+    if (started.current || !session) return;
+    started.current = true;
+    if (session.pair) {
       setPair(session.pair);
+      setNudgeAt(Date.now() + NUDGE_EVERY_MS - (serverNow() - session.pair.startedAt));
       setPhase('chat');
-    } else if (session?.queued && phase === 'idle') {
-      setPhase('searching');
-      setSince(Date.now());
+    } else if (role !== 'listen') startLooking();
+  }, [session, role, startLooking]);
+
+  // Outside pod hours there's nothing to join.
+  useEffect(() => {
+    // (mid-chat the server's pods:closed shows the 2am page instead)
+    if (lobby?.pods && !lobby.pods.open && !['chat', 'closed', 'ended', 'reported'].includes(phaseRef.current)) router.replace('/asleep');
+  }, [lobby?.pods, router]);
+
+  useEffect(() => () => {
+    emit('pair:leave');
+    closeMic();
+  }, []);
+
+  // looking for a long time -> "nobody's free"; the 10 minute check-in; the closing slip
+  useEffect(() => {
+    const t = setInterval(() => {
+      const p = phaseRef.current;
+      if ((p === 'matching' || p === 'requeue') && Date.now() - since > NOBODY_AFTER_MS) setPhase('nobody');
+      if (p === 'chat' && nudgeAt && Date.now() >= nudgeAt) {
+        setNudge(true);
+        setNudgeAt(Date.now() + NUDGE_EVERY_MS);
+      }
+      if (p === 'chat' && !closingAt) {
+        const left = lobby?.pods?.minsToClose ?? podMinsToClose();
+        if ((left && left <= POD_CLOSING_WARN_MIN && (lobby?.pods?.minsToClose != null)) || DEV === 'closing') setClosingAt(clockAmPm());
+      }
+      if (DEV === 'closed' && p === 'chat' && nudgeAt && Date.now() >= nudgeAt - NUDGE_EVERY_MS + 15_000) {
+        closeMic();
+        emit('pair:leave');
+        setPhase('closed');
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [since, nudgeAt, closingAt, lobby?.pods]);
+
+  // They said yes to our ask: now the mic (the design's "your mic · asked only after yes"). No mic -> back to text.
+  const askingMic = useRef(false);
+  useEffect(() => {
+    if (voice !== 'on' || track || askingMic.current) return;
+    askingMic.current = true;
+    mic.ask().then((ok) => {
+      askingMic.current = false;
+      if (ok && micTrack()) setTrack(micTrack());
+      else emit('pair:voiceEnd');
+    });
+  }, [voice, track, mic]);
+  const call = usePairCall({ active: voice === 'on' && !!track, polite, track, muted });
+  // dev: ?dev=drop drops the voice line 6s after it goes live
+  useEffect(() => {
+    if (DEV !== 'drop' || call.state !== 'live') return;
+    const t = setTimeout(() => {
+      droppedRef.current = true;
+      emit('pair:voiceEnd');
+      setDropped(clockAmPm());
+      add('sys', `${clock()} · voice line dropped`);
+    }, 6000);
+    return () => clearTimeout(t);
+  }, [call.state]);
+  // The line couldn't hold: back to text, say so.
+  useEffect(() => {
+    if (voice === 'on' && call.state === 'failed') {
+      droppedRef.current = true;
+      emit('pair:voiceEnd');
+      setDropped(clockAmPm());
+      add('sys', `${clock()} · voice line dropped`);
     }
-  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(
-    () => () => {
-      emit('pair:leave');
-      closeMic();
-    },
-    []
-  );
-
-  const call = usePairCall({ active: voice === 'on', polite, track, muted });
+  }, [call.state, voice]);
 
   // ---------- actions ----------
-
-  const skip = async () => {
-    await emit('pair:skip');
-    resetChat();
-    setPhase('searching');
-    setSince(Date.now());
-  };
-  const report = async () => {
-    setConfirmReport(false);
-    await emit('pair:report');
-    resetChat();
-    setPhase('searching');
-    setSince(Date.now());
-    toast({ kind: 'solid', tag: '[ REPORTED ]', text: 'THANKS. THAT CHAT IS OVER. FINDING SOMEONE NEW.' });
-  };
-  const askVoice = async () => {
-    if (voice !== 'off') return;
-    const ok = await mic.ask();
-    if (!ok) return;
-    setTrack(micTrack());
-    const r = await emit('pair:voiceRequest');
-    if (r.ok) setVoice('asked');
-  };
-  const answerVoice = async (yes) => {
-    if (!yes) {
-      setIncoming(null);
-      setVoice('off');
-      return emit('pair:voiceDecline');
-    }
-    const ok = await mic.ask();
-    if (!ok) {
-      setIncoming(null);
-      setVoice('off');
-      return emit('pair:voiceDecline');
-    }
-    setTrack(micTrack());
-    emit('pair:voiceAccept');
-  };
-  const endCall = () => emit('pair:voiceEnd');
-
-  const sendMsg = async (e) => {
-    e?.preventDefault();
-    const text = draft.trim();
+  const send = useCallback(async (retryOf) => {
+    const text = (retryOf ? retryOf.text : draft).trim();
     if (!text) return;
-    const r = await emit('pair:message', { text });
+    if (!retryOf) setDraft('');
+    sentTyping.current = 0;
+    const r = DEV === 'sendfail' && !retryOf && /fail/.test(text) ? { error: 'dev' } : await emit('pair:message', { text });
     if (r.ok) {
-      setMsgs((l) => [...l, { id: r.id, from: 'me', text: text.replace(/\s+/g, ' ') }]);
-      setDraft('');
-      sentTyping.current = 0;
-    } else if (r.error === 'slow') toast({ key: 'slow', tag: '[ SLOW DOWN ]', text: 'ONE MESSAGE AT A TIME. TRY AGAIN IN A SECOND.' });
-    else if (r.error === 'too_long') toast({ key: 'long', tag: '[ TOO LONG ]', text: 'KEEP IT UNDER 500 CHARACTERS.' });
-  };
-  const onDraft = (v) => {
+      setItems((l) => {
+        const rest = retryOf ? l.filter((m) => m.id !== retryOf.id && m.of !== retryOf.id) : l;
+        return [...rest, { id: r.id, kind: 'me', text: text.replace(/\s+/g, ' '), t: clock(r.at) }];
+      });
+      setDropped(null);
+    } else if (r.error === 'slow') {
+      if (!retryOf) setDraft(text);
+    } else if (r.error === 'too_long') {
+      if (!retryOf) setDraft(text.slice(0, 500));
+    } else if (!retryOf) {
+      const id = nid();
+      setItems((l) => [...l, { id, kind: 'fail', text, t: clock() },
+        { id: nid(), of: id, kind: 'pencil', text: 'the connection slipped for a second. your words are still here.', t: clock() }]);
+    }
+  }, [draft]);
+  const onDraft = useCallback((v) => {
     setDraft(v);
     const now = Date.now();
     if (v && now - sentTyping.current > 2500) {
       sentTyping.current = now;
       emit('pair:typing', { on: true });
     }
-  };
-
-  // keys: Esc Esc skip, S skip, V voice, M mute, E end call
-  useEffect(() => {
-    const onKey = (e) => {
-      if (phase !== 'chat' || mic.modal || incoming || confirmReport) return;
-      const inInput = e.target.tagName === 'INPUT';
-      if (e.key === 'Escape') {
-        if (Date.now() - escAt.current < 1500) {
-          escAt.current = 0;
-          skip();
-        } else {
-          escAt.current = Date.now();
-          toast({ key: 'esc', tag: '[ SKIP? ]', text: 'PRESS ESC AGAIN TO SKIP TO SOMEONE NEW.', ttl: 1500 });
-        }
-        return;
-      }
-      if (inInput || e.metaKey || e.ctrlKey) return;
-      const k = e.key.toLowerCase();
-      if (k === 's') skip();
-      if (k === 'v') askVoice();
-      if (k === 'm' && voice === 'on') setMuted((m) => !m);
-      if (k === 'e' && voice === 'on') endCall();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
-
-  // ---------- views ----------
-
-  if (phase === 'blocked') return <Blocked />;
-  if (phase === 'idle') return <Idle onStart={startLooking} />;
-  if (phase === 'searching') return <Searching name={session?.name} since={since} onCancel={() => { emit('pair:leave'); setPhase('idle'); }} />;
-
-  return (
-    <ChatView
-      pair={pair}
-      me={session?.name}
-      msgs={msgs}
-      typing={typing}
-      away={away}
-      voice={voice}
-      call={call}
-      muted={muted}
-      draft={draft}
-      onDraft={onDraft}
-      onSend={sendMsg}
-      onSkip={skip}
-      onReport={() => setConfirmReport(true)}
-      onAskVoice={askVoice}
-      onEndCall={endCall}
-      onMute={() => setMuted((m) => !m)}
-      overlays={
-        <>
-          {incoming && voice === 'incoming' && <VoiceConsent from={incoming} onAnswer={answerVoice} />}
-          <MicModals flow={mic} where="call" />
-          {confirmReport && pair && <ReportConfirm name={pair.partner.name} where="chat" onConfirm={report} onCancel={() => setConfirmReport(false)} />}
-        </>
-      }
-    />
-  );
-}
-
-function Idle({ onStart }) {
-  return (
-    <div className="page">
-      <TopBar crumb="/CHAT" back={{ label: '← LOBBY', href: '/' }} />
-      <main className="main split" style={{ paddingTop: 20 }}>
-        <div className="lead" style={{ width: 600 }}>
-          <div className="eyebrow">1:1 CHAT</div>
-          <h1 className="h-40">ONE STRANGER. PICKED AT RANDOM. NO FILTERS.<span className="cursor">_</span></h1>
-          <p className="p-16">YOU&apos;LL BE MATCHED WITH WHOEVER HAS BEEN WAITING LONGEST. IT STARTS AS TEXT. IF IT&apos;S NOT CLICKING, SKIP AND MEET SOMEONE ELSE.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
-            <button type="button" className="btn solid tall" style={{ alignSelf: 'flex-start', gap: 40, padding: '0 24px' }} onClick={onStart}>
-              <span>[ START CHATTING ]</span><span>→</span>
-            </button>
-            <Link href="/rooms" className="dim" style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', height: 44, fontSize: 12 }}>PREFER VOICE ROOMS? →</Link>
-          </div>
-        </div>
-        <div className="side box" style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '36px 40px' }}>
-          <div className="dim" style={{ fontSize: 12 }}>HOW A 1:1 WORKS</div>
-          <dl className="kv" style={{ gridTemplateColumns: '130px 1fr', rowGap: 18, lineHeight: 1.55 }}>
-            <dt>YOUR NAME</dt><dd>NEW FOR THIS VISIT, LIKE <span className="nc">quiet_otter_42</span></dd>
-            <dt>MESSAGES</dt><dd>GO ONLY TO THEM. NEVER SAVED.</dd>
-            <dt>VOICE</dt><dd>EITHER OF YOU CAN ASK. IT ONLY STARTS IF THE OTHER SAYS YES.</dd>
-            <dt>SKIP</dt><dd>[ S ] OR ESC TWICE. YOU&apos;RE MATCHED WITH SOMEONE NEW.</dd>
-            <dt>REPORT</dt><dd>ENDS THE CHAT RIGHT AWAY.</dd>
-          </dl>
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
-function Searching({ name, since, onCancel }) {
-  const now = useNow(true, 1000);
-  const slow = since && Date.now() - since > 30_000;
-  void now;
-  return (
-    <div className="page fixed">
-      <TopBar crumb="/CHAT" back={{ label: '← CANCEL' }} onBack={onCancel} />
-      <main role="status" aria-live="polite" className="match">
-        <div aria-hidden="true"><Rabbit className="rabbit-md" mode="look" label="Rabbit looking for someone" /></div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
-          <h1>{slow ? 'STILL LOOKING' : 'LOOKING FOR A STRANGER'}<span className="cursor">_</span></h1>
-          <p className="dim" style={{ fontSize: 14 }}>
-            {slow ? 'IT’S TAKING LONGER THAN USUAL. YOU’RE FIRST IN LINE FOR THE NEXT PERSON.' : 'WHOEVER HAS BEEN WAITING LONGEST GETS YOU. THIS USUALLY TAKES A MOMENT.'}
-          </p>
-        </div>
-        <dl className="kv">
-          <dt>YOU ARE</dt><dd className="nc">{name ?? '—'}</dd>
-          <dt>STARTS AS</dt><dd>TEXT</dd>
-          <dt>KEPT</dt><dd>NOTHING</dd>
-        </dl>
-        <div style={{ minHeight: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {slow && (
-            <div role="status" className="quiet">
-              <span style={{ color: 'var(--soft)' }}>IT&apos;S QUIET RIGHT NOW. KEEP WAITING, OR:</span>
-              <Link href="/rooms">TRY A VOICE ROOM →</Link>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function ChatView({ pair, me, msgs, typing, away, voice, call, muted, draft, onDraft, onSend, onSkip, onReport, onAskVoice, onEndCall, onMute, overlays }) {
-  const now = useNow(true, 1000);
-  const thread = useRef(null);
-  useEffect(() => {
-    const el = thread.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [msgs, typing, voice]);
-  const partner = pair?.partner?.name ?? '…';
-  const live = voice === 'on';
-  const [narrow, setNarrow] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 760px)');
-    const f = () => setNarrow(mq.matches);
-    f();
-    mq.addEventListener('change', f);
-    return () => mq.removeEventListener('change', f);
   }, []);
 
-  return (
-    <div className="page fixed chat-page">
-      <TopBar crumb="/CHAT" back={{ label: '← LEAVE CHAT', href: '/' }} />
-      <div className="chatwrap">
-        <aside aria-label="Session" className="session">
-          <p className="lead">YOU&apos;RE TALKING TO SOMEONE YOU WILL NEVER MEET.</p>
-          <dl className="kv" style={{ rowGap: 16 }}>
-            <dt>STRANGER</dt><dd className="nc">{partner}{away && <span className="dim3"> · reconnecting…</span>}</dd>
-            <dt className="opt">YOU</dt><dd className="nc opt">{me}</dd>
-            <dt>MATCHED</dt><dd>{pair ? hhmmss(now - pair.startedAt) : '—'} AGO</dd>
-            <dt>MODE</dt><dd style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className={`dot ${live ? 'pulse' : ''}`} />{live ? 'TEXT + VOICE' : 'TEXT'}</dd>
-            <dt className="opt">KEPT</dt><dd className="opt">NOTHING</dd>
-          </dl>
-          {/* During a call, END CALL lives only in the call panel below (next to MUTE). */}
-          <div className={`m-chatbtns${live ? ' live' : ''}`}>
-            <button type="button" className="btn" onClick={onSkip}>SKIP</button>
-            <button type="button" className="btn dim" onClick={onReport}>REPORT</button>
-            {live ? null : voice === 'asked' ? (
-              <button type="button" className="btn dash" disabled>ASKED…</button>
-            ) : (
-              <button type="button" className="btn" onClick={onAskVoice}>VOICE</button>
-            )}
-          </div>
-          <div className="sidebtns">
-            <button type="button" className="sidebtn" onClick={onSkip}><span>[ S ] SKIP</span><span className="sub">MEET SOMEONE NEW →</span></button>
-            <button type="button" className="sidebtn" style={{ color: 'var(--fg-2)' }} onClick={onReport}><span>[ ! ] REPORT</span><span className="sub">ENDS THIS NOW</span></button>
-          </div>
-        </aside>
+  const leaveGently = useCallback(() => {
+    const list = itemsRef.current;
+    const lastTheirs = [...list].reverse().find((m) => m.kind === 'them');
+    const n = list.filter((m) => m.kind === 'me' || m.kind === 'them').length;
+    const mins = pair ? Math.max(1, Math.round((serverNow() - pair.startedAt) / 60000)) : 0;
+    setEnded({ mins, n, last: lastTheirs?.text ?? null, partner: pair?.partner?.name ?? 'them' });
+    emit('pair:leave');
+    resetChat();
+    setPhase('ended');
+  }, [pair, resetChat]);
+  const report = useCallback(async () => {
+    await emit('pair:report', { requeue: false });
+    resetChat();
+    setPhase('reported');
+  }, [resetChat]);
+  const again = useCallback(() => {
+    resetChat();
+    setLeft(null);
+    setSince(Date.now());
+    setPhase('matching');
+    startLooking();
+  }, [resetChat, startLooking]);
 
-        <main className="convo">
-          {live && (
-            <section aria-label="Voice call" className="call">
-              <div className="top">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="dot pulse" />
-                  VOICE · {call.state === 'live' ? 'LIVE' : call.state === 'failed' ? 'COULDN’T CONNECT' : 'CONNECTING…'}
-                </span>
-                <span className="dim3">DIRECT CONNECTION</span>
-              </div>
-              <div className="peers">
-                <div className="peer"><span className="nc">{partner}</span>{call.speaking.has('partner') ? <Bars /> : <IdleDots />}</div>
-                <div className="peer"><span>YOU{muted ? ' · MUTED' : ''}</span>{call.speaking.has('me') && !muted ? <Bars /> : <IdleDots />}</div>
-              </div>
-              {call.state === 'failed' && (
-                <p className="dim" style={{ fontSize: 12, lineHeight: 1.6 }}>YOUR NETWORKS COULDN&apos;T REACH EACH OTHER DIRECTLY. TEXT STILL WORKS. YOU CAN END THE CALL AND TRY AGAIN LATER.</p>
-              )}
-              <div className="btns">
-                <button type="button" className="btn" onClick={onMute}>{muted ? (narrow ? 'UNMUTE' : '[ M ] UNMUTE') : narrow ? 'MUTE' : '[ M ] MUTE'}</button>
-                <button type="button" className="btn solid" onClick={onEndCall}>{narrow ? 'END CALL' : '[ E ] END CALL — BACK TO TEXT'}</button>
-              </div>
-            </section>
-          )}
-          <div role="log" aria-label="Conversation" className="thread" ref={thread}>
-            <div className="line first">
-              <span className="who">MATCHED</span>
-              <span className="txt">SAY HI, AND MAYBE ASK WHERE THEY&apos;RE CHATTING FROM.</span>
-            </div>
-            {msgs.map((m) =>
-              m.from === 'sys' ? (
-                <div key={m.id} className="line sysl"><span>VOICE</span><span>{m.text}</span></div>
-              ) : m.from === 'me' ? (
-                <div key={m.id} className="line me"><span className="who">YOU</span><span className="txt nc">{m.text}</span></div>
-              ) : (
-                <div key={m.id} className="line"><span className="who nc">{partner}</span><span className="txt nc">{m.text}</span></div>
-              )
-            )}
-            {typing && !live && (
-              <div className="line" style={{ color: 'var(--fg-3)' }}><span className="nc">{partner}</span><span>TYPING<span className="cursor">_</span></span></div>
-            )}
-            {voice === 'asked' && (
-              <div role="status" className="line pending">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--fg-2)' }}><span className="dot pulse" />VOICE</span>
-                <span>REQUEST SENT. WAITING FOR <span className="nc">{partner}</span> TO ACCEPT. KEEP TYPING MEANWHILE.</span>
-              </div>
-            )}
-          </div>
-          <form className="chat-compose" onSubmit={onSend}>
-            <label>
-              <span>&gt;</span>
-              <input
-                value={draft}
-                onChange={(e) => onDraft(e.target.value)}
-                placeholder={live ? 'TYPE WHILE YOU TALK' : narrow ? 'SAY SOMETHING…' : 'SAY SOMETHING… (ESC ESC TO SKIP)'}
-                aria-label="Message"
-                maxLength={500}
-                autoComplete="off"
-              />
-              {draft.length >= 400 && <span className="dim3" style={{ fontSize: 11, color: draft.length >= 450 ? 'var(--fg)' : undefined }}>{draft.length}/500</span>}
-            </label>
-            {live ? (
-              <button type="button" className="btn dash voice-slot" disabled style={{ color: 'var(--fg-2)' }}>VOICE IS ON</button>
-            ) : voice === 'asked' ? (
-              <button type="button" className="btn dash voice-slot" disabled>VOICE REQUESTED…</button>
-            ) : (
-              <button type="button" className="btn voice-slot" onClick={onAskVoice}>[ V ] ASK FOR VOICE</button>
-            )}
-            <button type="submit" className="btn solid send" style={{ height: 44 }}>SEND ↵</button>
-          </form>
-        </main>
-      </div>
-      {overlays}
-    </div>
+  const voiceSupported = () => typeof window !== 'undefined' && !!(navigator.mediaDevices?.getUserMedia && window.RTCPeerConnection);
+  const askVoice = useCallback(async () => {
+    if (voice !== 'off') return;
+    if (!voiceSupported()) return setNoVoice(true);
+    // the mic is asked for only after they say yes (see below)
+    const r = await emit('pair:voiceRequest');
+    if (r.ok) {
+      setVoice('asked');
+      setDropped(null);
+      add('sys', `${clock()} · you asked for voice`);
+    }
+  }, [voice, mic]);
+  const cancelVoice = useCallback(() => {
+    emit('pair:voiceCancel');
+    setVoice('off');
+    closeMic();
+    setTrack(null);
+  }, []);
+  const answerVoice = useCallback(async (yes) => {
+    if (!yes || !voiceSupported()) {
+      setVoice('off');
+      if (yes) setNoVoice(true);
+      return emit('pair:voiceDecline');
+    }
+    const ok = await mic.ask();
+    if (!ok) {
+      setVoice('off');
+      return emit('pair:voiceDecline');
+    }
+    setTrack(micTrack());
+    emit('pair:voiceAccept');
+  }, [mic]);
+  const endCall = useCallback(() => emit('pair:voiceEnd'), []);
+
+  // ---------- what's on screen ----------
+  const partner = pair?.partner?.name ?? '…';
+  const myRole = pair?.role ?? role;
+  const theirRole = pair?.partner?.role;
+  const lead = myRole === 'listen' ? 'they lead.' : theirRole === 'talk' && myRole === 'talk' ? 'take turns.' : 'you lead.';
+  const statusText = away ? 'RECONNECTING…' : myRole === 'listen' ? "YOU'RE LISTENING" : theirRole === 'talk' && myRole === 'talk' ? 'TAKING TURNS' : "THEY'RE LISTENING";
+
+  const vals = useMemo(() => ({
+    partner, PARTNER: partner.toUpperCase(), me, ME: me.toUpperCase(),
+    joined: pair ? clockAmPm(pair.startedAt - (serverNow() - Date.now())) : clockAmPm(),
+    status: statusText, lead,
+    slipAt: dropped || closingAt || clockAmPm(),
+    together: pair ? `${Math.max(1, Math.round((serverNow() - pair.startedAt) / 60000))} MIN TOGETHER` : '',
+    callState: call.state === 'live' ? 'ON VOICE' : call.state === 'failed' ? 'LINE DROPPED' : 'CONNECTING…',
+    themState: call.speaking.has('partner') ? 'SPEAKING' : 'LISTENING',
+    meState: muted ? 'MUTED' : call.speaking.has('me') ? 'SPEAKING' : 'LISTENING',
+    muteLabel: muted ? 'unmute' : 'mute',
+    // matching / requeue / end
+    crumb: role === 'listen' ? 'listen pod' : 'talk pod',
+    whoFirst: role === 'listen' ? "YOU'LL" : "THEY'LL",
+    matchTitle: role === 'listen' ? 'Finding someone to listen to…' : "Finding someone who'll listen…",
+    awake: role === 'listen'
+      ? `${Math.max(0, (lobby?.waiting ?? 0) - (lobby?.listeners ?? 0))} WAITING TO TALK`
+      : lobby?.listeners ? `${lobby.listeners} ${lobby.listeners === 1 ? 'LISTENER' : 'LISTENERS'} AWAKE` : 'A QUIET NIGHT SO FAR',
+    leftAt: left ? clockAmPm(left.at) : '',
+    looked: `LOOKED FOR ${Math.max(1, Math.round((Date.now() - since) / 60000))} MINUTES`,
+    stats: ended ? `${ended.mins} ${ended.mins === 1 ? 'MINUTE' : 'MINUTES'} · ${ended.n} ${ended.n === 1 ? 'MESSAGE' : 'MESSAGES'} · 0 KEPT` : '',
+    lastLabel: ended?.last ? `${ended.partner.toUpperCase()}'S LAST WORDS` : 'FROM US',
+    lastWords: ended?.last ?? 'you showed up tonight. that counts.'
+  }), [partner, me, pair, statusText, lead, dropped, closingAt, call.state, call.speaking, muted, role, lobby?.waiting, lobby?.listeners, left, since, ended]);
+  // the requeue screen talks about the person who left
+  const requeueVals = useMemo(() => ({ ...vals, partner: left?.name ?? 'they', PARTNER: (left?.name ?? 'they').toUpperCase() }), [vals, left]);
+
+  const ctx = useMemo(() => ({
+    phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince
+  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince]);
+
+  const links = useMemo(() => ({
+    VoiceWait: askVoice,
+    PodEnd: leaveGently,
+    Reported: report,
+    Matching: again,
+    'keep-going': () => setNudge(false),
+    mutelabel: () => setMuted((m) => !m),
+    Pod: voice === 'incoming' ? () => answerVoice(false) : voice === 'asked' ? cancelVoice : voice === 'on' ? endCall : () => {},
+    Call: () => answerVoice(true)
+  }), [askVoice, leaveGently, report, again, voice, answerVoice, cancelVoice, endCall]);
+
+  const micActs = useMemo(() => ({
+    'allow mic': () => mic.allow(),
+    'stay on text': () => mic.decline(),
+    reload: () => window.location.reload(),
+    'continue on text': () => setNoVoice(false)
+  }), [mic]);
+  const reconnectActs = useMemo(() => ({ 'leave gently': leaveGently }), [leaveGently]);
+
+  // which board
+  let D, M, v = vals, acts = null;
+  if (phase === 'intro') [D, M] = [DListener, MListener];
+  else if (phase === 'matching') [D, M] = [DMatching, MMatching];
+  else if (phase === 'requeue') [D, M, v] = [DRequeue, MRequeue, requeueVals];
+  else if (phase === 'nobody') [D, M] = [DNoOne, MNoOne];
+  else if (phase === 'ended') [D, M] = [DEnd, MEnd];
+  else if (phase === 'reported') [D, M] = [DReported, MReported];
+  else if (phase === 'paused') [D, M] = [DPaused, MPaused];
+  else if (phase === 'closed') [D, M] = [DClosedMid, MClosedMid];
+  else if (status === 'reconnecting') [D, M, acts] = [DReconnect, MReconnect, reconnectActs];
+  else if (mic.modal === 'ask') [D, M, acts] = [DMicAsk, MMicAsk, micActs];
+  else if (mic.modal === 'blocked') [D, M, acts] = [DMicBlocked, MMicBlocked, micActs];
+  else if (noVoice) [D, M, acts] = [DNoVoice, MNoVoice, micActs];
+  else if (voice === 'on') [D, M] = [DCall, MCall];
+  else if (voice === 'incoming') [D, M] = [DVoiceAsk, MVoiceAsk];
+  else if (nudge) [D, M] = [DNudge, MNudge];
+  else if (voice === 'asked') [D, M] = [DVoiceWait, MVoiceWait];
+  else if (dropped) [D, M] = [DDropped, MDropped];
+  else if (closingAt) [D, M] = [DClosing, MClosing];
+  else [D, M] = [DPod, MPod];
+
+  return (
+    <PodCtxBridge ctx={ctx}>
+      <Acts acts={acts || {}}>
+        <Screen desktop={D} phone={M} vals={v} slots={SLOTS} links={links} css={POD_EXTRA_CSS} />
+      </Acts>
+    </PodCtxBridge>
   );
 }
 
-function VoiceConsent({ from, onAnswer }) {
-  const now = useNow(true, 500);
-  const left = Math.max(0, from.expiresAt - now);
-  return (
-    <Modal label="Voice request">
-      <div className="head">
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="dot ring" />INCOMING REQUEST · {mmss(left)}</span>
-        <span>NOTHING STARTS UNTIL YOU SAY YES</span>
-      </div>
-      <h1 style={{ fontSize: 32 }}><span className="nc">{from.name}</span> WANTS TO SWITCH TO VOICE.<span className="cursor">_</span></h1>
-      <dl className="kv" style={{ rowGap: 14 }}>
-        <dt>AUDIO</dt><dd>DEVICE TO DEVICE. NOT THROUGH US.</dd>
-        <dt>YOUR MIC</dt><dd>OFF UNTIL YOU ACCEPT</dd>
-        <dt>TEXT</dt><dd>STAYS OPEN THE WHOLE TIME</dd>
-        <dt>ENDING IT</dt><dd>EITHER OF YOU, ANYTIME</dd>
-      </dl>
-      <div className="two">
-        <button type="button" className="btn solid tall" onClick={() => onAnswer(true)}>[ Y ] ACCEPT</button>
-        <button type="button" className="btn tall" onClick={() => onAnswer(false)}>[ N ] DECLINE, STAY IN TEXT</button>
-      </div>
-    </Modal>
-  );
-}
-
-function Blocked() {
-  return (
-    <div className="page">
-      <TopBar crumb="/CHAT" showOnline={false} back={{ label: '← LOBBY', href: '/' }} />
-      <main className="main split">
-        <div className="lead" style={{ width: 760 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}><span className="tagbox">[ BLOCKED ]</span><span className="dim">1:1 MATCHMAKING</span></div>
-          <h1 className="h-40">YOU&apos;VE BEEN REMOVED FROM 1:1 MATCHMAKING AFTER MULTIPLE REPORTS.</h1>
-          <p className="p-16">SEVERAL DIFFERENT PEOPLE REPORTED YOU IN THIS SESSION. YOU WON&apos;T BE MATCHED WITH ANYONE ELSE FOR THE REST OF IT.</p>
-          <Link href="/" className="btn" style={{ alignSelf: 'flex-start', height: 52, padding: '0 24px' }}>[ BACK TO LOBBY ]</Link>
-        </div>
-        <dl className="side kv" style={{ padding: '32px 36px', gridTemplateColumns: '120px 1fr', border: '1px solid var(--rule-2)', fontSize: 12, lineHeight: 1.6 }}>
-          <dt className="dim3">WHY</dt><dd className="dim">ENOUGH REPORTS FROM DIFFERENT PEOPLE TRIGGER THIS AUTOMATICALLY. NO HUMAN DECIDED IT.</dd>
-          <dt className="dim3">WHAT&apos;S KEPT</dt><dd className="dim">NOTHING. REPORTS LIVE IN MEMORY AND DISAPPEAR WITH THE SESSION.</dd>
-          <dt className="dim3">RULES</dt><dd><Link href="/terms" className="dim" style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>READ THE TERMS →</Link></dd>
-        </dl>
-      </main>
-      <Footer />
-    </div>
-  );
-}
-
-function Bars() {
-  return (
-    <span aria-label="Speaking" className="speaking" style={{ height: 22 }}>
-      {[10, 22, 14, 18, 8, 16].map((h, i) => <span key={i} className="bar" style={{ height: h, background: 'var(--accent)', animationDelay: `${i * 0.1}s` }} />)}
-    </span>
-  );
-}
-function IdleDots() {
-  return <span className="idle-dots" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} />)}</span>;
+// Tells the slots whether the phone or desktop board is showing (their markup differs).
+function PodCtxBridge({ ctx, children }) {
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const f = () => {
+      const w = window.innerWidth, h = window.innerHeight;
+      setPhone(w < 700 || (w < 1000 && h > w));
+    };
+    f();
+    window.addEventListener('resize', f);
+    return () => window.removeEventListener('resize', f);
+  }, []);
+  const value = useMemo(() => ({ ...ctx, phone }), [ctx, phone]);
+  return <PodCtx.Provider value={value}>{children}</PodCtx.Provider>;
 }

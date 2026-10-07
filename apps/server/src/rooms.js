@@ -1,9 +1,13 @@
 import { CHANNELS, CHANNEL_BY_ID, ROLES, ERRORS } from '@wisp/shared';
 import { randomUUID } from 'node:crypto';
+import { POD_CLOSED, QUESTION_ROOM, questionFor } from '@wisp/shared/pods.js';
 import { config } from './config.js';
 
 const L = config.limits;
 const { MOD, SPEAKER, LISTENER } = ROLES;
+// Seats on an open pod's stage (the V5 room board has four). Mods choose who fills them.
+export const STAGE_CAP = 4;
+const STAGE_FULL = 'stage_full';
 
 // Reports needed to remove someone. 5 in a busy room, but never more than half of the others,
 // so a small room can still act (with a floor of 2 so one person can't remove anyone alone).
@@ -19,7 +23,39 @@ export class Rooms {
   }
 
   counts() {
-    return CHANNELS.map((c) => ({ id: c.id, count: this.rooms.get(c.id)?.members.size ?? 0 }));
+    return CHANNELS.map((c) => {
+      const room = this.rooms.get(c.id);
+      const stage = room ? [...room.members.values()].filter((m) => m.role !== LISTENER).map((m) => m.user.name) : [];
+      return { id: c.id, count: room?.members.size ?? 0, stage: stage.slice(0, 3), stageCount: stage.length };
+    });
+  }
+
+  // Tonight's question: one fixed room. Who's in it (for the page before you join).
+  questionInfo() {
+    const room = this.rooms.get(QUESTION_ROOM.id);
+    return {
+      question: questionFor(),
+      cap: QUESTION_ROOM.cap,
+      count: room?.members.size ?? 0,
+      members: room ? [...room.members.values()].map((m) => ({ name: m.user.name, role: m.role, muted: m.role !== LISTENER && Boolean(m.muted) })) : []
+    };
+  }
+
+  cap(room) {
+    return room.id === QUESTION_ROOM.id ? QUESTION_ROOM.cap : L.ROOM_CAP;
+  }
+
+  // Pods closed for the night: everyone is walked out of every room.
+  closeAll() {
+    for (const room of [...this.rooms.values()]) {
+      for (const m of [...room.members.values()]) {
+        this.clearMemberTimers(room, m);
+        m.user.roomId = null;
+        this.hub.toUser(m.user, 'pods:closed', { where: 'room' });
+      }
+      this.rooms.delete(room.id);
+    }
+    this.hub.lobbyChanged();
   }
 
   get(user) {
@@ -35,7 +71,9 @@ export class Rooms {
     return {
       id: room.id,
       name: room.name,
-      cap: L.ROOM_CAP,
+      cap: this.cap(room),
+      stageCap: room.id === QUESTION_ROOM.id ? null : STAGE_CAP,
+      question: room.id === QUESTION_ROOM.id ? questionFor() : undefined,
       serverNow: now,
       reportThreshold: reportThreshold(room.members.size),
       members: [...room.members.values()].map((m) => ({
@@ -73,8 +111,10 @@ export class Rooms {
 
   // ---------- join / leave ----------
 
-  join(user, channelId) {
-    const channel = CHANNEL_BY_ID.get(channelId);
+  // opts.voice (tonight's question only): come in on stage, mic on. Otherwise you come in listening.
+  join(user, channelId, opts = {}) {
+    const isQ = channelId === QUESTION_ROOM.id;
+    const channel = isQ ? QUESTION_ROOM : CHANNEL_BY_ID.get(channelId);
     if (!channel) return { error: ERRORS.NOT_FOUND };
     if (user.roomId === channelId) {
       const room = this.rooms.get(channelId);
@@ -82,7 +122,8 @@ export class Rooms {
     }
     let room = this.rooms.get(channelId);
     if (room?.banned.has(user.id)) return { error: ERRORS.REMOVED };
-    if (room && room.members.size >= L.ROOM_CAP) return { error: ERRORS.FULL };
+    if (!this.hub.podsOpen()) return { error: POD_CLOSED };
+    if (room && room.members.size >= (isQ ? QUESTION_ROOM.cap : L.ROOM_CAP)) return { error: ERRORS.FULL };
 
     this.hub.leaveEverything(user, 'switch');
 
@@ -105,13 +146,25 @@ export class Rooms {
 
     const now = Date.now();
     const member = { user, role: LISTENER, joinedAt: now, stageSince: null, promoteAt: null, promoteTimer: null };
+    if (isQ) {
+      // Tonight's question has no stage politics: you join with voice or you listen, and you can switch.
+      if (opts.voice) {
+        member.role = SPEAKER;
+        member.stageSince = now;
+      }
+      room.members.set(user.id, member);
+      user.roomId = room.id;
+      this.system(room, `${user.name} joined`, 'join');
+      this.broadcast(room);
+      return { snapshot: this.snapshot(room), history: room.messages, reported: this.reportedBy(room, user) };
+    }
     // The first people into an empty room start it, so they get the keys.
     if (room.members.size === 0) {
       room.foundingId = user.id;
       room.modsGranted = 0;
     }
     // First people into a room get the keys; so does anyone walking into a room with no mods at all.
-    if ((room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) || this.modCount(room) === 0) {
+    if (((room.modsGranted < L.FIRST_N_MODS && this.modCount(room) < L.FIRST_N_MODS) || this.modCount(room) === 0) && this.stageCount(room) < STAGE_CAP) {
       member.role = MOD;
       member.stageSince = now;
       room.modsGranted++;
@@ -147,7 +200,7 @@ export class Rooms {
     }
     const text = reason === 'removed' ? `${user.name} was removed after reports` : `${user.name} left`;
     this.system(room, text, reason === 'removed' ? 'removed' : 'leave');
-    if (member.role === MOD) this.ensureMods(room);
+    if (member.role === MOD && room.id !== QUESTION_ROOM.id) this.ensureMods(room);
     this.broadcast(room);
   }
 
@@ -163,6 +216,12 @@ export class Rooms {
   }
 
   // ---------- roles ----------
+
+  stageCount(room) {
+    let n = 0;
+    for (const m of room.members.values()) if (m.role !== LISTENER) n++;
+    return n;
+  }
 
   modCount(room) {
     let n = 0;
@@ -235,6 +294,7 @@ export class Rooms {
     const t = this.target(room, targetId);
     if (!t || t.role !== LISTENER) return { error: ERRORS.BAD_REQUEST };
     if (room.invites.has(t.user.id)) return { ok: true };
+    if (this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL };
     const expiresAt = Date.now() + L.INVITE_EXPIRY_MS;
     const timer = setTimeout(() => {
       if (room.invites.get(t.user.id)?.timer !== timer) return;
@@ -254,6 +314,7 @@ export class Rooms {
     const { room, member } = this.get(user);
     const inv = room?.invites.get(user.id);
     if (!inv) return { error: ERRORS.BAD_REQUEST };
+    if (accept && this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL }; // invite stays open until it expires
     clearTimeout(inv.timer);
     room.invites.delete(user.id);
     const inviter = this.hub.userById(inv.by);
@@ -303,6 +364,7 @@ export class Rooms {
     const t = this.target(room, targetId);
     const hand = t && room.hands.get(t.user.id);
     if (!hand) return { error: ERRORS.BAD_REQUEST };
+    if (approve && this.stageCount(room) >= STAGE_CAP) return { error: STAGE_FULL };
     clearTimeout(hand.timer);
     room.hands.delete(t.user.id);
     if (approve) {
@@ -330,6 +392,17 @@ export class Rooms {
     t.promoteTimer = null;
     this.hub.toUser(t.user, 'stage:demoted', { by: user.name });
     this.system(room, `${t.user.name} moved to listeners`, 'stage');
+    this.broadcast(room);
+    return { ok: true };
+  }
+
+  // Tonight's question only: switch between voice and just listening yourself.
+  questionVoice(user, on) {
+    const { room, member } = this.get(user);
+    if (!room || room.id !== QUESTION_ROOM.id) return { error: ERRORS.NOT_ALLOWED };
+    member.role = on ? SPEAKER : LISTENER;
+    member.stageSince = on ? Date.now() : null;
+    member.muted = false;
     this.broadcast(room);
     return { ok: true };
   }

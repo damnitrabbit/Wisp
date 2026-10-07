@@ -150,6 +150,8 @@ export default function Onboarding({ next, onDone }) {
             text={<>UP TO 10 PEOPLE. YOU JOIN AS A LISTENER. <br />RAISE YOUR HAND WHEN YOU WANT TO SPEAK.</>} />
           <ModeCard no="02" meta="NO FILTERS" title="1:1 CHAT" onClick={() => onDone('/chat')}
             text={<>ONE RANDOM STRANGER. TEXT FIRST. <br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
+          <ModeCard no="03" meta="NO NAME" title="ECHOES" onClick={() => onDone('/echoes')}
+            text={<>SAY IT OUT LOUD, THEN LEAVE. <br />STRANGERS LISTEN. GONE IN 24 HOURS.</>} />
         </div>
       </main>
       <Footer />

@@ -1,8 +1,15 @@
 // Font files ship with the site: visitors never hit Google.
-import '@fontsource/ibm-plex-mono/latin-300.css';
-import '@fontsource/ibm-plex-mono/latin-400.css';
-import '@fontsource/ibm-plex-mono/latin-500.css';
-import './globals.css';
+import '@fontsource/courier-prime/latin-400.css';
+import '@fontsource/courier-prime/latin-700.css';
+import '@fontsource/covered-by-your-grace/latin-400.css';
+import '@fontsource/nothing-you-could-do/latin-400.css';
+import '@fontsource/newsreader/latin-300.css';
+import '@fontsource/newsreader/latin-400.css';
+import '@fontsource/newsreader/latin-300-italic.css';
+import '@fontsource/newsreader/latin-400-italic.css';
+import '@/v5/base.css';
+import './v5.css';
+import Script from 'next/script';
 import Shell from '@/components/Shell';
 import { SITE_URL, SITE_NAME, TITLE, ALT_NAMES, DESCRIPTION, KEYWORDS } from '@/lib/site';
 
@@ -43,7 +50,7 @@ const jsonLd = [
 ];
 
 export const viewport = {
-  themeColor: '#000000',
+  themeColor: '#0D0D0E',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover'
@@ -55,6 +62,8 @@ export default function RootLayout({ children }) {
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Shell>{children}</Shell>
+        {/* the paper sounds: synthesised in the browser, nothing fetched; muted with the pill or M */}
+        <Script src="/sound.js" strategy="afterInteractive" />
       </body>
     </html>
   );

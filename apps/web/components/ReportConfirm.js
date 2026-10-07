@@ -20,10 +20,12 @@ export default function ReportConfirm({ name, where = 'room', onConfirm, onCance
         <dd>
           {where === 'room'
             ? 'WHEN ENOUGH PEOPLE IN THIS ROOM REPORT THEM, THEY’RE REMOVED AUTOMATICALLY. MODS INCLUDED.'
-            : 'THIS CHAT ENDS RIGHT AWAY. THREE REPORTS FROM DIFFERENT PEOPLE REMOVE SOMEONE FROM MATCHMAKING.'}
+            : where === 'echo'
+              ? 'THREE REPORTS FROM DIFFERENT PEOPLE TAKE IT DOWN FOR EVERYONE, RIGHT AWAY.'
+              : 'THIS CHAT ENDS RIGHT AWAY. THREE REPORTS FROM DIFFERENT PEOPLE REMOVE SOMEONE FROM MATCHMAKING.'}
         </dd>
         <dt>WHO KNOWS</dt>
-        <dd>NOBODY. THEY WON’T SEE THAT IT WAS YOU.</dd>
+        <dd>{where === 'echo' ? 'NOBODY. IT’S ANONYMOUS.' : 'NOBODY. THEY WON’T SEE THAT IT WAS YOU.'}</dd>
       </dl>
       <div className="two">
         <button type="button" className="btn solid tall" onClick={onConfirm}>

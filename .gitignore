@@ -9,3 +9,6 @@ coverage/
 .DS_Store
 *.log
 .vercel
+design/v5/out/
+design/v5/__pycache__/
+__pycache__/
