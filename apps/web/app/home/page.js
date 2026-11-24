@@ -87,10 +87,10 @@ export default function HomePage() {
   }), [online, label, name, open]);
 
   if (!ok || !info) return <div style={{ minHeight: '100dvh', background: '#0D0D0E' }} />;
-  if (blocked) return <Screen key="blk" desktop={Blocked} phone={MBlocked} vals={vals} slots={slots} links={blockedLinks} fit />;
-  if (note === 'remember') return <Screen key="rem" desktop={Remember} phone={MRemember} vals={vals} slots={slots} fit />;
-  if (note === 'welcome' && !open) return <Screen key="wb" desktop={WelcomeBack} phone={MWelcomeBack} vals={vals} slots={slots} fit />;
+  if (blocked) return <Screen key="blk" desktop={Blocked} phone={MBlocked} vals={vals} slots={slots} links={blockedLinks} />;
+  if (note === 'remember') return <Screen key="rem" desktop={Remember} phone={MRemember} vals={vals} slots={slots} />;
+  if (note === 'welcome' && !open) return <Screen key="wb" desktop={WelcomeBack} phone={MWelcomeBack} vals={vals} slots={slots} />;
   return open
-    ? <Screen key="open" desktop={Open} phone={MOpen} vals={vals} slots={slots} fit />
-    : <Screen key="closed" desktop={Closed} phone={MClosed} vals={vals} slots={slots} fit />;
+    ? <Screen key="open" desktop={Open} phone={MOpen} vals={vals} slots={slots} />
+    : <Screen key="closed" desktop={Closed} phone={MClosed} vals={vals} slots={slots} />;
 }

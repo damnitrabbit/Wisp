@@ -107,28 +107,13 @@ function build(html, vals, slots, links, router) {
 }
 
 // The board itself: the phone variant fills the phone; the desktop variant is a 1440-wide board scaled to the window.
-export default function Screen({ phone, desktop, vals = {}, slots, links, css = '', className = '', fit = false }) {
+export default function Screen({ phone, desktop, vals = {}, slots, links, css = '', className = '' }) {
   const view = useView();
   const scr = view ? (view.phone ? phone || desktop : desktop || phone) : null;
   const tree = useMemo(() => (scr ? build(scr.html, vals, slots, links) : null), [scr, vals, slots, links]);
   if (!scr) return <div style={{ minHeight: '100dvh', background: '#0D0D0E' }} />;
   const style = <style dangerouslySetInnerHTML={{ __html: scr.css + '\n' + css }} />;
   if (scr.phone) {
-    // "fit" boards are meant to sit on one screen (home). Scale the fixed board to contain the *visible*
-    // viewport (100svh, so Safari's toolbar is accounted for): the paper slips grow or shrink with the
-    // device and the padding stays proportional, instead of overflowing into a scroll on taller phones.
-    if (fit) {
-      const s = Math.min(view.w / scr.w, view.h / scr.h);
-      return (
-        <div className={className} style={{ height: '100svh', minHeight: '100svh', background: scr.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-          <div style={{ width: scr.w * s, height: scr.h * s, position: 'relative', flexShrink: 0 }}>
-            <div className="v5-phone" style={{ position: 'absolute', left: 0, top: 0, width: scr.w, height: scr.h, transform: `scale(${s})`, transformOrigin: '0 0', background: scr.bg, color: '#E9E9E7', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              {style}{tree}
-            </div>
-          </div>
-        </div>
-      );
-    }
     const fill = scr.h <= 844;
     const board = (
       <div className={`v5-phone ${className}`} style={{ position: 'relative', width: '100%', minWidth: 320, height: fill ? '100dvh' : 'auto', minHeight: fill ? 568 : scr.h, background: scr.bg, color: '#E9E9E7', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
