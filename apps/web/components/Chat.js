@@ -213,7 +213,18 @@ function NoteComposer({ node }) {
   const writing = kids[0]; // the "say thanks…" area
   const actions = kids[1]; // the "pin it / skip / 0·140" row (kept, and wired through context)
   const ref = useRef(null);
+  const actionsRef = useRef(null);
   useEffect(() => { if (!n.sent) ref.current?.focus(); }, [n.sent]);
+  // keep the designed "N / 140" counter live as they type (it's design text inside the actions row)
+  useEffect(() => {
+    const root = actionsRef.current;
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let tn;
+    while ((tn = walker.nextNode())) {
+      if (/^\s*\d+\s*\/\s*\d+\s*$/.test(tn.nodeValue)) { tn.nodeValue = `${n.text.length} / ${NOTE_MAX}`; break; }
+    }
+  }, [n.text, n.sent]);
   if (n.sent) {
     return <div style={{ ...styleObj(node.attribs.style), alignItems: 'center', justifyContent: 'center', color: '#5F584E', fontStyle: 'italic', fontFamily: "'Newsreader', Georgia, serif", fontSize: 17 }}>
       {n.skipped ? 'no note this time. that’s okay.' : 'pinned for them.'}
@@ -233,7 +244,7 @@ function NoteComposer({ node }) {
           e.preventDefault();
           if (a.dataset.act === 'pin-it') n.pin();
           else if (a.dataset.act === 'skip') n.skip();
-        }}>{domToReact([actions])}</span>
+        }} ref={actionsRef}>{domToReact([actions])}</span>
       ) : null}
     </div>
   );
