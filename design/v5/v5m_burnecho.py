@@ -308,9 +308,8 @@ echoes = f'''
 <div class="rise" style="--w:.7s;display:flex;align-items:center;justify-content:space-between;margin-top:16px">
 <span style="{MARK};font-size:22px;color:{PINK};transform:rotate(-3deg)">your turn?</span>{chip('leave yours →', 'V5MEchoWrite.dc.html', seed=611, w=180)}</div>
 <div class="rise" data-slot="wall" style="--w:.4s;position:relative;height:{WALL_H}px;margin-top:22px">{wall}</div>
-<div class="rise" style="--w:1.4s;display:flex;flex-direction:column;align-items:center;gap:16px;padding:10px 0 34px">
-<span style="{HAND};font-size:22px;color:{BOARDTXT}">that's everything from tonight.</span>
-{chip('leave yours →', 'V5MEchoWrite.dc.html', seed=612, w=180, kind='kraft')}</div>
+<div class="rise" style="--w:1.4s;display:flex;flex-direction:column;align-items:center;padding:16px 0 34px">
+<span style="{HAND};font-size:22px;color:{BOARDTXT}">that's everything from tonight.</span></div>
 </main>
 {mfooter()}'''
 mpage('V5MEchoes', 'Echoes (scrolls)', echoes, h=EH, css=ECHO_CSS)
