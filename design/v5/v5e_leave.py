@@ -121,7 +121,7 @@ board('V5EchoesEmpty', 'L13 — The wall is quiet', 1440, 900, 'edge_leave')
 m_spots = [(10, 30, 150, 150, -2), (190, 10, 150, 170, 2.4), (20, 430, 300, 140, 1.2), (180, 600, 150, 150, -2.2)]
 m_wall = (f'<div aria-hidden="true" style="position:absolute;inset:0">{wall_ghosts(346, 640, 61, 4, 10, m_spots)}'
           f'{scrap(290, 200, 10, .8, seed=73)}{pin(30, 600, "#7a2a22", 6)}</div>')
-m_note = (f'<div class="drop" style="position:absolute;left:{(346 - 306) / 2:.0f}px;top:170px;transform:rotate(-1.6deg)">'
+m_note = (f'<div class="drop" style="position:relative;z-index:1;transform:rotate(-1.6deg)">'
           f'{empty_note(306, 290, 26, 17.5, 6051, "V5MEchoWrite.dc.html", 250)}</div>')
 meempty = f'''
 {matmos()}
@@ -129,8 +129,8 @@ meempty = f'''
 <main style="position:relative;z-index:10;flex-grow:1;padding:0 {MPAD}px;display:flex;flex-direction:column">
 {h_hand('The wall is quiet.', 34)}
 <div class="rise" style="--w:1s;{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.7;color:{BOARDTXT};margin-top:6px">ANONYMOUS · EACH ONE FADES IN 24 HOURS</div>
-<div class="rise" style="--w:.4s;position:relative;flex-grow:1;margin-top:18px">{m_wall}{m_note}
-<div class="rise" style="--w:2s;position:absolute;left:0;right:0;top:486px;text-align:center;{HAND};font-size:19px;line-height:1.35;color:{BOARDTXT}">everything from last night<br>has already let go.</div></div>
+<div class="rise" style="--w:.4s;position:relative;flex-grow:1;margin-top:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px">{m_wall}{m_note}
+<div class="rise" style="--w:2s;position:relative;z-index:1;text-align:center;{HAND};font-size:19px;line-height:1.35;color:{BOARDTXT}">everything from last night<br>has already let go.</div></div>
 </main>
 {mfooter()}'''
 mpage('V5MEchoesEmpty', 'The wall is quiet', meempty, css=ECHO_CSS)
