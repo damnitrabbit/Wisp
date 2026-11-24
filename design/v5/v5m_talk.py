@@ -202,11 +202,11 @@ if __name__ == '__main__':
     you_pin = (150, 98)
     listeners = [(300, 52, -4, 711), (86, 214, 3, 712), (286, 200, -2, 713), (186, 300, 4, 714)]
     loader_html, loader_css = thread_loader('m', LBW, LBH, you_pin, (26, 18, 150, 104, -3), you_note(), listeners, slip=(104, 84), k=46)
-    mfacts = paper(f'''
-<div style="display:grid;grid-template-columns:92px 1fr;row-gap:9px;{TYPE};font-size:11px;letter-spacing:.1em;line-height:1.45;color:{INK}">
-<span style="color:{PENCIL}">THEY'LL</span><span>LISTEN FIRST</span>
-<span style="color:{PENCIL}">STARTS AS</span><span>TEXT · VOICE ONLY IF YOU BOTH SAY YES</span>
-<span style="color:{PENCIL}">KEPT</span><span>NOTHING</span></div>''', W, 128, rot=-1.2, seed=1501, pad='22px 24px', tapes=tape(W / 2 - 50, -12, 100, 26, rot=3, seed=150))
+    # Quiet board meta, not a paper card — the facts sit behind the headline and the let-it-out scraps.
+    mfacts = (f'<div style="display:grid;grid-template-columns:auto 1fr;row-gap:6px;column-gap:16px;{TYPE};font-size:10px;letter-spacing:.12em;line-height:1.5;color:{BOARDTXT};text-align:left">'
+              f'<span style="opacity:.55">THEY\'LL</span><span>LISTEN FIRST</span>'
+              f'<span style="opacity:.55">STARTS AS</span><span>TEXT · VOICE ONLY IF YOU BOTH SAY YES</span>'
+              f'<span style="opacity:.55">KEPT</span><span>NOTHING</span></div>')
     matching = f'''
 {matmos()}
 {mtopbar(crumb=POD11, back='V5MHomeOpen.dc.html')}

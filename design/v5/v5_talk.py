@@ -49,11 +49,12 @@ board = f'''
 <svg width="1400" height="330" viewBox="0 0 1400 330" aria-hidden="true" style="position:absolute;inset:0;overflow:visible;z-index:5">
 {_threads}{_knots}{_pins}
 </svg></div>'''
-mcard = paper(f'''
-<div style="display:grid;grid-template-columns:120px 1fr;row-gap:12px;{TYPE};font-size:13px;letter-spacing:.1em;color:{INK}">
-<span style="color:{PENCIL}">THEY'LL</span><span>LISTEN FIRST</span>
-<span style="color:{PENCIL}">STARTS AS</span><span>TEXT · VOICE ONLY IF YOU BOTH SAY YES</span>
-<span style="color:{PENCIL}">KEPT</span><span>NOTHING</span></div>''', 470, 160, rot=-1.5, seed=501, pad='28px 32px', tapes=tape(180, -13, 100, 26, rot=3, seed=51))
+# The "how a pod works" facts: secondary to the headline and the let-it-out scraps — quiet board meta,
+# not a paper card competing for attention.
+mcard = (f'<div style="display:grid;grid-template-columns:auto 1fr;row-gap:7px;column-gap:22px;{TYPE};font-size:11px;letter-spacing:.14em;line-height:1.5;color:{BOARDTXT};max-width:430px">'
+         f'<span style="opacity:.55">THEY\'LL</span><span>LISTEN FIRST</span>'
+         f'<span style="opacity:.55">STARTS AS</span><span>TEXT · VOICE ONLY IF YOU BOTH SAY YES</span>'
+         f'<span style="opacity:.55">KEPT</span><span>NOTHING</span></div>')
 def mini_scrap(text, feat, href, rot, seed, kind=''):
     inner = (f'<div style="{HAND};font-size:20px;color:{INK};white-space:nowrap">{text}</div>'
              f'<div style="{TYPE};font-size:9.5px;font-weight:700;letter-spacing:.18em;color:{PENCIL};margin-top:4px">{feat} →</div>')
