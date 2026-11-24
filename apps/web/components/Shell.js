@@ -72,7 +72,7 @@ function Reconnecting() {
 .nt-recon-spin{flex-shrink:0;animation:ntSpin 2.4s linear infinite}
 @keyframes ntSpin{to{transform:rotate(360deg)}}
 @keyframes ntReconIn{from{opacity:0;transform:translate(-50%,14px) rotate(-.6deg)}to{opacity:1;transform:translateX(-50%) rotate(-.6deg)}}
-@media (max-width:759px){.nt-recon{top:62px;bottom:auto}}
+@media (max-width:759px){.nt-recon{top:auto;bottom:calc(18px + env(safe-area-inset-bottom,0px));min-width:0;width:max-content;max-width:calc(100vw - 28px);height:auto;min-height:52px;padding:9px 16px}}
 @media (prefers-reduced-motion:reduce){.nt-recon,.nt-recon-spin{animation:none}}`}</style>
     </div>
   );
