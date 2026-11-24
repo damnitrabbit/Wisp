@@ -24,7 +24,9 @@ function Wall() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [notes, Math.floor(now / 60_000)]
   );
-  if (notes && notes.length === 0) return <Screen desktop={DE} phone={ME} />;
+  // Nothing to show yet (still loading / reconnecting) or nothing left tonight: the clean single-CTA
+  // empty board, not the full wall with its "that's everything from tonight" end-of-list CTA.
+  if (!notes || notes.length === 0) return <Screen desktop={DE} phone={ME} />;
   return <Screen desktop={D} phone={M} slots={slots} css={PHONE_CSS} />;
 }
 
