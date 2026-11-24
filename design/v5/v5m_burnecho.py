@@ -146,7 +146,7 @@ write_body = (f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true
               f'<div class="words" data-slot="burnText" style="position:relative;{SERIF};font-size:17px;line-height:{LH}px;color:{INK};padding-top:13px">{TEXT}<span class="blink" style="color:{RED}">|</span></div></sc-if>')
 voice_body = (f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div class="words" style="position:relative;padding-top:12px;color:{INK}">'
               f'<div style="{HAND};font-size:24px;line-height:1.2">a voice note, {{{{voiceLen}}}}</div>'
-              f'<div style="margin-top:10px">{wave(250, 48, 61, "mbv", .0, head=False, sw=2)}</div>'
+              f'<div style="margin-top:10px"><div data-slot="playWave" data-w="250" data-h="48" style="height:48px"></div></div>'
               f'<div style="display:flex;gap:22px;margin-top:12px;{TYPE};font-size:10.5px;letter-spacing:.16em"><button type="button" onClick="{{{{togglePlay}}}}" style="color:inherit;letter-spacing:inherit">{{{{playLabel}}}}</button><button type="button" onClick="{{{{reRecord}}}}" style="color:{PENCIL};letter-spacing:inherit">RE-RECORD</button></div>'
               f'<div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.45;color:{PENCIL};margin-top:12px">Only you hear it. When it burns, the recording goes with it.</div></div></sc-if>')
 sheet_inner = (f'<div style="position:relative;{HAND};font-size:19px;color:{PENCIL};padding-left:30px;margin-top:-2px" data-slot="stamp">tonight, 11:48 pm</div>'

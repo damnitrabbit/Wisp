@@ -492,7 +492,7 @@ RBH = 470
 rsheet = paper(f'''
 <div style="{HAND};font-size:24px;color:{PENCIL};margin-top:-4px" data-slot="stamp">tonight, 11:48 pm</div>
 <div style="margin-top:18px">{rec_head(30, 18)}</div>
-<div style="margin-top:18px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(512, 80, .78, 404, 'rlw')}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(512, 80)}</sc-if></div>
+<div style="margin-top:18px"><div data-slot="recWave" data-w="512" data-h="80" style="height:80px"></div></div>
 <div style="display:flex;justify-content:flex-end;margin-top:10px;{TYPE};font-size:11px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>
 <div style="{SERIF};font-style:italic;font-size:18px;line-height:1.5;color:{PENCIL};margin-top:10px">Only you hear it. When it burns, the recording goes with it.</div>
 <div style="position:absolute;left:44px;right:44px;bottom:40px;border-top:1px dashed {RULE};padding-top:18px;display:flex;align-items:center;gap:22px">
@@ -518,7 +518,7 @@ board('V5BurnRecording', 'L12 — Burn, recording a voice note', 1440, 900, 'edg
 mrsheet = paper(f'''
 <div style="{HAND};font-size:19px;color:{PENCIL};margin-top:-2px" data-slot="stamp">tonight, 11:48 pm</div>
 <div style="margin-top:22px">{rec_head(25, 15)}</div>
-<div style="margin-top:22px"><sc-if value="{{{{recording}}}}" hint-placeholder-val="{{{{ true }}}}">{live_wave(282, 78, .78, 404, 'mrlw', 2)}</sc-if><sc-if value="{{{{notRecording}}}}">{idle_wave(282, 78)}</sc-if></div>
+<div style="margin-top:22px"><div data-slot="recWave" data-w="282" data-h="78" style="height:78px"></div></div>
 <div style="display:flex;justify-content:flex-end;margin-top:12px;{TYPE};font-size:9.5px;letter-spacing:.14em;color:{PENCIL}"><span>UP TO 2 MINUTES</span></div>
 <div style="{SERIF};font-style:italic;font-size:15.5px;line-height:1.5;color:{PENCIL};margin-top:22px">Only you hear it. When it burns, the recording goes with it.</div>''',
                 MBW, 340, rot=-.8, kind='hi', seed=301, pad='26px 24px', tapes=tape(115, -13, 100, 26, rot=-3, seed=31))

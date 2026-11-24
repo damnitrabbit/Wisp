@@ -152,7 +152,7 @@ write_body = (f'<sc-if value="{{{{writeMode}}}}" hint-placeholder-val="{{{{ true
 wave_pts = ' '.join(f'{x},{40 + math.sin(x / 9) * (8 + 22 * abs(math.sin(x / 41))) * (1 if (x // 3) % 2 else -1) * random.Random(x).uniform(.4, 1):.1f}' for x in range(0, 420, 3))
 voice_body = (f'<sc-if value="{{{{speakMode}}}}" hint-placeholder-val="{{{{ false }}}}"><div class="words" style="position:relative;padding-top:12px;color:{INK}">'
               f'<div style="{HAND};font-size:28px;line-height:1.2">a voice note, {{{{voiceLen}}}}</div>'
-              f'<svg width="420" height="80" viewBox="0 0 420 80" style="margin-top:2px;display:block;height:58px" preserveAspectRatio="none" aria-hidden="true"><polyline points="{wave_pts}" fill="none" stroke="{INK}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>'
+              f'<div data-slot="playWave" data-w="420" data-h="58" style="margin-top:2px;height:58px"></div>'
               f'<div style="display:flex;gap:26px;margin-top:10px;{TYPE};font-size:12px;letter-spacing:.16em"><button type="button" onClick="{{{{togglePlay}}}}" style="color:inherit;letter-spacing:inherit">{{{{playLabel}}}}</button><button type="button" onClick="{{{{reRecord}}}}" style="color:{PENCIL};letter-spacing:inherit">RE-RECORD</button></div>'
               f'<div style="{SERIF};font-style:italic;font-size:18px;color:{PENCIL};margin-top:12px">Only you hear it. When it burns, the recording goes with it.</div></div></sc-if>')
 

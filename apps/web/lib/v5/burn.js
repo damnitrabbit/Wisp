@@ -69,10 +69,12 @@ export function useVoiceNote(maxSeconds = VOICE_MAX_S) {
   const [elapsed, setElapsed] = useState(0);
   const [clip, setClip] = useState(null); // { url, duration }
   const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1 through the clip, for the playback waveform
   const rec = useRef(null);
   const want = useRef(false); // still holding? (the permission prompt can outlast the press)
   const audio = useRef(null);
   const urlRef = useRef(null);
+  const durationRef = useRef(0); // the clip's real length (from recording time; WebM's audio.duration can be Infinity)
 
   const stopStream = () => {
     const r = rec.current;
@@ -116,6 +118,7 @@ export function useVoiceNote(maxSeconds = VOICE_MAX_S) {
       if (duration < 0.6 || !blob.size) return setState('idle');
       if (urlRef.current) URL.revokeObjectURL(urlRef.current);
       urlRef.current = URL.createObjectURL(blob);
+      durationRef.current = duration;
       setClip({ url: urlRef.current, duration });
       setState('done');
     };
@@ -146,12 +149,17 @@ export function useVoiceNote(maxSeconds = VOICE_MAX_S) {
     let a = audio.current;
     if (!a) {
       a = audio.current = new Audio();
-      a.addEventListener('ended', () => setPlaying(false));
+      a.addEventListener('ended', () => { setPlaying(false); setProgress(1); });
       a.addEventListener('pause', () => setPlaying(false));
+      a.addEventListener('timeupdate', () => {
+        const dur = durationRef.current || (Number.isFinite(a.duration) ? a.duration : 0);
+        setProgress(dur ? Math.min(1, a.currentTime / dur) : 0);
+      });
     }
     if (!a.paused) return pause();
     if (a.src !== urlRef.current) a.src = urlRef.current;
     a.currentTime = 0;
+    setProgress(0);
     a.play().then(() => setPlaying(true), () => setPlaying(false));
   }, []);
 
@@ -171,8 +179,10 @@ export function useVoiceNote(maxSeconds = VOICE_MAX_S) {
     }
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
+    durationRef.current = 0;
     setClip(null);
     setPlaying(false);
+    setProgress(0);
     setElapsed(0);
     setState((s) => (s === 'denied' || s === 'unsupported' ? s : 'idle'));
   }, []);
@@ -191,5 +201,5 @@ export function useVoiceNote(maxSeconds = VOICE_MAX_S) {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
   }, []);
 
-  return { state, elapsed, clip, playing, start, stop, togglePlay, clear };
+  return { state, elapsed, clip, playing, progress, start, stop, togglePlay, clear };
 }

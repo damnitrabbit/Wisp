@@ -1,6 +1,6 @@
 'use client';
 // BURN: write it (or say it), hold the match, watch it go. Nothing is sent or stored anywhere.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { attributesToProps } from 'html-react-parser';
 import Screen, { pickPhone } from '@/v5/Screen';
 import D from '@/v5/screens/V5Burn';
@@ -8,8 +8,21 @@ import M from '@/v5/screens/V5MBurn';
 import DRec from '@/v5/screens/V5BurnRecording';
 import MRec from '@/v5/screens/V5MBurnRecording';
 import { useHold, useVoiceNote, clock, HOLD_MS, VOICE_MAX_S } from '@/lib/v5/burn';
+import VoiceWave from '@/lib/v5/VoiceWave';
 
 const RED = '#B8352A';
+
+// Live waveform frac flows through context so it can update without re-parsing the whole screen.
+const BurnCtx = createContext({ recFrac: 0, playFrac: 0 });
+const dim = (node, k, d) => { const v = parseFloat(node.attribs?.[k]); return Number.isFinite(v) ? v : d; };
+function RecWave({ node }) {
+  const { recFrac } = useContext(BurnCtx);
+  return <VoiceWave frac={recFrac} w={dim(node, 'data-w', 512)} h={dim(node, 'data-h', 80)} sw={2} trackColor="#B3A99A" fillColor="#221E1A" playheadColor={RED} pencilRest trackBars={false} />;
+}
+function PlayWave({ node }) {
+  const { playFrac } = useContext(BurnCtx);
+  return <VoiceWave frac={playFrac} w={dim(node, 'data-w', 420)} h={dim(node, 'data-h', 58)} sw={2} trackColor="#C2B8A7" fillColor="#221E1A" playheadColor={RED} pencilRest={false} trackBars />;
+}
 const BURN_MS = { desk: 4700, phone: 4300 }; // the design's burn animation (T + .3s)
 
 // the ring fills over the whole hold
@@ -181,17 +194,28 @@ export default function BurnPage() {
   const slots = useMemo(
     () => ({
       burnText: (node) => <BurnText node={node} store={store} onEmpty={onEmpty} phone={pickPhone()} />,
-      stamp: (node) => <Stamp node={node} />
+      stamp: (node) => <Stamp node={node} />,
+      recWave: (node) => <RecWave node={node} />,
+      playWave: (node) => <PlayWave node={node} />
     }),
     [onEmpty]
   );
   const links = useMemo(() => ({}), []);
 
+  // waveform progress: the note draws in as you record (over the 2-min strip), and flows as it plays back
+  const recFrac = voice.state === 'recording' ? Math.min(1, voice.elapsed / VOICE_MAX_S) : 0;
+  const playFrac = voice.progress || 0;
+  const burnCtx = useMemo(() => ({ recFrac, playFrac }), [recFrac, playFrac]);
+
   // speak mode with nothing recorded yet: the recording sheet (L12)
   const recordingScreen = mode === 'speak' && !hasClip && stage === 'writing';
-  return recordingScreen ? (
-    <Screen key="rec" desktop={DRec} phone={MRec} vals={vals} slots={slots} links={links} css={CSS} />
-  ) : (
-    <Screen key="burn" desktop={D} phone={M} vals={vals} slots={slots} links={links} css={CSS} />
+  return (
+    <BurnCtx.Provider value={burnCtx}>
+      {recordingScreen ? (
+        <Screen key="rec" desktop={DRec} phone={MRec} vals={vals} slots={slots} links={links} css={CSS} />
+      ) : (
+        <Screen key="burn" desktop={D} phone={M} vals={vals} slots={slots} links={links} css={CSS} />
+      )}
+    </BurnCtx.Provider>
   );
 }
