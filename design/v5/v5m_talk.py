@@ -331,10 +331,10 @@ if __name__ == '__main__':
 {mfooter()}'''
     MPODEND_H, MPODEND_NOTES_H = 950, MH
     mpage('V5MPodEnd', 'Pod ended', mpodend(), h=MPODEND_H, css=end_css, script='renderVals() { return { someoneWaiting: true }; }')
-    LV.mark('V5MPodEnd', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+    LV.mark('V5MPodEnd', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}'), ('HEARD 4 PEOPLE', 'HEARD {{heard}}')])
     board('V5MPodEnd', 'MT04 — You were heard tonight · leave a note (scrolls)', MPODEND_H, 'm_talk')
     mpage('V5MPodEndNotes', 'Pod ended, notes crossed', mpodend(True), h=MPODEND_NOTES_H, css=end_css)
-    LV.mark('V5MPodEndNotes', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+    LV.mark('V5MPodEndNotes', replace=[('18 MIN · 42 MESSAGES · 0 KEPT', '{{stats}}'), ('HEARD 4 PEOPLE', 'HEARD {{heard}}')])
     board('V5MPodEndNotes', 'MT04b — Notes crossed', MPODEND_NOTES_H, 'm_talk')
 
     # =====================================================================

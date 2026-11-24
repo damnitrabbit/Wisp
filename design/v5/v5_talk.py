@@ -285,9 +285,9 @@ def podend_body(notes=False):
 <div style="display:flex;align-items:center;gap:30px">{link('talk to someone new', 'V5Matching.dc.html')}{chip('back home', 'V5Home.dc.html', seed=552, w=180)}</div></div>
 </main>'''
 page('V5PodEnd', 'Pod ended', podend_body(), css=end_css + note_css, script='renderVals() { return { someoneWaiting: true }; }')
-LV.mark('V5PodEnd', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+LV.mark('V5PodEnd', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}'), ('HEARD 4 PEOPLE', 'HEARD {{heard}}')])
 page('V5PodEndNotes', 'Pod ended, notes crossed', podend_body(True), css=end_css + note_css)
-LV.mark('V5PodEndNotes', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}')])
+LV.mark('V5PodEndNotes', replace=[('18 MINUTES · 42 MESSAGES · 0 KEPT', '{{stats}}'), ('HEARD 4 PEOPLE', 'HEARD {{heard}}')])
 
 # ---------------- GROUP ROOM (tonight's question) ----------------
 def person(name, state, me=False):

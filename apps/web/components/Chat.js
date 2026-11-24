@@ -678,7 +678,7 @@ export default function Chat({ role = 'talk' }) {
     lastWords: ended?.last ?? 'you showed up tonight. that counts.',
     // the notes screen: whether to offer "stay and listen", and the count this browser remembers
     someoneWaiting: (lobby?.waiting ?? 0) > 0,
-    heardCount: heard
+    heard: `${heard} ${heard === 1 ? 'PERSON' : 'PEOPLE'}`
   }), [partner, me, pair, statusText, lead, dropped, closingAt, call.state, call.speaking, muted, activeRole, lobby?.waiting, lobby?.listeners, left, since, ended, heard]);
   // the requeue screen talks about the person who left
   const requeueVals = useMemo(() => ({ ...vals, partner: left?.name ?? 'they', PARTNER: (left?.name ?? 'they').toUpperCase() }), [vals, left]);
