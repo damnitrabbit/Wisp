@@ -683,5 +683,35 @@
 "w": 390,
 "h": 844,
 "phone": true
+},
+"V5Lean": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5LeanListen": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MLean": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5MLeanListen": {
+"w": 390,
+"h": 844,
+"phone": true
+},
+"V5PodEndNotes": {
+"w": 1440,
+"h": 900,
+"phone": false
+},
+"V5MPodEndNotes": {
+"w": 390,
+"h": 844,
+"phone": true
 }
 }

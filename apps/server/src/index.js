@@ -319,6 +319,8 @@ export function createWisp() {
     // 1:1
     on('pair:join', ({ role }) => pairs.join(user, role));
     on('pair:leave', () => pairs.leave(user));
+    on('pair:wrap', () => pairs.wrap(user));
+    on('pair:note', ({ text }) => pairs.note(user, text));
     on('pair:skip', () => pairs.skip(user));
     on('pair:report', ({ requeue }) => pairs.report(user, requeue !== false));
     on('pair:voiceCancel', () => pairs.voiceCancel(user));

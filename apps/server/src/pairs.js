@@ -170,15 +170,46 @@ export class Pairs {
     return { pair, partner: pair.a === user ? pair.b : pair.a };
   }
 
+  // A gentle wind-down: both land on the notes screen and may leave each other one parting note.
+  // The pair stays alive (so a note can still cross) until each person leaves on their own. Nothing is kept.
+  wrap(user) {
+    const { pair, partner } = this.get(user);
+    if (!pair) return { error: ERRORS.BAD_REQUEST };
+    if (!pair.wrapping) {
+      pair.wrapping = true;
+      clearTimeout(pair.voiceTimer);
+      pair.voice = 'off';
+      pair.voiceBy = null;
+      this.hub.toUser(user, 'pair:wrap', { by: 'you' });
+      this.hub.toUser(partner, 'pair:wrap', { by: user.name });
+    }
+    return { ok: true };
+  }
+
+  // One optional parting note, relayed a single time to the partner and stored nowhere.
+  note(user, text) {
+    const { pair, partner } = this.get(user);
+    if (!pair) return { error: ERRORS.BAD_REQUEST }; // partner already gone — nothing lands
+    if (typeof text !== 'string') return { error: ERRORS.BAD_REQUEST };
+    const clean = text.replace(/\s+/g, ' ').trim().slice(0, L.PAIR_NOTE_MAX);
+    if (!clean) return { error: ERRORS.EMPTY };
+    this.hub.toUser(partner, 'pair:note', { text: clean, name: user.name });
+    return { ok: true };
+  }
+
   // Ends the pair. The partner is put back in line automatically; so is the leaver if they skipped.
+  // During a wind-down both are already on the notes screen, so the one left behind is not re-queued —
+  // they pick their own next step (talk to someone new, or home).
   end(user, reason) {
     const { pair, partner } = this.get(user);
     if (!pair) return;
     clearTimeout(pair.voiceTimer);
+    const wrapping = pair.wrapping;
     this.pairs.delete(pair.id);
     user.pairId = null;
     partner.pairId = null;
-    this.hub.toUser(partner, 'pair:partnerLeft', { name: user.name, reason: reason === 'report' ? 'skip' : reason });
+    this.hub.toUser(partner, 'pair:partnerLeft', { name: user.name, reason: reason === 'report' ? 'skip' : wrapping ? 'wrapped' : reason });
+    if (wrapping) return;
     if (this.isBlocked(partner)) return;
     if (partner.online) this.enqueue(partner);
     else partner.requeueOnResume = true;

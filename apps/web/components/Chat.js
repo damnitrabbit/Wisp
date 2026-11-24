@@ -13,6 +13,10 @@ import { usePairCall } from '@/lib/call';
 import { podsOpen as clientPodsOpen } from '@/lib/v5/hours';
 import { podMinsToClose, POD_CLOSING_WARN_MIN } from '@wisp/shared/pods.js';
 
+import DLean from '@/v5/screens/V5Lean';
+import MLean from '@/v5/screens/V5MLean';
+import DLeanListen from '@/v5/screens/V5LeanListen';
+import MLeanListen from '@/v5/screens/V5MLeanListen';
 import DMatching from '@/v5/screens/V5Matching';
 import MMatching from '@/v5/screens/V5MMatching';
 import DPod from '@/v5/screens/V5Pod';
@@ -61,6 +65,15 @@ const DEV = (() => {
 const NOBODY_AFTER_MS = DEV === 'nobody' ? 10_000 : 3 * 60_000; // "nobody's free right now" after this long looking
 const NUDGE_EVERY_MS = DEV === 'nudge' ? 15_000 : 10 * 60_000; // the 10 minute check-in
 
+const NOTE_MAX = 140; // a parting note at the end of a pod (matches the server's PAIR_NOTE_MAX)
+// Several "tonight I want to…" choices lead to the same Matching screen, so the role is read from the words tapped.
+function roleFromClick(e, fallback) {
+  const t = (e?.currentTarget?.textContent || '').toLowerCase();
+  if (/listen|room for someone/.test(t)) return 'listen';
+  if (/either|company/.test(t)) return 'any';
+  if (/talk|something on my mind|someone new/.test(t)) return 'talk';
+  return fallback;
+}
 let seq = 0;
 const nid = () => `l${++seq}`;
 const clock = (t = Date.now()) => {
@@ -112,6 +125,9 @@ function MsgList({ base }) {
     <div className="scroll" ref={ref} style={style} role="log" aria-label="Conversation" aria-live="polite"
       onScroll={(e) => { const el = e.currentTarget; pin.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
       <div style={{ marginTop: 'auto' }} />
+      {c.opening && (
+        <div className="msg" style={{ alignSelf: 'center', margin: '4px 0 16px', fontFamily: "'Courier Prime', 'Courier New', monospace", fontSize: 10, letterSpacing: '.16em', color: '#5F584E' }}>{c.opening}</div>
+      )}
       {c.items.map((m) => {
         const tpl = m.kind === 'me' ? P[k + 'Mine'] : m.kind === 'them' ? P[k + 'Theirs'] : m.kind === 'sys' ? P[k + 'Sys'] : m.kind === 'fail' ? P[k + 'Fail'] : P[k + 'Pencil'];
         return <Part key={m.id} html={tpl} vals={{ ...pv, text: m.text, t: m.t }} acts={m.kind === 'fail' ? { retry: () => c.retry(m) } : undefined} />;
@@ -186,7 +202,54 @@ function LastList({ base }) {
     </div>
   );
 }
-const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer /> };
+// The parting note you write for them (its "pin it" / "skip" buttons live outside the slot and call ctx.note).
+function NoteWrite(node) {
+  return <NoteComposer node={node} />;
+}
+function NoteComposer({ node }) {
+  const c = useContext(PodCtx);
+  const n = c.note;
+  const kids = tags(node);
+  const writing = kids[0]; // the "say thanks…" area
+  const actions = kids[1]; // the "pin it / skip / 0·140" row (kept, and wired through context)
+  const ref = useRef(null);
+  useEffect(() => { if (!n.sent) ref.current?.focus(); }, [n.sent]);
+  if (n.sent) {
+    return <div style={{ ...styleObj(node.attribs.style), alignItems: 'center', justifyContent: 'center', color: '#5F584E', fontStyle: 'italic', fontFamily: "'Newsreader', Georgia, serif", fontSize: 17 }}>
+      {n.skipped ? 'no note this time. that’s okay.' : 'pinned for them.'}
+    </div>;
+  }
+  return (
+    <div style={styleObj(node.attribs.style)}>
+      <div style={{ ...styleObj(writing?.attribs?.style), flexGrow: 1, minHeight: 0 }}>
+        <textarea ref={ref} value={n.text} onChange={(e) => n.onText(e.target.value.slice(0, NOTE_MAX))} maxLength={NOTE_MAX}
+          aria-label="Leave them a note" placeholder="say thanks, or anything…" spellCheck={false}
+          style={{ width: '100%', height: '100%', minHeight: 48, resize: 'none', border: 0, outline: 'none', background: 'transparent', font: 'inherit', color: '#221E1A', caretColor: '#B8352A' }} />
+      </div>
+      {actions ? (
+        <span style={{ display: 'contents' }} onClickCapture={(e) => {
+          const a = e.target.closest('a');
+          if (!a) return;
+          e.preventDefault();
+          if (a.dataset.act === 'pin-it') n.pin();
+          else if (a.dataset.act === 'skip') n.skip();
+        }}>{domToReact([actions])}</span>
+      ) : null}
+    </div>
+  );
+}
+// Their note to you, when it lands — otherwise the designed "it lands here" line stays.
+function TheirNote(node) {
+  return <TheirNoteBox base={node.attribs.style} />;
+}
+function TheirNoteBox({ base }) {
+  const c = useContext(PodCtx);
+  const style = styleObj(base);
+  if (!c.their) return <div style={style}>if they leave you one, it lands here.</div>;
+  // their card sits on the dark board, so the note is written in light ink, not paper ink
+  return <div style={{ ...style, color: '#E4DAC9', fontFamily: "'Nothing You Could Do', 'Caveat', cursive", fontSize: 23, lineHeight: 1.35 }}>{c.their.text}</div>;
+}
+const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer />, noteWrite: NoteWrite, theirNote: TheirNote };
 const POD_EXTRA_CSS = PART_CSS + `
 .pod-input::placeholder{color:#5F584E;font-style:italic;opacity:1}
 .pod-input:focus-visible{outline:none;box-shadow:none}
@@ -200,8 +263,12 @@ export default function Chat({ role = 'talk' }) {
   const lobby = useWisp((s) => s.lobby);
   const me = session?.name ?? 'you';
 
-  const [phase, setPhase] = useState(role === 'listen' ? 'intro' : 'matching');
-  // intro | matching | requeue | nobody | chat | ended | reported | closed | paused
+  const [phase, setPhase] = useState('lean');
+  // lean | leanListen | matching | requeue | nobody | chat | ended | reported | closed | paused
+  const [lean, setLean] = useState(null); // the role you chose on the "tonight I mostly want to…" screen
+  const [note, setNote] = useState({ text: '', sent: false, skipped: false }); // your parting note
+  const [their, setTheir] = useState(null); // their parting note, when it lands: { text, name }
+  const [heard, setHeard] = useState(0); // people you've been with (this browser only)
   const [since, setSince] = useState(() => Date.now());
   const [pair, setPair] = useState(null);
   const [items, setItems] = useState([]);
@@ -228,6 +295,9 @@ export default function Chat({ role = 'talk' }) {
   phaseRef.current = phase;
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const pairRef = useRef(pair);
+  pairRef.current = pair;
+  const noteDraft = useRef(''); // the parting note as it's typed (read on "pin it" without a stale closure)
 
   const open = lobby?.pods ? lobby.pods.open : clientPodsOpen();
 
@@ -254,8 +324,20 @@ export default function Chat({ role = 'talk' }) {
     closeMic();
   }, []);
 
-  const startLooking = useCallback(async (next = 'matching') => {
-    const r = await emit('pair:join', { role });
+  const activeRole = lean ?? role;
+
+  // people you've sat with before (kept on this device only, never sent)
+  useEffect(() => {
+    try { setHeard(Math.max(0, parseInt(localStorage.getItem('nt-heard') || '0', 10) || 0)); } catch {}
+  }, []);
+  const bumpHeard = useCallback(() => setHeard((h) => {
+    const n = h + 1;
+    try { localStorage.setItem('nt-heard', String(n)); } catch {}
+    return n;
+  }), []);
+
+  const startLooking = useCallback(async (joinRole = lean ?? role, next = 'matching') => {
+    const r = await emit('pair:join', { role: joinRole });
     if (r.error === 'blocked') return setPhase('paused');
     if (r.error === 'closed') return router.replace('/asleep');
     if (r.error) return;
@@ -263,7 +345,33 @@ export default function Chat({ role = 'talk' }) {
       setSince(Date.now());
       setPhase((p) => (p === 'chat' ? p : next));
     }
-  }, [role, router]);
+  }, [lean, role, router]);
+
+  // The "tonight I mostly want to…" choice: talk/any go straight to looking, listen sees the three promises first.
+  const chooseLean = useCallback((r) => {
+    setLean(r);
+    setSince(Date.now());
+    setPhase('matching');
+    startLooking(r);
+  }, [startLooking]);
+
+  // Both land on the notes screen (the pod stays alive on the server so a note can still cross). Idempotent:
+  // whichever fires first — your own "leave gently" or the server's pair:wrap echo — wins. Defined before the
+  // server-events effect that calls it (on pair:wrap), to stay out of the temporal dead zone.
+  const enterNotes = useCallback(() => {
+    if (phaseRef.current === 'ended') return;
+    const pr = pairRef.current;
+    const list = itemsRef.current;
+    const lastTheirs = [...list].reverse().find((m) => m.kind === 'them');
+    const n = list.filter((m) => m.kind === 'me' || m.kind === 'them').length;
+    const mins = pr ? Math.max(1, Math.round((serverNow() - pr.startedAt) / 60000)) : 0;
+    setEnded({ mins, n, last: lastTheirs?.text ?? null, partner: pr?.partner?.name ?? 'them' });
+    setNote({ text: '', sent: false, skipped: false });
+    bumpHeard();
+    closeMic();
+    setVoice('off');
+    setPhase('ended');
+  }, [bumpHeard]);
 
   // ---------- server events ----------
   useEffect(() => {
@@ -286,7 +394,11 @@ export default function Chat({ role = 'talk' }) {
         clearTimeout(typingTimer.current);
         if (t) typingTimer.current = setTimeout(() => setTyping(false), 5000);
       }),
+      on('pair:wrap', () => enterNotes()),
+      on('pair:note', (n) => setTheir({ text: n.text, name: n.name })),
       on('pair:partnerLeft', (p) => {
+        // On the notes screen (a gentle wind-down) they've just headed off — stay put, keep any note they left.
+        if (phaseRef.current === 'ended' || p.reason === 'wrapped') return;
         resetChat();
         setLeft({ name: p.name, at: Date.now() });
         setSince(Date.now());
@@ -339,9 +451,9 @@ export default function Chat({ role = 'talk' }) {
       })
     ];
     return () => offs.forEach((f) => f());
-  }, [role, resetChat, startLooking, router]);
+  }, [role, resetChat, startLooking, enterNotes, router]);
 
-  // First visit: start looking (talk), or wait for "I'm ready" (listen). Resume a live pod after a reload.
+  // First visit: the "tonight I mostly want to…" screen chooses what to look for. Resume a live pod after a reload.
   const started = useRef(false);
   useEffect(() => {
     if (started.current || !session) return;
@@ -350,8 +462,8 @@ export default function Chat({ role = 'talk' }) {
       setPair(session.pair);
       setNudgeAt(Date.now() + NUDGE_EVERY_MS - (serverNow() - session.pair.startedAt));
       setPhase('chat');
-    } else if (role !== 'listen') startLooking();
-  }, [session, role, startLooking]);
+    }
+  }, [session]);
 
   // Outside pod hours there's nothing to join.
   useEffect(() => {
@@ -451,16 +563,25 @@ export default function Chat({ role = 'talk' }) {
     }
   }, []);
 
+  // "leave gently" / "ends now": wind the pod down for both of you.
   const leaveGently = useCallback(() => {
-    const list = itemsRef.current;
-    const lastTheirs = [...list].reverse().find((m) => m.kind === 'them');
-    const n = list.filter((m) => m.kind === 'me' || m.kind === 'them').length;
-    const mins = pair ? Math.max(1, Math.round((serverNow() - pair.startedAt) / 60000)) : 0;
-    setEnded({ mins, n, last: lastTheirs?.text ?? null, partner: pair?.partner?.name ?? 'them' });
+    emit('pair:wrap');
+    enterNotes();
+  }, [enterNotes]);
+  // Leave the notes screen for good: tear the lingering pod down and clear the notes.
+  const finalLeave = useCallback(() => {
     emit('pair:leave');
     resetChat();
-    setPhase('ended');
-  }, [pair, resetChat]);
+    setTheir(null);
+    setNote({ text: '', sent: false, skipped: false });
+  }, [resetChat]);
+  const pinNote = useCallback(() => {
+    const text = noteDraft.current.trim();
+    if (!text) return;
+    emit('pair:note', { text });
+    setNote({ text, sent: true, skipped: false });
+  }, []);
+  const skipNote = useCallback(() => setNote((n) => ({ ...n, sent: true, skipped: true })), []);
   const report = useCallback(async () => {
     await emit('pair:report', { requeue: false });
     resetChat();
@@ -471,8 +592,25 @@ export default function Chat({ role = 'talk' }) {
     setLeft(null);
     setSince(Date.now());
     setPhase('matching');
-    startLooking();
-  }, [resetChat, startLooking]);
+    startLooking(lean ?? role);
+  }, [resetChat, startLooking, lean, role]);
+  // "talk to someone new" / "stay and listen" from the notes screen: leave this pod, then look afresh.
+  const lookAfresh = useCallback((r) => {
+    finalLeave();
+    setLean(r);
+    setSince(Date.now());
+    setPhase('matching');
+    startLooking(r);
+  }, [finalLeave, startLooking]);
+
+  // The shared "Matching" link appears on the lean screens, the notes screen and the requeue screen — route by phase.
+  const onMatching = useCallback((e) => {
+    const p = phaseRef.current;
+    if (p === 'lean') return chooseLean(roleFromClick(e, 'talk'));
+    if (p === 'leanListen') return chooseLean(roleFromClick(e, 'listen'));
+    if (p === 'ended') return lookAfresh(roleFromClick(e, 'talk'));
+    return again();
+  }, [chooseLean, lookAfresh, again]);
 
   const voiceSupported = () => typeof window !== 'undefined' && !!(navigator.mediaDevices?.getUserMedia && window.RTCPeerConnection);
   const askVoice = useCallback(async () => {
@@ -510,10 +648,11 @@ export default function Chat({ role = 'talk' }) {
 
   // ---------- what's on screen ----------
   const partner = pair?.partner?.name ?? '…';
-  const myRole = pair?.role ?? role;
+  const myRole = pair?.role ?? activeRole;
   const theirRole = pair?.partner?.role;
   const lead = myRole === 'listen' ? 'they lead.' : theirRole === 'talk' && myRole === 'talk' ? 'take turns.' : 'you lead.';
   const statusText = away ? 'RECONNECTING…' : myRole === 'listen' ? "YOU'RE LISTENING" : theirRole === 'talk' && myRole === 'talk' ? 'TAKING TURNS' : "THEY'RE LISTENING";
+  const opening = theirRole === 'listen' ? `${partner} came to listen.` : theirRole === 'talk' ? `${partner} came to talk.` : `${partner} is here.`;
 
   const vals = useMemo(() => ({
     partner, PARTNER: partner.toUpperCase(), me, ME: me.toUpperCase(),
@@ -526,35 +665,44 @@ export default function Chat({ role = 'talk' }) {
     meState: muted ? 'MUTED' : call.speaking.has('me') ? 'SPEAKING' : 'LISTENING',
     muteLabel: muted ? 'unmute' : 'mute',
     // matching / requeue / end
-    crumb: role === 'listen' ? 'listen pod' : 'talk pod',
-    whoFirst: role === 'listen' ? "YOU'LL" : "THEY'LL",
-    matchTitle: role === 'listen' ? 'Finding someone to listen to…' : "Finding someone who'll listen…",
-    awake: role === 'listen'
+    crumb: activeRole === 'listen' ? 'listen pod' : 'talk pod',
+    whoFirst: activeRole === 'listen' ? "YOU'LL" : "THEY'LL",
+    matchTitle: activeRole === 'listen' ? 'Finding someone to listen to…' : "Finding someone who'll listen…",
+    awake: activeRole === 'listen'
       ? `${Math.max(0, (lobby?.waiting ?? 0) - (lobby?.listeners ?? 0))} WAITING TO TALK`
       : lobby?.listeners ? `${lobby.listeners} ${lobby.listeners === 1 ? 'LISTENER' : 'LISTENERS'} AWAKE` : 'A QUIET NIGHT SO FAR',
     leftAt: left ? clockAmPm(left.at) : '',
     looked: `LOOKED FOR ${Math.max(1, Math.round((Date.now() - since) / 60000))} MINUTES`,
     stats: ended ? `${ended.mins} ${ended.mins === 1 ? 'MINUTE' : 'MINUTES'} · ${ended.n} ${ended.n === 1 ? 'MESSAGE' : 'MESSAGES'} · 0 KEPT` : '',
     lastLabel: ended?.last ? `${ended.partner.toUpperCase()}'S LAST WORDS` : 'FROM US',
-    lastWords: ended?.last ?? 'you showed up tonight. that counts.'
-  }), [partner, me, pair, statusText, lead, dropped, closingAt, call.state, call.speaking, muted, role, lobby?.waiting, lobby?.listeners, left, since, ended]);
+    lastWords: ended?.last ?? 'you showed up tonight. that counts.',
+    // the notes screen: whether to offer "stay and listen", and the count this browser remembers
+    someoneWaiting: (lobby?.waiting ?? 0) > 0,
+    heardCount: heard
+  }), [partner, me, pair, statusText, lead, dropped, closingAt, call.state, call.speaking, muted, activeRole, lobby?.waiting, lobby?.listeners, left, since, ended, heard]);
   // the requeue screen talks about the person who left
   const requeueVals = useMemo(() => ({ ...vals, partner: left?.name ?? 'they', PARTNER: (left?.name ?? 'they').toUpperCase() }), [vals, left]);
 
+  const onNoteText = useCallback((v) => { noteDraft.current = v; setNote((n) => ({ ...n, text: v })); }, []);
   const ctx = useMemo(() => ({
-    phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince
-  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince]);
+    phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince,
+    opening, their, note: { text: note.text, sent: note.sent, skipped: note.skipped, onText: onNoteText, pin: pinNote, skip: skipNote }
+  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince, opening, their, note.text, note.sent, note.skipped, onNoteText, pinNote, skipNote]);
 
   const links = useMemo(() => ({
     VoiceWait: askVoice,
     PodEnd: leaveGently,
     Reported: report,
-    Matching: again,
+    Matching: onMatching,
+    LeanListen: () => setPhase('leanListen'),
+    'pin-it': pinNote,
+    skip: skipNote,
+    'not-tonight': () => { finalLeave(); router.push('/home'); },
     'keep-going': () => setNudge(false),
     mutelabel: () => setMuted((m) => !m),
     Pod: voice === 'incoming' ? () => answerVoice(false) : voice === 'asked' ? cancelVoice : voice === 'on' ? endCall : () => {},
     Call: () => answerVoice(true)
-  }), [askVoice, leaveGently, report, again, voice, answerVoice, cancelVoice, endCall]);
+  }), [askVoice, leaveGently, report, onMatching, pinNote, skipNote, finalLeave, router, voice, answerVoice, cancelVoice, endCall]);
 
   const micActs = useMemo(() => ({
     'allow mic': () => mic.allow(),
@@ -566,7 +714,9 @@ export default function Chat({ role = 'talk' }) {
 
   // which board
   let D, M, v = vals, acts = null;
-  if (phase === 'intro') [D, M] = [DListener, MListener];
+  if (phase === 'lean') [D, M] = [DLean, MLean];
+  else if (phase === 'leanListen') [D, M] = [DLeanListen, MLeanListen];
+  else if (phase === 'intro') [D, M] = [DListener, MListener];
   else if (phase === 'matching') [D, M] = [DMatching, MMatching];
   else if (phase === 'requeue') [D, M, v] = [DRequeue, MRequeue, requeueVals];
   else if (phase === 'nobody') [D, M] = [DNoOne, MNoOne];

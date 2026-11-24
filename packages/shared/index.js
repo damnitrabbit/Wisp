@@ -15,6 +15,7 @@ export const LIMITS = Object.freeze({
   VOICE_REQUEST_EXPIRY_MS: 30_000,
   CHAT_MIN_INTERVAL_MS: 400,
   MSG_MAX: 500,
+  PAIR_NOTE_MAX: 140, // a parting note at the end of a 1:1 pod (relayed once, never stored)
   ROOM_HISTORY: 200,
   RECONNECT_GRACE_MS: 30_000, // how long a dropped socket keeps its seat
   STILL_LOOKING_MS: 30_000, // client shows the "still looking" state after this
