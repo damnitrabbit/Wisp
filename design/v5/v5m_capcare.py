@@ -124,15 +124,17 @@ SEAL_CSS = """
 msealed = f'''
 {matmos()}
 {mtopbar(crumb='time capsule', back='V5MHome.dc.html')}
-<main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column;align-items:center">
-<div class="envwrap" style="margin-top:190px">{menvelope}</div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:48px;padding:0 {MPAD}px;text-align:center">
+<main style="position:relative;z-index:10;flex-grow:1;min-height:0;display:flex;flex-direction:column;align-items:center">
+<div style="flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:14px {MPAD}px 0;text-align:center">
+<div class="envwrap">{menvelope}</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px">
 {h_hand('Sealed.<br>See you on {{openLong}}.', 34, color=PAPERHI, wait='3.4s')}
-<div class="rise" style="--w:4.2s;{SERIF};font-style:italic;font-size:16px;line-height:1.5;color:rgba(233,233,231,.8);5;max-width:300px">Until then it waits here, in this browser. Not even we can open it.</div>
+<div class="rise" style="--w:4.2s;{SERIF};font-style:italic;font-size:16px;line-height:1.5;color:rgba(233,233,231,.8);max-width:300px">Until then it waits here, in this browser. Not even we can open it.</div>
 <sc-if value="{{{{remindOk}}}}"><div class="rise" style="--w:4.4s">{inline_note('{{remindOkText}}', 'soft', 18)}</div></sc-if>
 <sc-if value="{{{{remindFail}}}}"><div class="rise" style="--w:4.4s">{inline_note('{{remindFailA}}<br>{{remindFailB}}', 'soft', 18)}</div></sc-if>
 </div>
-<div class="rise" style="--w:4.6s;display:flex;align-items:center;justify-content:space-between;width:100%;padding:30px {MPAD + 4}px 0">{chip('back home', 'V5MHome.dc.html', seed=1463, w=170)}{link('write another', 'V5MCapsule.dc.html', size=12)}</div>
+</div>
+<div class="rise" style="--w:4.6s;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px {MPAD + 4}px 16px">{chip('back home', 'V5MHome.dc.html', seed=1463, w=170)}{link('write another', 'V5MCapsule.dc.html', size=12)}</div>
 </main>
 {mfooter()}'''
 SEALED_VALS = "openLong: '15 October', openShort: '15 oct', preview: 'Right now you\\'re scared about the interview on Monday. Whatever happened, you went…', remindOk: false, remindFail: false, remindFailA: 'couldn\\'t set the reminder.', remindFailB: 'the letter is still sealed here.'"
