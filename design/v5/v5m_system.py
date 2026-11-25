@@ -185,7 +185,8 @@ hold_card = mcard(f'''
 <span style="{TYPE};font-size:9.5px;letter-spacing:.14em;line-height:1.6;color:{PENCIL}">IF IT DOESN'T COME BACK,<br>THE POD ENDS GENTLY.</span>
 {mtext('leave gently', 'V5MPodEnd.dc.html', INK)}</div>''',
     rot=-1, seed=2402, pad='30px 26px 14px', w='300px', tapes=ctape(110, 28, rot=3, seed=241))
-pod_dock = mdock(mtext('leave gently', 'V5MPodEnd.dc.html', CHALK) + '<span style="flex:1"></span>' + mtext('report · ends now', 'V5MReported.dc.html', CRISIS), footer=False)
+# the frozen pod behind the dialog is context only; its "leave gently" would just echo the dialog's, so keep report
+pod_dock = mdock('<span style="flex:1"></span>' + mtext('report · ends now', 'V5MReported.dc.html', CRISIS), footer=False)
 mx04 = f'''
 {matmos()}
 {mtopbar(back='V5MHomeOpen.dc.html', crumb='talk pod')}
