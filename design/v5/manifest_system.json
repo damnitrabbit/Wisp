@@ -1,0 +1,72 @@
+[
+ {
+  "file": "V5MicAsk.dc.html",
+  "title": "X01 \u2014 Before the browser asks for your mic",
+  "w": 1440,
+  "h": 900,
+  "row": "system"
+ },
+ {
+  "file": "V5MicBlocked.dc.html",
+  "title": "X02 \u2014 Mic is blocked",
+  "w": 1440,
+  "h": 900,
+  "row": "system"
+ },
+ {
+  "file": "V5Offline.dc.html",
+  "title": "X03 \u2014 Lost the signal",
+  "w": 1440,
+  "h": 900,
+  "row": "system"
+ },
+ {
+  "file": "V5Reconnect.dc.html",
+  "title": "X04 \u2014 Reconnecting, mid pod",
+  "w": 1440,
+  "h": 900,
+  "row": "system"
+ },
+ {
+  "file": "V5NotFound.dc.html",
+  "title": "X05 \u2014 This note isn't here",
+  "w": 1440,
+  "h": 900,
+  "row": "system"
+ },
+ {
+  "file": "V5MMicAsk.dc.html",
+  "title": "MX01 \u2014 Before the browser asks for your mic",
+  "w": 390,
+  "h": 844,
+  "row": "m_system"
+ },
+ {
+  "file": "V5MMicBlocked.dc.html",
+  "title": "MX02 \u2014 Mic is blocked",
+  "w": 390,
+  "h": 844,
+  "row": "m_system"
+ },
+ {
+  "file": "V5MOffline.dc.html",
+  "title": "MX03 \u2014 Lost the signal",
+  "w": 390,
+  "h": 844,
+  "row": "m_system"
+ },
+ {
+  "file": "V5MReconnect.dc.html",
+  "title": "MX04 \u2014 Reconnecting, mid pod",
+  "w": 390,
+  "h": 844,
+  "row": "m_system"
+ },
+ {
+  "file": "V5MNotFound.dc.html",
+  "title": "MX05 \u2014 This note isn't here",
+  "w": 390,
+  "h": 844,
+  "row": "m_system"
+ }
+]

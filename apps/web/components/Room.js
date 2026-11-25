@@ -1,567 +1,260 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+// OPEN POD — inside a room. One design board (V5Room on desktop, V5MRoom on phone); its columns are slots filled with
+// the generated parts (stage cards, listeners, the notes on the right), so every state looks like the designed ones:
+// mod view (V5Room), invited up (V5RoomHand), moved off stage (V5MovedOffStage), alone in the room (V5RoomAlone).
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import TopBar from './TopBar';
-import Modal from './Modal';
-import MicModals from './MicModals';
-import ReportConfirm from './ReportConfirm';
-import { emit, on, bus, toast, syncClock, useWisp } from '@/lib/wisp';
-import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
-import { useMesh } from '@/lib/mesh';
-import { useNow, mmss } from '@/lib/time';
+import Screen from '@/v5/Screen';
+import DRoom from '@/v5/screens/V5Room';
+import MRoom from '@/v5/screens/V5MRoom';
+import Asleep from '@/app/asleep/page';
+import Tpl, { fill, CSS, Wrap } from '@/app/rooms/_parts/Tpl';
+import { roomTitle, roomTheme } from '@/app/rooms/_parts/names';
+import { useRoom, onStage } from '@/app/rooms/_parts/useRoom';
+import MicScreen from '@/app/rooms/_parts/MicScreens';
+import { useNow } from '@/lib/time';
+import { podsOpen } from '@/lib/v5/hours';
 
-const initials = (name) => name.split('_').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-const onStage = (m) => m && m.role !== 'listener';
-const SYS_TAG = { join: '[ JOINED ]', leave: '[ LEFT ]', mod: '[ MOD ]', stage: '[ STAGE ]', removed: '[ REMOVED ]', info: '[ ROOM ]' };
+const CAP = 10;
+const SEATS = 4;
+const m_ss = (ms) => {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+// names are drawn at the design's size; long ones shrink a little so they stay on their card
+const fitName = (name, phone) => {
+  const [size, fits, min] = phone ? [19, 12, 14] : [25, 14, 18];
+  const n = String(name).length;
+  return n <= fits ? size : Math.max(min, Math.round((size * fits) / n));
+};
+const ROOM_CSS = CSS + '\n[data-act]{cursor:pointer}';
+const NO_VALS = {};
+
+const Ctx = createContext(null);
+
+// ---------- what the room looks like right now (shared by the desktop and phone boards) ----------
+function useView(room, channel, picked, reporting, now) {
+  const { me, members, speaking, invite, note, reported, muted } = room;
+  const meMod = me?.role === 'mod';
+  const stage = members.filter(onStage).sort((a, b) => (b.founding - a.founding) || ((a.role === 'mod' ? 0 : 1) - (b.role === 'mod' ? 0 : 1)) || a.stageSince - b.stageSince);
+  const listeners = members.filter((m) => !onStage(m)).sort((a, b) => a.joinedAt - b.joinedAt);
+  const alone = Boolean(me) && members.length === 1;
+  const hands = listeners.filter((m) => m.handUp && m.id !== me?.id).sort((a, b) => a.handExpiresAt - b.handExpiresAt);
+  const pending = listeners.filter((m) => m.invitedUntil && m.invitedUntil > now);
+  const pick = picked && listeners.find((m) => m.id === picked);
+
+  const tag = (m, i, phone) => {
+    const state = m.muted ? 'muted' : speaking.has(m.id) ? 'speaking' : 'listening';
+    const you = m.id === me?.id;
+    return fill(`${phone ? 'm' : 'd'}Tag_${state}_${i}`, {
+      name: m.name, id: m.id, mod: m.role === 'mod', me: you, fs: fitName(m.name, phone),
+      canMove: meMod && !reporting && !you && m.role === 'speaker',
+      canReport: reporting && !you && !reported.has(m.id)
+    });
+  };
+  const stageHtml = (phone) => {
+    const tags = stage.slice(0, SEATS).map((m, i) => tag(m, i, phone)).join('')
+      + Array.from({ length: Math.max(0, SEATS - stage.length) }, (_, i) => fill(`${phone ? 'm' : 'd'}Empty${stage.length + i}`)).join('');
+    const items = listeners.map((m) => {
+      const you = m.id === me?.id;
+      const canRep = reporting && !you && !reported.has(m.id);
+      return fill(phone ? 'mLi' : 'dLi', { name: m.name, id: m.id, hand: m.handUp, you, rep: canRep, act: canRep ? 'report' : meMod && !you && !reporting ? 'pick' : '' });
+    }).join('');
+    const open = Math.max(0, CAP - members.length);
+    const n = stage.length;
+    return fill(phone ? 'mStage' : 'dStage', {
+      tags,
+      count: phone ? (n >= SEATS ? `${n} ON STAGE` : `${n} ON STAGE · ${SEATS - n} OPEN`) : n >= SEATS ? `${n} ON STAGE · MODS CHOOSE WHO COMES UP` : `${n} ON STAGE · ${SEATS - n} SEATS OPEN`,
+      listeners: listeners.length ? fill(phone ? 'mLiRow' : 'dLiRow', { items }) : fill(phone ? 'mLiNone' : 'dLiNone'),
+      lcount: phone && !listeners.length ? '0 HERE' : `${listeners.length} HERE · ${open} ${open === 1 ? 'SEAT' : 'SEATS'} OPEN`
+    });
+  };
+
+  // the note on the right (desktop) / the pinned slip (phone)
+  let right;
+  const first = hands[0];
+  if (invite && me && !onStage(me)) right = { kind: 'invite', from: invite.from };
+  else if (reporting) right = { kind: 'note', kicker: 'REPORT SOMEONE', title: 'Who is it?', body: "Tap REPORT by their name. Enough reports here and they're removed.", action: 'NEVER MIND', act: 'cancelreport', foot: 'ONE REPORT PER PERSON. NOTHING ELSE IS KEPT.' };
+  else if (note) right = noteFor(note, me);
+  if (!right && me) {
+    if (meMod && alone) right = { kind: 'alone' };
+    else if (meMod && pick) right = { kind: 'hand', mark: 'listening', name: pick.name, id: pick.id, body: stage.length >= SEATS ? 'could come up when a seat opens.' : 'could be invited up to speak.', chips: stage.length < SEATS, yes: 'invite up', no: 'not now', yesAct: 'invite', noAct: 'unpick', t: '', foot: 'THEY CHOOSE WHETHER TO COME UP. THEIR MIC IS ASKED ONLY THEN.' };
+    else if (meMod && first) right = { kind: 'hand', mark: 'a hand is up', name: first.name, id: first.id, body: stage.length >= SEATS ? 'would like to speak. the stage is full: move someone off first.' : 'would like to come up and speak.', chips: true, yes: 'invite up', no: 'not now', yesAct: 'approve', noAct: 'decline', t: m_ss(first.handExpiresAt - now), next: hands[1]?.name, foot: 'THEY CHOOSE WHETHER TO COME UP. THEIR MIC IS ASKED ONLY THEN.' };
+    else if (meMod && pending[0]) right = { kind: 'hand', mark: 'invite sent', name: pending[0].name, id: pending[0].id, body: 'was asked up. waiting for their answer.', chips: false, t: m_ss(pending[0].invitedUntil - now), foot: 'NO ANSWER AND THEY STAY A LISTENER. NOTHING HAPPENS.' };
+    else if (meMod) right = { kind: 'note', kicker: 'MOD · ON STAGE', title: 'You let people up.', body: 'Raised hands show here. Tap a name under listening to invite them up.', foot: 'ONLY REPORTS CAN REMOVE A MOD.', under: 'one at a time. no one is rushed off.' };
+    else if (me.role === 'speaker') right = { kind: 'note', kicker: muted ? 'ON STAGE · MUTED' : 'ON STAGE · MIC ON', title: 'The room can hear you.', body: 'Say as much or as little as you like. A mod can move you back to listening.', action: 'STEP DOWN', act: 'stepdown', foot: me.promoteAt ? `STAY ${m_ss(me.promoteAt - now)} MORE AND YOU BECOME A MOD.` : 'STEP DOWN ANY TIME.' };
+    else if (me.handUp) right = { kind: 'note', kicker: `HAND UP · ${m_ss(me.handExpiresAt - now)}`, title: 'Your hand is up.', body: 'The mods can see it. If one lets you up, your mic is asked then.', action: 'LOWER HAND', act: 'lower', hand: true, foot: 'NO ANSWER IN 30 SECONDS AND IT GOES DOWN ON ITS OWN.' };
+    else right = { kind: 'note', kicker: 'YOU · MIC OFF', title: "You're listening.", body: "Nobody can hear you. Raise a hand if you'd like to speak.", action: 'RAISE HAND', act: 'raise', hand: true, foot: "A MOD LETS YOUR HAND UP WHEN THERE'S ROOM.", under: 'listening is enough too.' };
+  }
+
+  // the "you" box on the room card (desktop) / words under the title (phone)
+  let you = '', youPhone = '';
+  if (me) {
+    if (invite && !onStage(me)) {
+      you = fill('dYouHand', { from: invite.from });
+      youPhone = fill('mRightText', { text: "YOU'RE LISTENING" });
+    } else if (meMod && alone) {
+      you = fill('dYouFirst');
+      youPhone = fill('mRightFirst');
+    } else if (meMod) {
+      you = fill('dYouMod', { body: me.founding ? 'You opened this room. You let people up, and help them down.' : 'Earned by being kind in rooms like this. You let people up, and help them down.' });
+      youPhone = fill('mRightMod');
+    } else if (me.role === 'speaker') {
+      you = fill('dYouPlain', { title: 'on stage', body: me.promoteAt ? `The room can hear you. In ${m_ss(me.promoteAt - now)} you become a mod.` : 'The room can hear you.' });
+      youPhone = fill('mRightText', { text: 'ON STAGE' });
+    } else {
+      you = fill('dYouPlain', { title: 'listening', body: note?.kind === 'demoted' ? "Your mic is off. Raise a hand whenever you'd like to speak again." : "Your mic is off. Raise a hand whenever you'd like to speak." });
+      youPhone = fill('mRightText', { text: me.handUp ? 'HAND UP' : "YOU'RE LISTENING" });
+    }
+  }
+  return { me, meMod, stage, listeners, right, you, youPhone, stageHtml, n: members.length, onStageMe: onStage(me) };
+}
+
+function noteFor(note, me) {
+  const n = note.name;
+  switch (note.kind) {
+    case 'demoted':
+      return onStage(me) ? null : { kind: 'note', kicker: 'OFF STAGE · MIC OFF', title: "You're listening again.", body: 'A mod moved you off stage. It happens, no reason needed.', action: 'RAISE HAND AGAIN', act: 'raise', hand: true, foot: "A MOD LETS YOUR HAND UP WHEN THERE'S ROOM.", under: 'listening is enough too.' };
+    case 'declined':
+      return { kind: 'note', kicker: 'HAND DOWN', title: 'Not right now.', body: 'A mod said not now. You can raise your hand again in a few seconds.', foot: 'IT HAPPENS. NO REASON NEEDED.', under: 'listening is enough too.' };
+    case 'expired':
+      return { kind: 'note', kicker: 'HAND DOWN', title: 'Your hand went down.', body: 'Nobody answered in 30 seconds. Raise it again any time.', action: 'RAISE HAND', act: 'raise', hand: true, foot: "A MOD LETS YOUR HAND UP WHEN THERE'S ROOM." };
+    case 'cooldown':
+      return { kind: 'note', kicker: 'HAND DOWN', title: 'Give it a moment.', body: 'Wait a few seconds before raising your hand again.', foot: 'NO ONE IS RUSHED.' };
+    case 'approved':
+      return { kind: 'note', kicker: 'ON STAGE · MIC ON', title: "You're on stage.", body: `${n} let you up. The room can hear you now.`, action: 'STEP DOWN', act: 'stepdown', foot: 'STEP DOWN ANY TIME.' };
+    case 'promoted':
+      return { kind: 'note', kicker: 'MOD', title: "You're a mod now.", body: 'You can let raised hands up, invite listeners, and move speakers back to listening.', foot: 'ONLY REPORTS CAN REMOVE A MOD.' };
+    case 'succession':
+      return { kind: 'note', kicker: 'NEW MOD', title: `${n} is a mod now.`, body: 'A mod left, so the longest on stage holds the door.', foot: 'NO ONE IS RUSHED OFF.' };
+    case 'inviteDeclined':
+      return { kind: 'note', kicker: 'INVITE', title: `${n} said not now.`, body: "They're still listening. That's okay.", foot: 'LISTENING IS ENOUGH TOO.' };
+    case 'inviteExpired':
+      return { kind: 'note', kicker: 'INVITE', title: 'No answer.', body: `${n} didn't answer in time, so they're still listening.`, foot: 'NOTHING HAPPENS IF NOBODY ANSWERS.' };
+    case 'stageFull':
+      return { kind: 'note', kicker: 'STAGE FULL', title: 'Four on stage.', body: 'A seat opens when a speaker steps down or a mod moves someone off.', foot: 'ONE AT A TIME.' };
+    case 'reported':
+      return { kind: 'note', kicker: 'REPORTED', title: 'Thank you.', body: `If enough people here report ${n}, they're removed automatically.`, foot: 'NOTHING ELSE IS KEPT.' };
+    default:
+      return null;
+  }
+}
+
+function rightHtml(r, phone) {
+  if (!r) return '';
+  if (r.kind === 'invite') return fill(phone ? 'mSlipInvite' : 'dRightInvite', { FROM: r.from.toUpperCase() });
+  if (r.kind === 'alone') return fill(phone ? 'mSlipAlone' : 'dRightAlone');
+  if (r.kind === 'hand') {
+    const t = phone ? [r.t, r.next ? `NEXT: ${r.next.toUpperCase()}` : ''].filter(Boolean).join(' · ') : r.t;
+    return fill(phone ? 'mSlipHand' : 'dRightHand', { ...r, t, NEXT: r.next?.toUpperCase(), no: phone ? r.no : r.no?.toUpperCase() });
+  }
+  return fill(phone ? 'mSlipNote' : 'dRightNote', r);
+}
+
+// ---------- slot components (stable; they read the live room from context) ----------
+function Card({ node }) {
+  const { view, channel, reporting, muted } = useContext(Ctx);
+  const html = fill('dCard', {
+    title: roomTitle(channel), theme: roomTheme(channel), n: view.n, cdots: fill(`dCDots${Math.min(CAP, view.n)}`),
+    you: view.you, btns: view.onStageMe ? fill('dBtnMute', { muteLabel: muted ? 'unmute' : 'mute' }) : '',
+    h: view.onStageMe ? 600 : 520, reportLabel: reporting ? 'never mind' : 'report someone'
+  });
+  return <Wrap node={node}><Act html={html} /></Wrap>;
+}
+function Stage({ node, phone }) {
+  const { view } = useContext(Ctx);
+  return <Wrap node={node}><Act html={view.stageHtml(phone)} /></Wrap>;
+}
+function Right({ node, phone }) {
+  const { view } = useContext(Ctx);
+  const html = rightHtml(view.right, phone);
+  if (!html) return null;
+  return <Wrap node={node}><Act html={html} /></Wrap>;
+}
+function Head() {
+  const { view, channel } = useContext(Ctx);
+  return <Act html={fill('mHead', { title: roomTitle(channel), theme: roomTheme(channel), n: view.n, right: view.youPhone })} />;
+}
+function Bar() {
+  const { view, reporting, muted } = useContext(Ctx);
+  const left = view.onStageMe ? fill('mBarMute', { muteLabel: muted ? 'unmute' : 'mute' }) : fill('mBarText', { text: view.me?.handUp ? 'HAND UP' : 'MIC OFF' });
+  return <Act html={fill('mBar', { left, reportLabel: reporting ? 'never mind' : 'report' })} />;
+}
+function Act({ html }) {
+  const { onAct } = useContext(Ctx);
+  return <Tpl html={html} onAct={onAct} />;
+}
+
+const SLOTS = {
+  card: (node) => <Card node={node} />,
+  stage: (node) => <Stage node={node} phone={/flex:1 0 auto/.test(node.attribs?.style || '')} />,
+  right: (node) => <Right node={node} />,
+  head: () => <Head />,
+  slip: (node) => <Right node={node} phone />,
+  bar: () => <Bar />
+};
 
 export default function Room({ channel }) {
   const router = useRouter();
-  const session = useWisp((s) => s.session);
-  const status = useWisp((s) => s.status);
-  const meId = session?.id;
-
-  const [snap, setSnap] = useState(null);
-  const [feed, setFeed] = useState([]);
-  const [invite, setInvite] = useState(null); // { from, expiresAt }
-  const [muted, setMuted] = useState(false);
-  const [track, setTrack] = useState(null);
-  const [tab, setTab] = useState('stage');
-  const [sheet, setSheet] = useState(null); // member id for the mobile action sheet
-  const [draft, setDraft] = useState('');
-  const [reported, setReported] = useState(() => new Set());
-  const [confirming, setConfirming] = useState(null); // member we're about to report
-  const mic = useMicFlow();
-  const left = useRef(false);
-  const asking = useRef(false);
-
-  const members = snap?.members ?? [];
-  const me = members.find((m) => m.id === meId);
-  const meMod = me?.role === 'mod';
-
-  // ---------- join / leave ----------
-
-  const join = useCallback(async () => {
-    const r = await emit('channel:join', { id: channel.id });
-    if (r.error === 'full') {
-      toast({ kind: 'solid', tag: '[ ROOM FULL ]', text: `${channel.name.toUpperCase()} FILLED UP (10/10) BEFORE YOU GOT IN. TRY ANOTHER ROOM.` });
-      return router.replace('/rooms');
-    }
-    if (r.error === 'removed') {
-      toast({ kind: 'solid', tag: '[ REMOVED ]', text: `YOU WERE REMOVED FROM ${channel.name.toUpperCase()} AFTER MULTIPLE REPORTS. OTHER ROOMS ARE STILL OPEN TO YOU.` });
-      return router.replace('/rooms');
-    }
-    if (r.error) return; // offline: the reconnect handler rejoins
-    syncClock(r.snapshot.serverNow);
-    setSnap(r.snapshot);
-    setFeed(r.history ?? []);
-    setReported(new Set(r.reported ?? []));
-  }, [channel, router]);
-
-  useEffect(() => {
-    if (!meId) return;
-    join();
-  }, [meId, join]);
-
-  useEffect(() => {
-    document.title = `${channel.name} · NoTrace`;
-    const offs = [
-      on('channel:update', (s) => {
-        if (s.id !== channel.id) return;
-        syncClock(s.serverNow);
-        setSnap(s);
-      }),
-      on('chat:new', (m) => setFeed((f) => (f.some((x) => x.id === m.id) ? f : [...f, m].slice(-200)))),
-      on('channel:speakInviteReceived', (p) => {
-        syncClock(p.serverNow);
-        setInvite(p);
-      }),
-      on('channel:inviteExpired', (p) => {
-        if (p.id) toast({ tag: '[ INVITE ]', text: <><span className="nc">{p.name}</span> DIDN&apos;T ANSWER IN TIME. THE INVITE EXPIRED.</> });
-        else setInvite(null);
-      }),
-      on('channel:inviteDeclined', (p) => toast({ tag: '[ INVITE ]', text: <><span className="nc">{p.name}</span> SAID NO. THEY&apos;RE STILL LISTENING.</> })),
-      on('hand:approved', (p) =>
-        toast({ kind: 'solid', tag: '[ ON STAGE ]', text: <><span className="nc">{p.by}</span> BROUGHT YOU UP. THE ROOM CAN HEAR YOU NOW. STAY 2:30 AND YOU BECOME A MOD.</> })
-      ),
-      on('hand:declined', () => toast({ tag: '[ HAND DOWN ]', text: 'NOT RIGHT NOW. YOUR HAND IS DOWN. YOU CAN RAISE IT AGAIN IN A FEW SECONDS.' })),
-      on('hand:expired', () => toast({ tag: '[ HAND DOWN ]', text: 'NOBODY ANSWERED IN 30 SECONDS, SO YOUR HAND WENT DOWN. RAISE IT AGAIN ANYTIME.' })),
-      on('stage:demoted', () =>
-        toast({ kind: 'solid', tag: '[ BACK TO LISTENING ]', text: 'A MOD MOVED YOU BACK TO LISTENERS. YOUR MIC IS OFF. IF YOU’RE INVITED UP AGAIN, YOUR 2:30 STARTS OVER.' })
-      ),
-      on('channel:modPromoted', (p) => {
-        if (p.id === meId) {
-          toast({ kind: 'solid', tag: '[ YOU’RE A MOD ]', text: 'YOU CAN NOW INVITE LISTENERS ON STAGE, ANSWER RAISED HANDS, AND MOVE SPEAKERS BACK TO LISTENERS. NOBODY CAN MOVE YOU NOW.' });
-        } else if (p.why === 'succession') {
-          toast({ tag: '[ SUCCESSION ]', text: <>A MOD LEFT. <span className="nc">{p.name}</span> IS NOW A MOD — LONGEST ON STAGE.</> });
-        }
-      }),
-      on('channel:youWereKicked', (p) => {
-        left.current = true;
-        toast({ kind: 'solid', tag: '[ REMOVED ]', text: `YOU WERE REMOVED FROM ${String(p.name).toUpperCase()} AFTER MULTIPLE REPORTS. OTHER ROOMS ARE STILL OPEN TO YOU.` });
-        router.replace('/rooms');
-      }),
-      bus.on('session', ({ fresh }) => {
-        if (fresh) {
-          setSnap(null);
-          setFeed([]);
-          join();
-        }
-      })
-    ];
-    return () => offs.forEach((f) => f());
-  }, [channel, meId, join, router]);
-
-  useEffect(
-    () => () => {
-      if (!left.current) emit('channel:leave');
-      closeMic();
-    },
-    []
-  );
-
-  // ---------- mic follows the stage ----------
-
-  useEffect(() => {
-    if (!me) return;
-    if (onStage(me) && !track && !asking.current) {
-      asking.current = true;
-      mic.ask().then((ok) => {
-        asking.current = false;
-        if (ok) {
-          setTrack(micTrack());
-          setMuted(false);
-        } else emit('stage:stepDown');
-      });
-    }
-    if (!onStage(me) && track) {
-      closeMic();
-      setTrack(null);
-      setMuted(false);
-    }
-  }, [me?.role]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const { speaking } = useMesh({ meId, members, track, muted });
-
-  // ---------- actions ----------
-
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    emit('stage:mute', { muted: next });
-  };
-
-  const toggleHand = async () => {
-    if (me?.handUp) return emit('hand:lower');
-    const ok = await mic.ask();
-    if (!ok) return;
-    setTrack(micTrack());
-    const r = await emit('hand:raise');
-    if (r.error === 'cooldown') toast({ tag: '[ HAND DOWN ]', text: 'GIVE IT A FEW SECONDS BEFORE RAISING YOUR HAND AGAIN.' });
-  };
-
-  const answerInvite = async (yes) => {
-    setInvite(null);
-    if (!yes) return emit('channel:declineInvite');
-    const ok = await mic.ask();
-    if (!ok) return emit('channel:declineInvite');
-    setTrack(micTrack());
-    const r = await emit('channel:acceptInvite');
-    if (r.ok) toast({ kind: 'solid', tag: '[ ON STAGE ]', text: 'THE ROOM CAN HEAR YOU NOW. STAY 2:30 AND YOU BECOME A MOD.' });
-  };
-
-  const report = (m) => {
-    setSheet(null);
-    if (!reported.has(m.id)) setConfirming(m);
-  };
-  const confirmReport = async () => {
-    const m = confirming;
-    setConfirming(null);
-    if (!m || reported.has(m.id)) return;
-    setReported((s) => new Set(s).add(m.id));
-    const r = await emit('channel:report', { to: m.id });
-    if (r.ok && !r.already) {
-      toast({ key: `rep-${m.id}`, tag: '[ REPORTED ]', text: <>THANKS. IF ENOUGH PEOPLE HERE REPORT <span className="nc">{m.name}</span>, THEY&apos;RE REMOVED AUTOMATICALLY.</> });
-    }
-  };
-  const act = (event, m) => {
-    setSheet(null);
-    return emit(event, { to: m.id });
-  };
-
-  const sendChat = async (e) => {
-    e?.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    const r = await emit('chat:send', { text });
-    if (r.ok) setDraft('');
-    else if (r.error === 'slow') toast({ key: 'slow', tag: '[ SLOW DOWN ]', text: 'ONE MESSAGE AT A TIME. TRY AGAIN IN A SECOND.' });
-    else if (r.error === 'too_long') toast({ key: 'long', tag: '[ TOO LONG ]', text: 'KEEP IT UNDER 500 CHARACTERS.' });
-  };
-
-  // keyboard: M mic, H hand, Y/N on an invite
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || mic.modal || confirming || sheet) return;
-      const k = e.key.toLowerCase();
-      if (invite) {
-        if (k === 'y') answerInvite(true);
-        if (k === 'n') answerInvite(false);
-        return;
-      }
-      if (k === 'm' && onStage(me) && track) toggleMute();
-      if (k === 'h' && me && !onStage(me)) toggleHand();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  });
-
-  // ---------- derived ----------
-
+  const back = useCallback(() => router.push('/rooms'), [router]);
+  const room = useRoom(channel.id, { onGone: back });
+  const [picked, setPicked] = useState(null);
+  const [reporting, setReporting] = useState(false);
   const now = useNow(true, 500);
-  const speakers = useMemo(() => {
-    const rank = (m) => (snap?.members && m.founding ? 0 : m.role === 'mod' ? 1 : 2);
-    return members.filter(onStage).sort((a, b) => rank(a) - rank(b) || a.stageSince - b.stageSince);
-  }, [members, snap]);
-  const listeners = useMemo(
-    () =>
-      members
-        .filter((m) => !onStage(m))
-        .sort((a, b) => (b.id === meId) - (a.id === meId) || b.handUp - a.handUp || a.joinedAt - b.joinedAt),
-    [members, meId]
-  );
-  const hands = listeners.filter((m) => m.handUp).length;
-  const alone = members.length === 1 && meMod;
-
-  let stripTag, stripText, roleLine;
-  if (!me) {
-    stripTag = '[ JOINING ]';
-    stripText = 'WALKING IN…';
-    roleLine = 'JOINING';
-  } else if (alone) {
-    stripTag = '[ YOU OPENED THIS ROOM ]';
-    stripText = 'IT’S JUST YOU. THE NEXT PERSON IN BECOMES THE OTHER MOD. TALK TO THE ROOM OR WAIT — IT STAYS OPEN WHILE YOU’RE HERE.';
-    roleLine = me.founding ? 'YOU ARE A FOUNDING MOD' : 'YOU ARE A MOD';
-  } else if (meMod) {
-    stripTag = '[ YOU’RE A MOD ]';
-    stripText = 'THE ROOM CAN HEAR YOU. YOU DECIDE WHO SPEAKS: BRING UP RAISED HANDS, INVITE LISTENERS, OR MOVE SPEAKERS BACK TO LISTENERS.';
-    roleLine = me.founding ? 'YOU ARE A FOUNDING MOD' : 'YOU ARE A MOD';
-  } else if (me.role === 'speaker') {
-    stripTag = '[ ON STAGE ]';
-    stripText = `THE ROOM CAN HEAR YOU. IN ${mmss(me.promoteAt - now)} YOU BECOME A MOD. UNTIL THEN, A MOD CAN MOVE YOU BACK TO LISTENERS.`;
-    roleLine = 'YOU ARE ON STAGE';
-  } else if (me.handUp) {
-    stripTag = '[ HAND UP ]';
-    stripText = 'THE MODS CAN SEE YOUR HAND. IF ONE BRINGS YOU UP, YOUR MIC TURNS ON. NO ANSWER IN 30 SECONDS AND IT GOES DOWN ON ITS OWN.';
-    roleLine = 'YOU ARE LISTENING';
-  } else {
-    stripTag = '[ YOU’RE LISTENING ]';
-    stripText = 'NOBODY CAN HEAR YOU. RAISE YOUR HAND TO ASK FOR THE STAGE, OR WAIT FOR A MOD TO INVITE YOU. YOU CAN ALWAYS TYPE IN THE ROOM CHAT.';
-    roleLine = 'YOU ARE LISTENING';
-  }
-
-  const bigButton = !me ? (
-    <button type="button" className="bigbtn" disabled>…</button>
-  ) : onStage(me) ? (
-    muted || !track ? (
-      <button type="button" className="bigbtn" aria-pressed="true" onClick={toggleMute} disabled={!track}>
-        [ M ] MIC OFF — UNMUTE
-      </button>
-    ) : (
-      <button type="button" className="bigbtn solid" aria-pressed="false" onClick={toggleMute}>
-        <span aria-hidden="true" className="bars">
-          <span className="bar" style={{ height: 8, background: '#000' }} />
-          <span className="bar" style={{ height: 14, background: '#000', animationDelay: '.2s' }} />
-          <span className="bar" style={{ height: 10, background: '#000', animationDelay: '.35s' }} />
-        </span>
-        [ M ] MIC ON — MUTE
-      </button>
-    )
-  ) : me.handUp ? (
-    <button type="button" className="bigbtn solid" aria-pressed="true" onClick={toggleHand}>
-      <span className="dot pulse" style={{ background: '#000' }} />
-      HAND UP · {mmss(me.handExpiresAt - now)} — [ H ] LOWER
-    </button>
-  ) : (
-    <button type="button" className="bigbtn" aria-pressed="false" onClick={toggleHand}>
-      [ H ] RAISE HAND TO SPEAK
-    </button>
-  );
-
-  const sheetMember = sheet && members.find((m) => m.id === sheet);
-
-  return (
-    <div className="page fixed room-page">
-      <TopBar crumb={`/ROOMS/${channel.id.toUpperCase()}`} back={{ label: '← LEAVE ROOM', href: '/rooms' }} />
-      <div className="room" data-tab={tab}>
-        <div className="room-top">
-          <div role="status" aria-live="polite" className="strip">
-            <span className="tag">{stripTag}</span>
-            <span className="txt">{stripText}</span>
-          </div>
-          <div className="room-title">
-            <div>
-              <h1>{channel.name}</h1>
-              <div className="sub">
-                <span className="blurb nc" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{channel.blurb}</span>
-                <span>{String(members.length).padStart(2, '0')}/10 IN ROOM · {roleLine}</span>
-              </div>
-            </div>
-            {bigButton}
-          </div>
-          <div className="tabs" role="tablist" aria-label="Room view">
-            <button type="button" role="tab" aria-selected={tab === 'stage'} onClick={() => setTab('stage')}>STAGE + LISTENERS</button>
-            <button type="button" role="tab" aria-selected={tab === 'chat'} onClick={() => setTab('chat')}>ROOM CHAT · {feed.filter((f) => !f.system).length}</button>
-          </div>
-        </div>
-
-        <div className="people">
-          <People
-            speakers={speakers}
-            listeners={listeners}
-            me={me}
-            meMod={meMod}
-            alone={alone}
-            hands={hands}
-            speaking={speaking}
-            now={now}
-            onAct={act}
-            onReport={report}
-            reported={reported}
-            onMore={setSheet}
-          />
-        </div>
-
-        <aside aria-label="Room chat" className="room-chat">
-          <div className="hd"><span>ROOM CHAT</span><span className="dim3">CLEARS WHEN ROOM EMPTIES</span></div>
-          <Feed feed={feed} meId={meId} />
-          <form className="compose" onSubmit={sendChat}>
-            <span>&gt;</span>
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="SAY SOMETHING TO THE ROOM" aria-label="Message the room" maxLength={500} />
-            {draft.length >= 400 ? <span className={`count ${draft.length >= 450 ? 'warn' : ''}`}>{draft.length}/500</span> : <span className="dim" style={{ fontSize: 11 }}>↵</span>}
-          </form>
-        </aside>
-      </div>
-      <div className="bottombar">
-        {tab === 'chat' ? (
-          <form className="compose" onSubmit={sendChat}>
-            <span>&gt;</span>
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="SAY SOMETHING" aria-label="Message the room" maxLength={500} />
-            <span className="dim">↵</span>
-          </form>
-        ) : (
-          bigButton
-        )}
-      </div>
-
-      {invite && (
-        <InviteModal invite={invite} now={now} onAnswer={answerInvite} />
-      )}
-      <MicModals flow={mic} where="room" />
-      {confirming && <ReportConfirm name={confirming.name} onConfirm={confirmReport} onCancel={() => setConfirming(null)} />}
-      {sheetMember && (
-        <Modal label={`Actions for ${sheetMember.name}`} onEscape={() => setSheet(null)}>
-          <div className="head"><span className="nc" style={{ color: 'var(--fg)', fontSize: 16 }}>{sheetMember.name}</span><span>{sheetMember.role.toUpperCase()}</span></div>
-          <div className="more-sheet">
-            {meMod && sheetMember.role === 'listener' && !sheetMember.invitedUntil && !sheetMember.handUp && (
-              <button type="button" className="btn tall" onClick={() => act('channel:invite', sheetMember)}>[ ↑ ] INVITE ON STAGE</button>
-            )}
-            {meMod && sheetMember.role === 'speaker' && (
-              <button type="button" className="btn tall" onClick={() => act('stage:demote', sheetMember)}>[ ↓ ] MOVE TO LISTENERS</button>
-            )}
-            {reported.has(sheetMember.id) ? (
-              <button type="button" className="btn tall dash" disabled>REPORTED</button>
-            ) : (
-              <button type="button" className="btn tall" onClick={() => report(sheetMember)}>[ ! ] REPORT</button>
-            )}
-            <button type="button" className="btn tall dim" onClick={() => setSheet(null)}>CLOSE</button>
-          </div>
-        </Modal>
-      )}
-      {status === 'reconnecting' && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, top: 'calc(var(--top) + 72px)', background: 'rgba(0,0,0,.7)', zIndex: 35 }} />}
-    </div>
-  );
-}
-
-function People({ speakers, listeners, me, meMod, alone, hands, speaking, now, onAct, onReport, reported, onMore }) {
-  const reportBtn = (m) =>
-    reported.has(m.id) ? (
-      <span className="ctl wide done" aria-label={`You reported ${m.name}`}>REPORTED</span>
-    ) : (
-      <button type="button" className="ctl wide" aria-label={`Report ${m.name}`} onClick={() => onReport(m)}>[ ! ]</button>
-    );
-  return (
-    <>
-      <section aria-label="On stage" className="sec">
-        <div className="lbl">
-          <span>ON STAGE<br /><span className="dim3 cnt">{String(speakers.length).padStart(2, '0')}</span></span>
-        </div>
-        <div className="stage">
-          {speakers.map((s) => {
-            const you = s.id === me?.id;
-            const talking = speaking.has(s.id) && !s.muted;
-            const roleName = s.founding && s.role === 'mod' ? 'FOUNDING MOD' : s.role === 'mod' ? 'MOD' : 'SPEAKER';
-            return (
-              <div key={s.id} className="sp">
-                <span className={`av ${you ? 'me' : ''} ${s.online ? '' : 'away'}`}>{initials(s.name)}</span>
-                <span className="namecol">
-                  <span className="nm nc">{s.name}{you && <span className="dim3"> (you)</span>}</span>
-                  <span className="mstate">
-                    {roleName}
-                    {s.muted && ' · MUTED'}
-                    {!s.online && ' · RECONNECTING'}
-                    {talking && <Bars small />}
-                    {s.role === 'speaker' && s.promoteAt && <span style={{ color: 'var(--fg)' }}>{mmss(s.promoteAt - now)} TO MOD</span>}
-                  </span>
-                </span>
-                <span className="role">
-                  {roleName === 'FOUNDING MOD' && <span className="badge solid">FOUNDING MOD</span>}
-                  {roleName === 'MOD' && <span className="badge outline">MOD</span>}
-                  {roleName === 'SPEAKER' && <span className="dim" style={{ fontSize: 11 }}>SPEAKER</span>}
-                </span>
-                <span className="state" style={{ fontSize: 12 }}>
-                  {!s.online ? (
-                    <span className="dim3">RECONNECTING…</span>
-                  ) : talking ? (
-                    <Bars />
-                  ) : s.muted ? (
-                    <span className="dim3">MUTED</span>
-                  ) : s.role === 'speaker' && s.promoteAt ? (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="dot pulse" />{mmss(s.promoteAt - now)} TO MOD</span>
-                  ) : null}
-                </span>
-                <div className="acts">
-                  {you && !alone && (
-                    <button type="button" className="ctl" onClick={() => emit('stage:stepDown')}>
-                      <span className="wide">[ ↓ ] LEAVE STAGE</span><span className="narrow">↓</span>
-                    </button>
-                  )}
-                  {!you && meMod && s.role === 'speaker' && (
-                    <button type="button" className="ctl hi" onClick={() => onAct('stage:demote', s)} aria-label={`Move ${s.name} to listeners`}>
-                      <span className="wide">[ ↓ ] TO LISTENERS</span><span className="narrow">↓</span>
-                    </button>
-                  )}
-                  {!you && meMod && s.role === 'mod' && <span className="wide fixed-note dim3">CAN&apos;T BE MOVED</span>}
-                  {!you && (
-                    <>
-                      {reportBtn(s)}
-                      <button type="button" className="ctl narrow" aria-label={`More for ${s.name}`} onClick={() => onMore(s.id)}>···</button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {meMod && !alone && <div className="hint">MODS CAN MOVE SPEAKERS DOWN UNTIL THEY BECOME MODS. AFTER THAT, ONLY REPORTS CAN REMOVE THEM.</div>}
-        </div>
-      </section>
-
-      <section aria-label="Listening" className="sec" style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 24 }}>
-        <div className="lbl" style={{ paddingTop: 16 }}>
-          <span>LISTENING<br /><span className="dim3 cnt">{String(listeners.length).padStart(2, '0')}</span></span>
-          {hands > 0 && meMod && <><br /><span className="handsbadge">{hands} HAND{hands > 1 ? 'S' : ''} UP</span></>}
-        </div>
-        <div className="listen">
-          {listeners.map((l) => {
-            const you = l.id === me?.id;
-            const invited = l.invitedUntil && l.invitedUntil > now;
-            const note = l.handUp ? `HAND UP · ${mmss(l.handExpiresAt - now)}` : invited && meMod ? `INVITE SENT · ${mmss(l.invitedUntil - now)} TO ANSWER` : !l.online ? 'RECONNECTING…' : '';
-            return (
-              <div key={l.id} className="li">
-                <span className={`av ${you ? 'me' : ''}`} style={you ? { background: 'var(--fg)', borderColor: 'var(--fg)' } : undefined}>{initials(l.name)}</span>
-                <span className="namecol">
-                  <span className="nm nc" style={{ color: you || l.handUp ? 'var(--fg)' : undefined }}>{l.name}{you && <span className="dim3"> (you)</span>}</span>
-                </span>
-                <span className="note">{l.handUp && <span className="dot pulse" />}{note}</span>
-                <div className="acts">
-                  {meMod && l.handUp && (
-                    <>
-                      <button type="button" className="ctl solid" onClick={() => onAct('hand:approve', l)} aria-label={`Bring ${l.name} up`}>
-                        <span className="wide">[ ✓ ] BRING UP</span><span className="narrow">✓ UP</span>
-                      </button>
-                      <button type="button" className="ctl" onClick={() => onAct('hand:decline', l)} aria-label="Not now">
-                        <span className="wide">[ ✕ ] NOT NOW</span><span className="narrow">✕</span>
-                      </button>
-                    </>
-                  )}
-                  {meMod && !l.handUp && !invited && !you && (
-                    <button type="button" className="ctl hi wide" onClick={() => onAct('channel:invite', l)}>[ ↑ ] INVITE ON STAGE</button>
-                  )}
-                  {!you && (
-                    <>
-                      {reportBtn(l)}
-                      {!(meMod && l.handUp) && <button type="button" className="ctl narrow" aria-label={`More for ${l.name}`} onClick={() => onMore(l.id)}>···</button>}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {listeners.length === 0 && (
-            <div style={{ minHeight: 50, display: 'flex', alignItems: 'center', fontSize: 12 }} className="dim3">
-              NOBODY LISTENING YET. THE ROOM IS LIVE IN THE LIST, SO PEOPLE CAN FIND IT.
-            </div>
-          )}
-        </div>
-      </section>
-    </>
-  );
-}
-
-function Bars({ small }) {
-  const h = small ? [7, 13, 9, 11] : [8, 16, 11, 14, 6];
-  return (
-    <span aria-label="Speaking" className="speaking" style={small ? { height: 12, gap: 2 } : undefined}>
-      {h.map((x, i) => <span key={i} className="bar" style={{ height: x, background: 'var(--accent)', animationDelay: `${i * 0.13}s` }} />)}
-    </span>
-  );
-}
-
-function Feed({ feed, meId }) {
-  const ref = useRef(null);
+  const [open, setOpen] = useState(true);
   useEffect(() => {
-    const el = ref.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [feed]);
-  return (
-    <div role="log" className="feed" ref={ref}>
-      {feed.map((f) =>
-        f.system ? (
-          <div key={f.id} className="sys">
-            <span className="t">{SYS_TAG[f.kind] ?? '[ ROOM ]'}</span>
-            <span className="nc">{f.text}.</span>
-          </div>
-        ) : (
-          <div key={f.id} className={`msg ${f.from.id === meId ? 'mine' : ''}`}>
-            <span className="who nc">{f.from.id === meId ? `${f.from.name} (you)` : f.from.name}</span>
-            <span className="txt nc">{f.text}</span>
-          </div>
-        )
-      )}
-    </div>
-  );
-}
+    document.title = `${roomTitle(channel)} · open pod · NoTrace`;
+    const t = () => setOpen(podsOpen());
+    t();
+    const id = setInterval(t, 30_000);
+    return () => clearInterval(id);
+  }, [channel]);
 
-function InviteModal({ invite, now, onAnswer }) {
-  const left = Math.max(0, invite.expiresAt - now);
+  // leaving a room you were removed from (or one that filled up) goes back to the list
+  useEffect(() => {
+    if (room.phase === 'removed' || room.phase === 'full') router.replace('/rooms');
+  }, [room.phase, router]);
+
+  const view = useView(room, channel, picked, reporting, now);
+  const { modAct, report, raiseHand, lowerHand, answerInvite, stepDown, toggleMute, leave, setNote } = room;
+
+  const onAct = useCallback((act, id) => {
+    switch (act) {
+      case 'leave': return leave();
+      case 'report': // the card's "report someone" toggles report mode; a REPORT by a name reports them
+        if (id) {
+          setReporting(false);
+          return report(id);
+        }
+        return setReporting((r) => !r);
+      case 'cancelreport': return setReporting(false);
+      case 'mute': return toggleMute();
+      case 'raise': setNote(null); return raiseHand();
+      case 'lower': return lowerHand();
+      case 'stepdown': setNote(null); return stepDown();
+      case 'accept': return answerInvite(true);
+      case 'refuse': return answerInvite(false);
+      case 'move': return modAct('stage:demote', id);
+      case 'pick': return setPicked((p) => (p === id ? null : id));
+      case 'unpick': return setPicked(null);
+      case 'yes': // the hand note's first chip: let a raised hand up, or invite the picked listener
+        setPicked(null);
+        return view.right?.yesAct === 'invite' ? modAct('channel:invite', id) : modAct('hand:approve', id);
+      case 'no':
+        setPicked(null);
+        return view.right?.noAct === 'decline' ? modAct('hand:decline', id) : null;
+      default: return null;
+    }
+  }, [leave, report, toggleMute, raiseHand, lowerHand, stepDown, answerInvite, modAct, setNote, view.right]);
+
+  const ctx = useMemo(() => ({ view, channel, reporting, muted: room.muted, onAct }), [view, channel, reporting, room.muted, onAct]);
+
+  if (!open || room.phase === 'closed') return <Asleep />;
+  if (room.noVoice) return <MicScreen which="novoice" mic={room.mic} onBack={() => room.setNoVoice(false)} />;
+  if (room.mic.modal) return <MicScreen which={room.mic.modal} mic={room.mic} />;
   return (
-    <Modal label="Stage invite" onEscape={() => onAnswer(false)}>
-      <div className="head">
-        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span className="dot pulse" />STAGE INVITE</span>
-        <span>EXPIRES IN <span style={{ color: 'var(--fg)' }}>{mmss(left)}</span></span>
-      </div>
-      <div className="progress" role="progressbar" aria-label="Time left to answer" aria-valuemin={0} aria-valuemax={30} aria-valuenow={Math.round(left / 1000)}>
-        <div style={{ width: `${Math.min(100, (left / 30000) * 100)}%` }} />
-      </div>
-      <h1><span className="nc">{invite.from}</span> INVITED YOU ON STAGE.<span className="cursor">_</span></h1>
-      <dl className="kv" style={{ gridTemplateColumns: '150px 1fr', rowGap: 12 }}>
-        <dt>IF YOU ACCEPT</dt><dd>YOUR MIC TURNS ON. THE ROOM CAN HEAR YOU.</dd>
-        <dt>STAY 2:30</dt><dd>AND YOU BECOME A MOD YOURSELF.</dd>
-        <dt>NO ANSWER</dt><dd>YOU STAY A LISTENER. NOTHING HAPPENS.</dd>
-      </dl>
-      <div className="two">
-        <button type="button" className="btn solid tall" onClick={() => onAnswer(true)}>[ Y ] GO ON STAGE</button>
-        <button type="button" className="btn tall" onClick={() => onAnswer(false)}>[ N ] KEEP LISTENING</button>
-      </div>
-    </Modal>
+    <Ctx.Provider value={ctx}>
+      <Screen desktop={DRoom} phone={MRoom} vals={NO_VALS} slots={SLOTS} css={ROOM_CSS} />
+    </Ctx.Provider>
   );
 }

@@ -110,3 +110,38 @@ test('if the partner never comes back, you are told and put back in line', async
   assert.equal(left.reason, 'left');
   await a.waitFor('pair:waiting');
 });
+
+test('wind-down: both land on the notes screen, and the one left behind is not re-queued', async () => {
+  const [a, b] = await matched();
+  assert.ok((await a.emit('pair:wrap')).ok);
+  assert.equal((await a.waitFor('pair:wrap')).by, 'you');
+  assert.equal((await b.waitFor('pair:wrap')).by, a.session.name);
+  // a leaves for good; b is on the notes screen and should NOT be thrown back in line
+  await a.emit('pair:leave');
+  assert.equal((await b.waitFor('pair:partnerLeft')).reason, 'wrapped');
+  await assert.rejects(b.waitFor('pair:waiting', () => true, 500));
+});
+
+test('a parting note crosses once, trimmed and capped, and is kept nowhere', async () => {
+  const [a, b] = await matched();
+  await a.emit('pair:wrap');
+  await b.waitFor('pair:wrap');
+  assert.ok((await a.emit('pair:note', { text: '  thanks for\n  staying   ' })).ok);
+  const got = await b.waitFor('pair:note');
+  assert.equal(got.text, 'thanks for staying');
+  assert.equal(got.name, a.session.name);
+  // capped at PAIR_NOTE_MAX (140)
+  await b.emit('pair:note', { text: 'y'.repeat(300) });
+  assert.equal((await a.waitFor('pair:note')).text.length, 140);
+  // empty / whitespace-only is refused
+  assert.equal((await a.emit('pair:note', { text: '   ' })).error, 'empty');
+});
+
+test('a note after the partner has gone just does not land', async () => {
+  const [a, b] = await matched();
+  await a.emit('pair:wrap');
+  await b.waitFor('pair:wrap');
+  await b.emit('pair:leave');
+  await a.waitFor('pair:partnerLeft');
+  assert.equal((await a.emit('pair:note', { text: 'you there?' })).error, 'bad_request');
+});

@@ -1,0 +1,65 @@
+[
+ {
+  "file": "V5MBurn.dc.html",
+  "title": "MB01 \u2014 Burn: write, hold the match",
+  "w": 390,
+  "h": 844,
+  "row": "m_burn"
+ },
+ {
+  "file": "V5MBurnVoice.dc.html",
+  "title": "MB02 \u2014 Burn, voice note",
+  "w": 390,
+  "h": 844,
+  "row": "m_burn"
+ },
+ {
+  "file": "V5MBurnMid.dc.html",
+  "title": "MB03 \u2014 Burning, frozen mid-way",
+  "w": 390,
+  "h": 844,
+  "row": "m_burn"
+ },
+ {
+  "file": "V5MBurnGone.dc.html",
+  "title": "MB04 \u2014 It's gone",
+  "w": 390,
+  "h": 844,
+  "row": "m_burn"
+ },
+ {
+  "file": "V5MEchoes.dc.html",
+  "title": "ME01 \u2014 The wall (scrolls)",
+  "w": 390,
+  "h": 2064,
+  "row": "m_echoes"
+ },
+ {
+  "file": "V5MEchoWrite.dc.html",
+  "title": "ME02 \u2014 Leave yours",
+  "w": 390,
+  "h": 844,
+  "row": "m_echoes"
+ },
+ {
+  "file": "V5MEchoPinned.dc.html",
+  "title": "ME03 \u2014 It's up there now",
+  "w": 390,
+  "h": 844,
+  "row": "m_echoes"
+ },
+ {
+  "file": "V5MEchoThread.dc.html",
+  "title": "ME04 \u2014 An echo: listen, Heard, reply (scrolls)",
+  "w": 390,
+  "h": 1310,
+  "row": "m_echoes"
+ },
+ {
+  "file": "V5EchoThread.dc.html",
+  "title": "E04 \u2014 An echo: listen, Heard, reply",
+  "w": 1440,
+  "h": 900,
+  "row": "echoes"
+ }
+]

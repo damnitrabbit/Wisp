@@ -1,0 +1,128 @@
+[
+ {
+  "file": "V5BurnEmpty.dc.html",
+  "title": "L11 \u2014 Burn, nothing to burn yet",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5BurnRecording.dc.html",
+  "title": "L12 \u2014 Burn, recording a voice note",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5EchoesEmpty.dc.html",
+  "title": "L13 \u2014 The wall is quiet",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5EchoYours.dc.html",
+  "title": "L14 \u2014 Your echo (owner view)",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5EchoNoReplies.dc.html",
+  "title": "L15 \u2014 An echo, no replies yet",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5EchoTooLong.dc.html",
+  "title": "L16 \u2014 Leave yours, can't pin yet (too long)",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5CapsuleNotYet.dc.html",
+  "title": "L17 \u2014 Capsule, not yet",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5CapsuleEmailError.dc.html",
+  "title": "L18 \u2014 Capsule, email that doesn't look right",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5CapsuleLost.dc.html",
+  "title": "L19 \u2014 Capsule, the browser forgot",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_leave"
+ },
+ {
+  "file": "V5MBurnEmpty.dc.html",
+  "title": "ML11 \u2014 Burn, nothing to burn yet",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MBurnRecording.dc.html",
+  "title": "ML12 \u2014 Burn, recording a voice note",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MEchoesEmpty.dc.html",
+  "title": "ML13 \u2014 The wall is quiet",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MEchoYours.dc.html",
+  "title": "ML14 \u2014 Your echo (owner view)",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MEchoNoReplies.dc.html",
+  "title": "ML15 \u2014 An echo, no replies yet (scrolls)",
+  "w": 390,
+  "h": 1010,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MEchoTooLong.dc.html",
+  "title": "ML16 \u2014 Leave yours, can't pin yet (too long)",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MCapsuleNotYet.dc.html",
+  "title": "ML17 \u2014 Capsule, not yet",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MCapsuleEmailError.dc.html",
+  "title": "ML18 \u2014 Capsule, email that doesn't look right",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ },
+ {
+  "file": "V5MCapsuleLost.dc.html",
+  "title": "ML19 \u2014 Capsule, the browser forgot",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_leave"
+ }
+]

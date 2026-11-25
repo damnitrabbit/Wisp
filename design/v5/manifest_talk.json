@@ -1,0 +1,121 @@
+[
+ {
+  "file": "V5Lean.dc.html",
+  "title": "T00 \u2014 Tonight, I mostly want to\u2026 (tap a slip)",
+  "w": 1440,
+  "h": 900,
+  "row": "talk"
+ },
+ {
+  "file": "V5LeanListen.dc.html",
+  "title": "T00b \u2014 First \"listen\": the slip unfolds (shown once)",
+  "w": 1440,
+  "h": 900,
+  "row": "talk"
+ },
+ {
+  "file": "V5Listener.dc.html",
+  "title": "T07 \u2014 Before you listen (retired \u2192 V5LeanListen)",
+  "w": 1440,
+  "h": 900,
+  "row": "talk"
+ },
+ {
+  "file": "V5Requeue.dc.html",
+  "title": "T08 \u2014 They left. Finding someone new",
+  "w": 1440,
+  "h": 900,
+  "row": "talk"
+ },
+ {
+  "file": "V5Paused.dc.html",
+  "title": "T09 \u2014 Pods closed for you tonight",
+  "w": 1440,
+  "h": 900,
+  "row": "talk"
+ },
+ {
+  "file": "V5MLean.dc.html",
+  "title": "MT00 \u2014 Tonight, I mostly want to\u2026 (tap a slip)",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MLeanListen.dc.html",
+  "title": "MT00b \u2014 First \"listen\": the slip unfolds (shown once)",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MMatching.dc.html",
+  "title": "MT01 \u2014 Finding someone (scrolls)",
+  "w": 390,
+  "h": 1050,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MPod.dc.html",
+  "title": "MT02 \u2014 Talk pod",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MPodNudge.dc.html",
+  "title": "MT03 \u2014 10 minute check-in",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MPodEnd.dc.html",
+  "title": "MT04 \u2014 You were heard tonight \u00b7 leave a note (scrolls)",
+  "w": 390,
+  "h": 950,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MPodEndNotes.dc.html",
+  "title": "MT04b \u2014 Notes crossed",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MQuestion.dc.html",
+  "title": "MT05 \u2014 Tonight's question",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MAsleep.dc.html",
+  "title": "MT06 \u2014 Pods asleep",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MListener.dc.html",
+  "title": "MT07 \u2014 Before you listen (retired \u2192 V5MLeanListen)",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MRequeue.dc.html",
+  "title": "MT08 \u2014 They left. Finding someone new (scrolls)",
+  "w": 390,
+  "h": 1000,
+  "row": "m_talk"
+ },
+ {
+  "file": "V5MPaused.dc.html",
+  "title": "MT09 \u2014 Pods closed for you tonight",
+  "w": 390,
+  "h": 844,
+  "row": "m_talk"
+ }
+]

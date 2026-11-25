@@ -1,8 +1,14 @@
 import { ERRORS } from '@wisp/shared';
+import { POD_CLOSED } from '@wisp/shared/pods.js';
 import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 
 const L = config.limits;
+// Talk pod vs listen pod: a talker is matched with a listener when one is free. If no listener turns up within
+// TALK_FALLBACK_MS, two talkers are matched with each other (they listen to each other). Listeners only meet
+// talkers. 'any' (old clients, tests) matches whoever has waited longest.
+const TALK_FALLBACK_MS = Number(process.env.TALK_FALLBACK_MS ?? 20_000);
+const ROLES = new Set(['talk', 'listen', 'any']);
 
 export class Pairs {
   constructor(hub) {
@@ -11,6 +17,13 @@ export class Pairs {
     this.pairs = new Map();
     this.reports = new Map(); // targetUserId -> { reporters:Set, first:number }
     this.blocked = new Map(); // userId -> until
+    // Talkers waiting past the fallback get matched with each other on this sweep.
+    this.sweep = setInterval(() => this.fallback(), Math.max(250, Math.min(2000, TALK_FALLBACK_MS / 4 || 250)));
+    this.sweep.unref?.();
+  }
+
+  stop() {
+    clearInterval(this.sweep);
   }
 
   isBlocked(user) {
@@ -29,21 +42,42 @@ export class Pairs {
 
   // ---------- queue ----------
 
-  join(user) {
+  join(user, role) {
     if (this.isBlocked(user)) return { error: ERRORS.BLOCKED };
     if (user.pairId) return { ok: true, pairId: user.pairId };
-    if (this.queue.includes(user.id)) return { ok: true, waiting: true };
+    if (!this.hub.podsOpen()) return { error: POD_CLOSED };
+    const r = ROLES.has(role) ? role : 'any';
+    if (this.queue.includes(user.id)) {
+      user.podRole = r;
+      return { ok: true, waiting: true };
+    }
     this.hub.leaveEverything(user, 'switch');
+    user.podRole = r;
     this.enqueue(user);
     return { ok: true, waiting: !user.pairId };
   }
 
+  // Can these two be matched right now?
+  fits(a, b, now = Date.now()) {
+    const ra = a.podRole || 'any', rb = b.podRole || 'any';
+    if (ra === 'any' || rb === 'any') return true;
+    if (ra !== rb) return true; // a talker and a listener
+    if (ra === 'listen') return false;
+    // two talkers: only once one of them has waited long enough for a listener
+    const waited = Math.max(a.queuedAt ? now - a.queuedAt : 0, b.queuedAt ? now - b.queuedAt : 0);
+    return waited >= TALK_FALLBACK_MS;
+  }
+
   enqueue(user) {
     // Whoever has been waiting longest gets you, unless it's the person you just left.
-    const idx = this.queue.findIndex((id) => {
+    // A talker takes a waiting listener first.
+    const ok = (id) => {
       const other = this.hub.userById(id);
-      return other && other.online && id !== user.lastPartnerId && other.lastPartnerId !== user.id;
-    });
+      return other && other.online && id !== user.lastPartnerId && other.lastPartnerId !== user.id && this.fits(user, other);
+    };
+    let idx = -1;
+    if (user.podRole === 'talk') idx = this.queue.findIndex((id) => this.hub.userById(id)?.podRole === 'listen' && ok(id));
+    if (idx === -1) idx = this.queue.findIndex(ok);
     if (idx === -1) {
       this.queue.push(user.id);
       user.queuedAt = Date.now();
@@ -52,6 +86,43 @@ export class Pairs {
     }
     const [otherId] = this.queue.splice(idx, 1);
     this.match(this.hub.userById(otherId), user);
+  }
+
+  // Talkers who waited past the fallback meet each other (and anyone else who fits by now).
+  fallback() {
+    if (this.queue.length < 2) return;
+    const now = Date.now();
+    for (let i = 0; i < this.queue.length; i++) {
+      const a = this.hub.userById(this.queue[i]);
+      if (!a || !a.online) continue;
+      for (let j = i + 1; j < this.queue.length; j++) {
+        const b = this.hub.userById(this.queue[j]);
+        if (!b || !b.online || a.lastPartnerId === b.id || b.lastPartnerId === a.id || !this.fits(a, b, now)) continue;
+        this.queue.splice(j, 1);
+        this.queue.splice(i, 1);
+        this.match(a, b);
+        return this.fallback();
+      }
+    }
+  }
+
+  // Pods closed for the night: every live pod ends at once, the line empties.
+  closeAll() {
+    for (const pair of [...this.pairs.values()]) {
+      clearTimeout(pair.voiceTimer);
+      this.pairs.delete(pair.id);
+      for (const u of [pair.a, pair.b]) {
+        u.pairId = null;
+        this.hub.toUser(u, 'pods:closed', { where: 'pair' });
+      }
+    }
+    for (const id of this.queue.splice(0)) {
+      const u = this.hub.userById(id);
+      if (u) {
+        u.queuedAt = null;
+        this.hub.toUser(u, 'pods:closed', { where: 'queue' });
+      }
+    }
   }
 
   leaveQueue(user) {
@@ -84,7 +155,8 @@ export class Pairs {
     const partner = pair.a === user ? pair.b : pair.a;
     return {
       pairId: pair.id,
-      partner: { id: partner.id, name: partner.name },
+      partner: { id: partner.id, name: partner.name, role: partner.podRole || 'any' },
+      role: user.podRole || 'any',
       startedAt: pair.startedAt,
       serverNow: Date.now(),
       voice: pair.voice,
@@ -98,15 +170,46 @@ export class Pairs {
     return { pair, partner: pair.a === user ? pair.b : pair.a };
   }
 
+  // A gentle wind-down: both land on the notes screen and may leave each other one parting note.
+  // The pair stays alive (so a note can still cross) until each person leaves on their own. Nothing is kept.
+  wrap(user) {
+    const { pair, partner } = this.get(user);
+    if (!pair) return { error: ERRORS.BAD_REQUEST };
+    if (!pair.wrapping) {
+      pair.wrapping = true;
+      clearTimeout(pair.voiceTimer);
+      pair.voice = 'off';
+      pair.voiceBy = null;
+      this.hub.toUser(user, 'pair:wrap', { by: 'you' });
+      this.hub.toUser(partner, 'pair:wrap', { by: user.name });
+    }
+    return { ok: true };
+  }
+
+  // One optional parting note, relayed a single time to the partner and stored nowhere.
+  note(user, text) {
+    const { pair, partner } = this.get(user);
+    if (!pair) return { error: ERRORS.BAD_REQUEST }; // partner already gone — nothing lands
+    if (typeof text !== 'string') return { error: ERRORS.BAD_REQUEST };
+    const clean = text.replace(/\s+/g, ' ').trim().slice(0, L.PAIR_NOTE_MAX);
+    if (!clean) return { error: ERRORS.EMPTY };
+    this.hub.toUser(partner, 'pair:note', { text: clean, name: user.name });
+    return { ok: true };
+  }
+
   // Ends the pair. The partner is put back in line automatically; so is the leaver if they skipped.
+  // During a wind-down both are already on the notes screen, so the one left behind is not re-queued —
+  // they pick their own next step (talk to someone new, or home).
   end(user, reason) {
     const { pair, partner } = this.get(user);
     if (!pair) return;
     clearTimeout(pair.voiceTimer);
+    const wrapping = pair.wrapping;
     this.pairs.delete(pair.id);
     user.pairId = null;
     partner.pairId = null;
-    this.hub.toUser(partner, 'pair:partnerLeft', { name: user.name, reason: reason === 'report' ? 'skip' : reason });
+    this.hub.toUser(partner, 'pair:partnerLeft', { name: user.name, reason: reason === 'report' ? 'skip' : wrapping ? 'wrapped' : reason });
+    if (wrapping) return;
     if (this.isBlocked(partner)) return;
     if (partner.online) this.enqueue(partner);
     else partner.requeueOnResume = true;
@@ -125,7 +228,7 @@ export class Pairs {
     return { ok: true };
   }
 
-  report(user) {
+  report(user, requeue = true) {
     const { partner } = this.get(user);
     if (!partner) return { error: ERRORS.BAD_REQUEST };
     const now = Date.now();
@@ -134,7 +237,7 @@ export class Pairs {
     r.reporters.add(user.id);
     const blockNow = r.reporters.size >= L.PAIR_REPORT_THRESHOLD;
     this.end(user, 'report');
-    this.enqueue(user);
+    if (requeue) this.enqueue(user);
     if (blockNow) {
       this.blocked.set(partner.id, now + L.PAIR_BLOCK_MS);
       this.reports.delete(partner.id);
@@ -179,6 +282,17 @@ export class Pairs {
     pair.voiceTimer.unref?.();
     this.hub.toUser(partner, 'pair:voiceRequested', { name: user.name, expiresAt, serverNow: Date.now() });
     return { ok: true, expiresAt };
+  }
+
+  // The asker changed their mind before an answer.
+  voiceCancel(user) {
+    const { pair, partner } = this.get(user);
+    if (!pair || pair.voice !== 'requested' || pair.voiceBy !== user.id) return { error: ERRORS.BAD_REQUEST };
+    clearTimeout(pair.voiceTimer);
+    pair.voice = 'off';
+    pair.voiceBy = null;
+    this.hub.toUser(partner, 'pair:voiceWithdrawn', {});
+    return { ok: true };
   }
 
   voiceAnswer(user, accept) {

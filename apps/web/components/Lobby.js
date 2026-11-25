@@ -43,6 +43,8 @@ export default function Lobby() {
             text={<>25 THEMED ROOMS. UP TO 10 PEOPLE EACH. <br />JOIN AS A LISTENER. RAISE YOUR HAND TO SPEAK.</>} />
           <ModeCard href="/chat" no="02" meta={lobby.waiting ? `${lobby.waiting} WAITING` : 'NO FILTERS'} title="1:1 CHAT"
             text={<>ONE RANDOM STRANGER. TEXT FIRST. <br />VOICE ONLY IF YOU BOTH SAY YES.</>} />
+          <ModeCard href="/echoes" no="03" meta={lobby.echoes ? `${lobby.echoes} ON THE WALL` : 'NO NAME'} title="ECHOES"
+            text={<>SAY IT OUT LOUD, THEN LEAVE. <br />STRANGERS LISTEN. GONE IN 24 HOURS.</>} />
         </div>
       </main>
       <Footer />

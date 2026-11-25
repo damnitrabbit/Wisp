@@ -1,0 +1,86 @@
+[
+ {
+  "file": "V5VoiceWait.dc.html",
+  "title": "V01 \u2014 You asked for voice",
+  "w": 1440,
+  "h": 900,
+  "row": "voice"
+ },
+ {
+  "file": "V5VoiceAsk.dc.html",
+  "title": "V02 \u2014 They'd like to talk by voice",
+  "w": 1440,
+  "h": 900,
+  "row": "voice"
+ },
+ {
+  "file": "V5Call.dc.html",
+  "title": "V03 \u2014 On voice",
+  "w": 1440,
+  "h": 900,
+  "row": "voice"
+ },
+ {
+  "file": "V5Rooms.dc.html",
+  "title": "R01 \u2014 Open pod: pick a room",
+  "w": 1440,
+  "h": 900,
+  "row": "rooms"
+ },
+ {
+  "file": "V5Room.dc.html",
+  "title": "R02 \u2014 In a room, mod view",
+  "w": 1440,
+  "h": 900,
+  "row": "rooms"
+ },
+ {
+  "file": "V5RoomHand.dc.html",
+  "title": "R03 \u2014 Listener, invited to stage",
+  "w": 1440,
+  "h": 900,
+  "row": "rooms"
+ },
+ {
+  "file": "V5MVoiceWait.dc.html",
+  "title": "MV01 \u2014 You asked for voice",
+  "w": 390,
+  "h": 844,
+  "row": "m_voice"
+ },
+ {
+  "file": "V5MVoiceAsk.dc.html",
+  "title": "MV02 \u2014 They'd like to talk by voice",
+  "w": 390,
+  "h": 844,
+  "row": "m_voice"
+ },
+ {
+  "file": "V5MCall.dc.html",
+  "title": "MV03 \u2014 On voice",
+  "w": 390,
+  "h": 844,
+  "row": "m_voice"
+ },
+ {
+  "file": "V5MRooms.dc.html",
+  "title": "MR01 \u2014 Open pod: pick a room (scrolls)",
+  "w": 390,
+  "h": 1610,
+  "row": "m_rooms"
+ },
+ {
+  "file": "V5MRoom.dc.html",
+  "title": "MR02 \u2014 In a room, mod view",
+  "w": 390,
+  "h": 844,
+  "row": "m_rooms"
+ },
+ {
+  "file": "V5MRoomHand.dc.html",
+  "title": "MR03 \u2014 Listener, invited to stage",
+  "w": 390,
+  "h": 844,
+  "row": "m_rooms"
+ }
+]

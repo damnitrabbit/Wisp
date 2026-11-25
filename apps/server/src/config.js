@@ -17,6 +17,8 @@ export const config = {
       ...(process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map((s) => s.trim()).filter(Boolean)
     ])
   ],
+  // This project's Vercel preview deployments (wisp-<hash>-damn-it-rabbit.vercel.app and branch aliases).
+  previewOrigin: /^https:\/\/wisp-[a-z0-9-]+-damn-it-rabbit\.vercel\.app$/,
   limits: Object.fromEntries(Object.entries(LIMITS).map(([k, v]) => [k, num(k, v)])),
 
   // TURN (Cloudflare Realtime). Without these, clients get STUN only.

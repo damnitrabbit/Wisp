@@ -1,0 +1,65 @@
+[
+ {
+  "file": "V5MCapsule.dc.html",
+  "title": "MC01 \u2014 Write to later you",
+  "w": 390,
+  "h": 844,
+  "row": "m_capsule"
+ },
+ {
+  "file": "V5MCapsuleSealed.dc.html",
+  "title": "MC02 \u2014 Sealed",
+  "w": 390,
+  "h": 844,
+  "row": "m_capsule"
+ },
+ {
+  "file": "V5MCapsuleOpen.dc.html",
+  "title": "MC03 \u2014 It arrived",
+  "w": 390,
+  "h": 844,
+  "row": "m_capsule"
+ },
+ {
+  "file": "V5MHelp.dc.html",
+  "title": "MS01 \u2014 Need help now",
+  "w": 390,
+  "h": 844,
+  "row": "m_care"
+ },
+ {
+  "file": "V5MReported.dc.html",
+  "title": "MS02 \u2014 Reported",
+  "w": 390,
+  "h": 844,
+  "row": "m_care"
+ },
+ {
+  "file": "V5MPrivacy.dc.html",
+  "title": "MS03 \u2014 What we keep",
+  "w": 390,
+  "h": 844,
+  "row": "m_care"
+ },
+ {
+  "file": "V5MTerms.dc.html",
+  "title": "MS04 \u2014 The rules, in plain words (scrolls)",
+  "w": 390,
+  "h": 2830,
+  "row": "m_care"
+ },
+ {
+  "file": "V5Terms.dc.html",
+  "title": "S04 \u2014 The rules, in plain words (scrolls)",
+  "w": 1440,
+  "h": 1780,
+  "row": "care"
+ },
+ {
+  "file": "V5Notices.dc.html",
+  "title": "S05 \u2014 Notices and toasts",
+  "w": 1440,
+  "h": 1400,
+  "row": "care"
+ }
+]

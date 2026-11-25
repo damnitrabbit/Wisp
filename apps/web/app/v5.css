@@ -1,0 +1,12 @@
+/* site-level rules on top of the generated design stylesheet (apps/web/v5/base.css) */
+html, body { margin: 0; background: #0D0D0E; min-height: 100dvh; }
+body { -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+textarea, input { font: inherit; color: inherit; }
+.v5-in { width: 100%; background: transparent; border: 0; outline: none; resize: none; padding: 0; margin: 0; color: inherit; }
+.v5-in::placeholder { color: #8A8378; opacity: 1; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Press-and-hold (hold to burn / record) and taps must not select the handwriting around them,
+   and must not raise iOS's callout/selection menu on long-press. Inputs stay selectable. */
+.v5-desk, .v5-phone { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.v5-desk input, .v5-desk textarea, .v5-phone input, .v5-phone textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }

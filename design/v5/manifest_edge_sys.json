@@ -1,0 +1,86 @@
+[
+ {
+  "file": "V5SomethingBroke.dc.html",
+  "title": "X11 — Something broke on our side",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5Loading.dc.html",
+  "title": "X12 — Loading, one sec",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5NoVoice.dc.html",
+  "title": "X13 — This browser can't do voice",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5StorageBlocked.dc.html",
+  "title": "X14 — Private window, storage blocked",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5WelcomeBack.dc.html",
+  "title": "X15 — Welcome back, name remembered",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5SlowDown.dc.html",
+  "title": "X16 — Slow down, too many tries",
+  "w": 1440,
+  "h": 900,
+  "row": "edge_sys"
+ },
+ {
+  "file": "V5MSomethingBroke.dc.html",
+  "title": "MX11 — Something broke on our side",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_sys"
+ },
+ {
+  "file": "V5MLoading.dc.html",
+  "title": "MX12 — Loading, one sec",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_sys"
+ },
+ {
+  "file": "V5MNoVoice.dc.html",
+  "title": "MX13 — This browser can't do voice",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_sys"
+ },
+ {
+  "file": "V5MStorageBlocked.dc.html",
+  "title": "MX14 — Private window, storage blocked",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_sys"
+ },
+ {
+  "file": "V5MWelcomeBack.dc.html",
+  "title": "MX15 — Welcome back, name remembered (scrolls)",
+  "w": 390,
+  "h": 890,
+  "row": "m_edge_sys"
+ },
+ {
+  "file": "V5MSlowDown.dc.html",
+  "title": "MX16 — Slow down, too many tries",
+  "w": 390,
+  "h": 844,
+  "row": "m_edge_sys"
+ }
+]

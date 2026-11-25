@@ -8,7 +8,13 @@ Object.assign(process.env, {
   RECONNECT_GRACE_MS: '400',
   CHAT_MIN_INTERVAL_MS: '50',
   PER_IP_OPEN: '10000',
-  PER_IP_PER_MIN: '10000'
+  PER_IP_PER_MIN: '10000',
+  ECHO_POST_COOLDOWN_MS: '300',
+  ECHO_REPLY_COOLDOWN_MS: '100',
+  ECHO_TTL_MS: '4000',
+  ECHO_IP_POSTS: '3',
+  PODS_ALWAYS_OPEN: '1',
+  TALK_FALLBACK_MS: '400'
 });
 
 const { createWisp } = await import('../src/index.js');
@@ -22,9 +28,12 @@ export async function startServer() {
   const clients = [];
   let n = 0;
 
-  async function connect({ token, name } = {}) {
-    token ??= `test-token-${Date.now()}-${n++}-abcdef`;
-    const socket = ioc(`http://localhost:${port}`, { auth: { token, name }, transports: ['websocket'], forceNew: true, reconnection: false });
+  // Each client looks like a different person (its own IP), unless a test passes the same ip.
+  async function connect({ token, name, ip } = {}) {
+    const k = n++;
+    token ??= `test-token-${Date.now()}-${k}-abcdef`;
+    ip ??= `10.0.${Math.floor(k / 250)}.${(k % 250) + 1}`;
+    const socket = ioc(`http://localhost:${port}`, { auth: { token, name }, transports: ['websocket'], forceNew: true, reconnection: false, extraHeaders: { 'x-forwarded-for': ip } });
     const log = [];
     const waiters = [];
     socket.onAny((event, payload) => {
