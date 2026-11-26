@@ -2,7 +2,7 @@
 from gen5 import *
 import v5_live as LV
 # shared pieces from the desktop module of the same group (importing it also regenerates the desktop boards: harmless)
-from v5x_voice import (ic, MIC, MICOFF, DOOR, FLAG, TEXTI, HANDI, ink_wave, dots10, star, POD_CSS, status_dot, ROOMS, mini_wave,
+from v5x_voice import (ic, MIC, MICOFF, DOOR, FLAG, TEXTI, HANDI, ink_wave, wave_slot, dots10, star, POD_CSS, status_dot, ROOMS, mini_wave,
                        write_manifest)
 from v5m_talk import tchip, ctape, apaper, grow, mnote, bleed, LDOTS
 
@@ -150,17 +150,11 @@ call_inner = f'''<div style="position:absolute;inset:0;background-image:repeatin
 <div style="{TYPE};font-size:9px;letter-spacing:.16em;color:{PENCIL};margin-top:4px">14 MIN TOGETHER</div></div>
 {status_dot('ON VOICE', INK, size=9.5)}</div>
 <div style="flex-grow:1;display:flex;flex-direction:column;justify-content:center;gap:22px">
-<div class="rise" style="--w:.5s">{mlane('moss_byte', 'SPEAKING', ink_wave(306, 130, 50, 4301, 'ma', n=30, sw=2.4))}</div>
+<div class="rise" style="--w:.5s">{mlane('moss_byte', 'SPEAKING', wave_slot('themWave', 306, 130, amp=40, stretch=True))}</div>
 <div style="border-top:1.5px dashed {RULE}"></div>
-<div class="rise" style="--w:.8s">{mlane('you', 'LISTENING', ink_wave(306, 90, 5, 4302, 'mb', color=PENCIL, n=30, step=1.4, sw=2))}</div>
+<div class="rise" style="--w:.8s">{mlane('you', 'LISTENING', wave_slot('meWave', 306, 90, color=PENCIL, amp=8, stretch=True))}</div>
 </div>
 </div>'''
-def fluid(svg):
-    """Let a fixed-size ink drawing stretch to its column (phones 320 to 430 wide)."""
-    return svg.replace('<svg ', '<svg preserveAspectRatio="none" ', 1).replace('style="display:block;', 'style="display:block;width:100%;', 1)
-
-call_inner = call_inner.replace(ink_wave(306, 130, 50, 4301, 'ma', n=30, sw=2.4), fluid(ink_wave(306, 130, 50, 4301, 'ma', n=30, sw=2.4))) \
-                       .replace(ink_wave(306, 90, 5, 4302, 'mb', color=PENCIL, n=30, step=1.4, sw=2), fluid(ink_wave(306, 90, 5, 4302, 'mb', color=PENCIL, n=30, step=1.4, sw=2)))
 call_sheet = msheet(call_inner, kind='hi', seed=631, pad='16px 20px 14px', rot=.3, minh=380, tapes=tape(W / 2 - 50, -12, 100, 26, rot=-2, seed=63))
 mv03 = f'''
 {matmos()}

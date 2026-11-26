@@ -10,6 +10,7 @@ import P, { CSS as PART_CSS } from '@/app/talk/_pods/parts.gen';
 import { emit, on, bus, syncClock, serverNow, useWisp } from '@/lib/wisp';
 import { useMicFlow, micTrack, closeMic } from '@/lib/mic';
 import { usePairCall } from '@/lib/call';
+import LiveWave from '@/components/LiveWave';
 import { podsOpen as clientPodsOpen } from '@/lib/v5/hours';
 import { podMinsToClose, POD_CLOSING_WARN_MIN } from '@wisp/shared/pods.js';
 
@@ -264,7 +265,20 @@ function TheirNoteBox({ base }) {
   // their card sits on the dark board, so the note is written in light ink, not paper ink
   return <div style={{ ...style, color: '#E4DAC9', fontFamily: "'Nothing You Could Do', 'Caveat', cursive", fontSize: 23, lineHeight: 1.35 }}>{c.their.text}</div>;
 }
-const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer />, noteWrite: NoteWrite, theirNote: TheirNote };
+// The two voice-pod waveforms, driven by each participant's live audio level (not a baked animation):
+// the line moves only while that person actually speaks, and a muted mic reads as a distinct still line.
+function Wave({ node, id, muted }) {
+  const a = node.attribs || {};
+  return <LiveWave id={id} muted={!!muted} w={+a['data-w'] || 760} h={+a['data-h'] || 120} color={a['data-color'] || '#221E1A'} />;
+}
+function ThemWave(node) {
+  return <Wave node={node} id="partner" />;
+}
+function MeWave(node) {
+  const c = useContext(PodCtx);
+  return <Wave node={node} id="me" muted={c.muted} />;
+}
+const SLOTS = { lastlines: LastLines, msgs: Msgs, composer: Composer, checkin: <Checkin />, calltimer: <CallTimer />, noteWrite: NoteWrite, theirNote: TheirNote, themWave: ThemWave, meWave: MeWave };
 const POD_EXTRA_CSS = PART_CSS + `
 .pod-input::placeholder{color:#5F584E;font-style:italic;opacity:1}
 .pod-input:focus-visible{outline:none;box-shadow:none}
@@ -703,9 +717,9 @@ export default function Chat({ role = 'talk' }) {
 
   const onNoteText = useCallback((v) => { noteDraft.current = v; setNote((n) => ({ ...n, text: v })); }, []);
   const ctx = useMemo(() => ({
-    phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince,
+    phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince, muted,
     opening, their, note: { text: note.text, sent: note.sent, skipped: note.skipped, landed: note.landed, onText: onNoteText, pin: pinNote, skip: skipNote }
-  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince, opening, their, note.text, note.sent, note.skipped, note.landed, onNoteText, pinNote, skipNote]);
+  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince, muted, opening, their, note.text, note.sent, note.skipped, note.landed, onNoteText, pinNote, skipNote]);
 
   const links = useMemo(() => ({
     VoiceWait: askVoice,
