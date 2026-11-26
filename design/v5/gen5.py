@@ -389,12 +389,12 @@ def topbar(right='', crumb='', dark=True):
     return (f'<header style="position:relative;z-index:55;height:88px;flex-shrink:0;padding:0 56px;display:flex;align-items:center;justify-content:space-between">'
             f'<a href="V5Home.dc.html" style="display:flex;align-items:center;gap:14px" aria-label="N0TRACE home">{rabbit(34, c, uid="tb", blink=False)}{wordmark(14, c)}{cr}</a>'
             f'<div style="display:flex;align-items:center;gap:28px;{TYPE};font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:{ASH}">{right}'
-            f'<a href="V5Help.dc.html" class="ul" style="color:{CHALK}">need help now?</a></div></header>')
+            f'<a href="V5Help.dc.html" class="ul" style="color:{CRISIS}">need help now?</a></div></header>')
 
 def footer(dark=True):
     return (f'<footer style="position:relative;z-index:55;height:64px;flex-shrink:0;margin:0 56px;display:flex;align-items:center;justify-content:space-between;border-top:1px dashed {SOOT};{TYPE};font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:{ASH}">'
             f'<span>no account · a new name every visit · nothing kept · 18+</span>'
-            f'<span style="display:flex;gap:26px"><a href="V5Privacy.dc.html" class="ul">what we keep</a><a href="V5Help.dc.html" class="ul" style="color:#E07A6E">in crisis? talk to someone trained →</a></span></footer>')
+            f'<span style="display:flex;gap:26px"><a href="V5Privacy.dc.html" class="ul">what we keep</a><span>dug up by damn_it_rabbit</span></span></footer>')
 
 # ---------- phone (390 x 844) ----------
 MW, MH, MPAD = 390, 844, 22   # phone frame, gutter
@@ -409,7 +409,7 @@ def mtopbar(crumb='', back=None, right=None, dark=True):
         cr = f'<span style="{HAND};font-size:18px;color:{ASH if dark else PENCIL};margin-left:8px">{crumb}</span>' if crumb else ''
         left = f'<a href="V5MHome.dc.html" style="display:flex;align-items:center;gap:10px" aria-label="N0TRACE home">{rabbit(26, c, uid="mtb", blink=False)}{wordmark(11, c)}{cr}</a>'
     # help is always top right on phone; status (hours, offline) belongs in the screen, not here
-    help_ = f'<a href="V5MHelp.dc.html" class="ul" style="{TYPE};font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:{CHALK};padding:12px 0 12px 12px">help</a>'
+    help_ = f'<a href="V5MHelp.dc.html" class="ul" style="{TYPE};font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:{CRISIS};padding:12px 0 12px 12px">help</a>'
     rt = right if (right is not None and 'OFFLINE' in str(right)) else help_
     return (f'<header style="position:relative;z-index:55;height:64px;flex-shrink:0;padding:8px {MPAD}px 0;display:flex;align-items:center;justify-content:space-between">'
             f'{left}{rt}</header>')
@@ -422,7 +422,7 @@ M_DOCK_FOOT = 14      # dock -> footer rule
 M_SAFE = 'env(safe-area-inset-bottom, 0px)'
 def mfooter():
     return (f'<footer style="position:relative;z-index:55;flex-shrink:0;margin:0 {MPAD}px;padding:12px 0 calc(16px + {M_SAFE});border-top:1px dashed {SOOT};display:flex;justify-content:space-between;{TYPE};font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:{ASH}">'
-            f'<span>nothing kept · 18+</span><a href="V5MHelp.dc.html" class="ul" style="color:#E07A6E">in crisis? →</a></footer>')
+            f'<span>nothing kept · 18+</span><span>dug up by damn_it_rabbit</span></footer>')
 
 def mbody(inner, center=False, gap=14, top=4, cls='', extra=''):
     """The flexible middle of a phone screen. center=True for scene screens (a note, an envelope)."""
