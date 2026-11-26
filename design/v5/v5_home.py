@@ -51,8 +51,7 @@ left_inner = f'''
 
 right_open = f'''<nav aria-label="Talk to someone" style="margin-top:18px;border-top:1px dashed rgba(34,30,26,.25)">
 {hrow('Someone, one on one', '1:1 POD', 'V5Lean.dc.html', sw=250)}
-{hrow('A room, just listening in', 'OPEN POD', 'V5Rooms.dc.html', sw=300, size=28)}
-{hrow('Join a small group', 'GROUP POD', 'V5Question.dc.html', True, sw=250)}
+{hrow('A room, just listening in', 'OPEN POD', 'V5Rooms.dc.html', True, sw=300, size=28)}
 </nav>'''
 right_closed = f'''<div style="margin-top:18px;border-top:1px dashed rgba(34,30,26,.25);padding-top:30px;display:flex;align-items:center;gap:26px">
 {rabbit(96, INK, mood='sleep', uid='hs')}
@@ -87,7 +86,7 @@ def home(open_, capsule=False, focus=False, greeting=''):
     # the letter shows only when a capsule letter is due (site: vals.letter); the board shows it where capsule=True
     cap = f'<sc-if value="{{{{letter}}}}" hint-placeholder-val="{{{{ {str(capsule).lower()} }}}}">{letter_arrived()}</sc-if>'
     status = 'PODS OPEN · UNTIL 2AM' if open_ else '<span data-slot="pods">PODS OPEN AT 10PM · 1H 42M</span>'
-    qhref, qlabel = ('V5Question.dc.html', 'JOIN THE ROOM →') if open_ else ('V5Asleep.dc.html', 'REMIND ME AT 10 →')
+    qhref, qlabel = ('V5Question.dc.html', 'JOIN THE GROUP →') if open_ else ('V5Asleep.dc.html', 'REMIND ME AT 10 →')
     body = f'''
 {atmos()}
 {topbar(right=status)}
