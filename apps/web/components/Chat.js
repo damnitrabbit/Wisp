@@ -226,8 +226,12 @@ function NoteComposer({ node }) {
     }
   }, [n.text, n.sent]);
   if (n.sent) {
+    const msg = n.skipped ? 'no note this time. that’s okay.'
+      : n.landed === null ? 'pinning…'
+        : n.landed === false ? 'they’d already headed off — it didn’t reach them.'
+          : 'pinned for them.';
     return <div style={{ ...styleObj(node.attribs.style), alignItems: 'center', justifyContent: 'center', color: '#5F584E', fontStyle: 'italic', fontFamily: "'Newsreader', Georgia, serif", fontSize: 17 }}>
-      {n.skipped ? 'no note this time. that’s okay.' : 'pinned for them.'}
+      {msg}
     </div>;
   }
   return (
@@ -586,11 +590,14 @@ export default function Chat({ role = 'talk' }) {
     setTheir(null);
     setNote({ text: '', sent: false, skipped: false });
   }, [resetChat]);
-  const pinNote = useCallback(() => {
+  const pinNote = useCallback(async () => {
     const text = noteDraft.current.trim();
     if (!text) return;
-    emit('pair:note', { text });
-    setNote({ text, sent: true, skipped: false });
+    setNote({ text, sent: true, skipped: false, landed: null }); // optimistic: show it as pinned while the ack comes back
+    const r = await emit('pair:note', { text });
+    // the server relays only while the pair is alive (it buffers for a briefly-away partner); a failure
+    // means they'd already left for good, so say so honestly instead of a false "pinned for them".
+    setNote({ text, sent: true, skipped: false, landed: !!r?.ok });
   }, []);
   const skipNote = useCallback(() => setNote((n) => ({ ...n, sent: true, skipped: true })), []);
   const report = useCallback(async () => {
@@ -697,8 +704,8 @@ export default function Chat({ role = 'talk' }) {
   const onNoteText = useCallback((v) => { noteDraft.current = v; setNote((n) => ({ ...n, text: v })); }, []);
   const ctx = useMemo(() => ({
     phone: false, items, typing: typing && voice !== 'on', partner, draft, onDraft, send: () => send(), retry: (m) => send(m), nudgeAt, callSince,
-    opening, their, note: { text: note.text, sent: note.sent, skipped: note.skipped, onText: onNoteText, pin: pinNote, skip: skipNote }
-  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince, opening, their, note.text, note.sent, note.skipped, onNoteText, pinNote, skipNote]);
+    opening, their, note: { text: note.text, sent: note.sent, skipped: note.skipped, landed: note.landed, onText: onNoteText, pin: pinNote, skip: skipNote }
+  }), [items, typing, voice, partner, draft, onDraft, send, nudgeAt, callSince, opening, their, note.text, note.sent, note.skipped, note.landed, onNoteText, pinNote, skipNote]);
 
   const links = useMemo(() => ({
     VoiceWait: askVoice,
