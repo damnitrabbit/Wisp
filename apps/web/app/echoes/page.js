@@ -24,10 +24,12 @@ function Wall() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [notes, Math.floor(now / 60_000)]
   );
-  // Nothing to show yet (still loading / reconnecting) or nothing left tonight: the clean single-CTA
-  // empty board, not the full wall with its "that's everything from tonight" end-of-list CTA.
-  if (!notes || notes.length === 0) return <Screen desktop={DE} phone={ME} />;
-  return <Screen desktop={D} phone={M} slots={slots} css={PHONE_CSS} />;
+  // Only the confirmed-empty wall (notes === []) gets the "the wall is quiet" board. While still loading
+  // (notes === null) we show the wall frame with an empty board and the notes rise in, so there is no
+  // "quiet" message flashing to a full wall on every visit. `tail` hides the "that's everything" end line
+  // until there are actually notes above it.
+  if (notes && notes.length === 0) return <Screen desktop={DE} phone={ME} />;
+  return <Screen desktop={D} phone={M} slots={slots} css={PHONE_CSS} vals={{ tail: Boolean(notes && notes.length) }} />;
 }
 
 export default function Page() {
