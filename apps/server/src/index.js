@@ -9,6 +9,7 @@ import { makeName, isValidName } from './names.js';
 import { Rooms } from './rooms.js';
 import { Pairs } from './pairs.js';
 import { Echoes } from './echoes.js';
+import { makeEchoStore } from './echoStore.js';
 import { capsuleRemind } from './capsule.js';
 import { getIceServers, reportRelayBytes, turnStatus } from './turn.js';
 
@@ -142,7 +143,8 @@ export function createWisp() {
 
   const rooms = new Rooms(hub);
   const pairs = new Pairs(hub);
-  const echoes = new Echoes(hub);
+  const echoStore = makeEchoStore(config.redisUrl, (...a) => console.warn(...a));
+  const echoes = new Echoes(hub, echoStore);
 
   function onlineCount() {
     let n = 0;
@@ -387,6 +389,10 @@ export function createWisp() {
     io,
     httpServer,
     state: { users, rooms, pairs, echoes },
+    // Repopulate the echoes wall from durable storage before serving (no-op without REDIS_URL).
+    init() {
+      return echoes.load();
+    },
     listen(port = config.port) {
       return new Promise((resolve) => httpServer.listen(port, () => resolve(httpServer.address().port)));
     },
@@ -394,13 +400,14 @@ export function createWisp() {
       echoes.stop();
       pairs.stop();
       clearInterval(hours);
-      return new Promise((resolve) => io.close(() => resolve()));
+      return Promise.resolve(echoStore?.close()).then(() => new Promise((resolve) => io.close(() => resolve())));
     }
   };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const wisp = createWisp();
+  await wisp.init(); // reload the echoes wall from Redis, if configured
   const port = await wisp.listen();
   console.log(`[wisp] signaling on :${port} · origins: ${config.allowedOrigins.join(', ')}`);
   const shutdown = () => wisp.close().then(() => process.exit(0));

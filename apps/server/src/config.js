@@ -21,6 +21,10 @@ export const config = {
   previewOrigin: /^https:\/\/wisp-[a-z0-9-]+-damn-it-rabbit\.vercel\.app$/,
   limits: Object.fromEntries(Object.entries(LIMITS).map(([k, v]) => [k, num(k, v)])),
 
+  // Durable 24h storage for the echoes wall (so a restart/redeploy doesn't wipe it). Without it, echoes
+  // live in memory only, exactly as before. Any Redis URL works (Northflank Redis addon, Upstash, ...).
+  redisUrl: process.env.REDIS_URL || '',
+
   // TURN (Cloudflare Realtime). Without these, clients get STUN only.
   turnKeyId: process.env.CF_TURN_KEY_ID || '',
   turnApiToken: process.env.CF_TURN_API_TOKEN || '',
