@@ -186,6 +186,16 @@ def ink_wave(w, h, amp, seed, uid, color=INK, n=46, frames=8, step=.95, sw=2.6, 
             f'<path d="{fr[-1]}" stroke-width="{sw * .7:.1f}" opacity=".28">{anim(f"-{step * 1.2:.2f}s")}</path>'
             f'<path class="draw" style="--len:{w * 3};--d:1.6s;--w:.6s" d="{fr[0]}" stroke-width="{sw}">{anim("0s")}</path></g></svg>')
 
+def wave_slot(slot, w, h, color=INK, amp=10, stretch=False):
+    """A live waveform the app fills by audio level (data-slot="slot"). The static board shows a
+    representative line; in the app LiveWave swaps it for one that moves only while that person speaks."""
+    inner = ink_wave(w, h, amp, 4100 + (w % 97), slot, color=color)
+    if stretch:
+        inner = inner.replace('<svg ', '<svg preserveAspectRatio="none" ', 1).replace('style="display:block;', 'style="display:block;width:100%;', 1)
+    wd = '100%' if stretch else f'{w}px'
+    return (f'<div data-slot="{slot}" data-w="{w}" data-h="{h}" data-color="{color}" '
+            f'style="width:{wd};height:{h}px">{inner}</div>')
+
 def lane(name, state, wave, color=INK, note=''):
     st_col = '#B0561F' if state.startswith('SPEAK') else PENCIL
     return (f'<div style="display:flex;flex-direction:column;gap:6px">'
@@ -197,9 +207,9 @@ call_sheet_inner = f'''
 <div style="position:relative;height:100%;display:flex;flex-direction:column">
 <div style="{TYPE};font-size:10px;letter-spacing:.18em;color:{PENCIL};text-align:center;padding-bottom:12px;border-bottom:1px dashed {RULE}">11:58 PM · PEER TO PEER · NOT RECORDED</div>
 <div style="flex-grow:1;display:flex;flex-direction:column;justify-content:center;gap:54px;padding:0 24px">
-<div class="rise" style="--w:.5s">{lane('moss_byte', 'SPEAKING', ink_wave(760, 150, 58, 4101, 'a'))}</div>
+<div class="rise" style="--w:.5s">{lane('moss_byte', 'SPEAKING', wave_slot('themWave', 760, 150, amp=40))}</div>
 <div style="border-top:1.5px dashed {RULE}"></div>
-<div class="rise" style="--w:.8s">{lane('you', 'LISTENING', ink_wave(760, 110, 7, 4102, 'b', color=PENCIL, step=1.4, sw=2.2))}</div>
+<div class="rise" style="--w:.8s">{lane('you', 'LISTENING', wave_slot('meWave', 760, 110, color=PENCIL, amp=8))}</div>
 </div>
 <div style="border-top:1.5px dashed {RULE};padding-top:16px;display:flex;align-items:center;justify-content:space-between">
 <span style="{SERIF};font-style:italic;font-size:18px;color:{PENCIL}">Pauses are fine. So is talking over each other.</span></div></div>'''

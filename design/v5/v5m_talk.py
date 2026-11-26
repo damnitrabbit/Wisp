@@ -462,8 +462,9 @@ if __name__ == '__main__':
 <div class="rise" style="--w:1.1s;padding:6px {MPAD}px 0;{TYPE};font-size:10px;letter-spacing:.16em;color:{BOARDTXT}">PODS OPEN UNTIL 2AM</div></div>
 <div class="rise" style="--w:.6s;margin:auto 0;padding:10px 0;display:flex;flex-direction:column;gap:22px;flex-shrink:0">
 {m_lean_slip(0, 'V5MMatching.dc.html', picked=True)}{m_lean_slip(1, 'V5MLeanListen.dc.html')}{m_lean_slip(2, 'V5MMatching.dc.html')}</div>
-<div class="rise" style="--w:1.6s;flex-shrink:0;{SERIF};font-style:italic;font-size:16px;line-height:1.5;color:{BOARDTXT};padding:0 4px">it only decides who we look for first. once you're in, you're just two people.</div>""", gap=14)}
-<div class="rise" style="--w:2s;display:flex;flex-direction:column">{mdock(mtext('not tonight', 'V5MHomeOpen.dc.html') + mnote('TAP ONE · WE START<br>LOOKING STRAIGHT AWAY'))}</div>
+<div class="rise" style="--w:1.6s;flex-shrink:0;{SERIF};font-style:italic;font-size:16px;line-height:1.5;color:{BOARDTXT};padding:0 4px">it only decides who we look for first. once you're in, you're just two people.</div>
+<div class="rise" style="--w:1.8s;flex-shrink:0;{TYPE};font-size:9.5px;font-weight:700;letter-spacing:.16em;line-height:1.6;color:{BOARDTXT};text-align:center;padding:2px 4px 0">TAP ONE · WE START LOOKING STRAIGHT AWAY</div>""", gap=14)}
+<div class="rise" style="--w:2.1s;display:flex;flex-direction:column">{mdock(f'<div style="flex:1 1 0;display:flex;justify-content:center">{mtext("not tonight", "V5MHomeOpen.dc.html")}</div>')}</div>
 {mfooter()}'''
     mpage('V5MLean', 'Tonight, I mostly want to', mlean, css=MLEAN_CSS)
     board('V5MLean', 'MT00 — Tonight, I mostly want to… (tap a slip)', MH, 'm_talk')

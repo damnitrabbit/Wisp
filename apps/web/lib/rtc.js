@@ -127,15 +127,22 @@ export function unmeter(id) {
   try { m.src.disconnect(); } catch {}
   meters.delete(id);
 }
+function rms(m) {
+  m.an.getByteTimeDomainData(m.buf);
+  let sum = 0;
+  for (const v of m.buf) sum += ((v - 128) / 128) ** 2;
+  return Math.sqrt(sum / m.buf.length);
+}
 export function speakingIds(threshold = 0.035) {
   const out = new Set();
-  for (const [id, m] of meters) {
-    m.an.getByteTimeDomainData(m.buf);
-    let sum = 0;
-    for (const v of m.buf) sum += ((v - 128) / 128) ** 2;
-    if (Math.sqrt(sum / m.buf.length) > threshold) out.add(id);
-  }
+  for (const [id, m] of meters) if (rms(m) > threshold) out.add(id);
   return out;
+}
+// Live mic/stream loudness for one participant (0..~0.3), for an audio-reactive waveform. 0 when not metered
+// (e.g. muted, or the stream isn't up yet), so the line reads as flat rather than a baked animation.
+export function level(id) {
+  const m = meters.get(id);
+  return m ? rms(m) : 0;
 }
 
 // ---------- relay usage (keeps the TURN free tier honest) ----------
