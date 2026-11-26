@@ -16,8 +16,21 @@ import { toast } from '@/lib/wisp';
 import { NOTE_MAX, VOICE_MAX_S, postEcho, useRecorder } from '@/lib/echoes';
 import { createStore, useStore, NoteText, NoteCount, NoteVoice, NoteTo, TO_MAX } from './compose';
 import { clock } from '../ui';
+import VoiceWave from '@/lib/v5/VoiceWave';
 
 const INK = '#221E1A', PENCIL = '#5F584E';
+const MONO = "'Courier Prime', 'Courier New', monospace";
+
+// A voice note has no text to fill its pinned card, so show the same waveform signature the wall uses,
+// with the length under it — not one lonely line floating in an empty sheet.
+function PinnedVoice({ base, dur }) {
+  return (
+    <div style={{ ...base, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, minHeight: 92, WebkitLineClamp: 'unset', WebkitBoxOrient: 'horizontal' }}>
+      <VoiceWave frac={1} w={190} h={42} seed={436} fillColor={INK} playhead={false} pencilRest={false} animate={false} />
+      <div style={{ fontFamily: MONO, fontSize: 11.5, letterSpacing: '.14em', color: PENCIL }}>VOICE · {clock(dur)}</div>
+    </div>
+  );
+}
 const ERR = {
   cooldown: (r) => `One note every few minutes. Try again in ${Math.max(1, Math.ceil((r.retryInMs || 0) / 60_000))} min.`,
   too_long: () => 'That’s too long for a note.',
@@ -97,16 +110,20 @@ export default function Writer({ kind = 'echo' }) {
   );
   const pinnedSlots = useMemo(
     () => ({
-      pinnedText: (node) => (
-        <div style={attributesToProps({ style: node.attribs?.style || '' }).style}>{pinned?.text ?? `a voice note · ${clock(pinned?.voice)}`}</div>
-      ),
+      pinnedText: (node) => {
+        const base = attributesToProps({ style: node.attribs?.style || '' }).style;
+        return pinned?.text != null ? <div style={base}>{pinned.text}</div> : <PinnedVoice base={base} dur={pinned?.voice} />;
+      },
       pinTo: (node) => <div style={attributesToProps({ style: node.attribs?.style || '' }).style}>{`to ${pinned?.to || 'you'},`}</div>,
-      // the letter on the wall is a fixed sheet: a long one shows its first lines
-      pinText: (node) => (
-        <div style={{ ...attributesToProps({ style: node.attribs?.style || '' }).style, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 4, overflow: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-          {pinned?.text ?? `a voice note · ${clock(pinned?.voice)}`}
-        </div>
-      )
+      // the letter on the wall is a fixed sheet: a long one shows its first lines; a voice note shows its wave
+      pinText: (node) => {
+        const base = attributesToProps({ style: node.attribs?.style || '' }).style;
+        return pinned?.text != null ? (
+          <div style={{ ...base, display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 4, overflow: 'hidden', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{pinned.text}</div>
+        ) : (
+          <PinnedVoice base={base} dur={pinned?.voice} />
+        );
+      }
     }),
     [pinned]
   );

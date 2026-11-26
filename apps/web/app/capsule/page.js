@@ -54,7 +54,7 @@ function CapText({ node, store, lines = 4 }) {
 }
 
 // "remind me by email · optional": the field's ruled line, as a real input.
-function CapEmail({ node, store }) {
+function CapEmail({ node, store, onHas }) {
   const [value, setValue] = useState(store.current);
   const p = strip(node);
   return (
@@ -70,6 +70,7 @@ function CapEmail({ node, store }) {
         onChange={(e) => {
           setValue(e.target.value);
           store.current = e.target.value;
+          onHas?.(Boolean(e.target.value.trim()));
         }}
         style={{ display: 'block', width: '100%', margin: 0, padding: 0, border: 0, outline: 'none', background: 'transparent', font: 'inherit', color: INK }}
       />
@@ -88,18 +89,25 @@ export default function CapsulePage() {
   const [sealed, setSealed] = useState(null); // { openAt, preview }
   const text = useRef('');
   const email = useRef('');
+  const [hasEmail, setHasEmail] = useState(false); // drives the date cap: a reminder only reaches 30 days
   const [bounds, setBounds] = useState({ min: '', max: '' });
 
   useEffect(() => {
     setCanStore(storageOk());
-    setBounds(dateBounds(new Date(), false));
   }, []);
+
+  // an email shrinks the furthest allowed date to 30 days; adding one pulls a now-too-far pick back in,
+  // removing one opens it back up to a year — so the calendar can never offer a date the reminder can't reach.
+  useEffect(() => {
+    const b = dateBounds(new Date(), hasEmail);
+    setBounds(b);
+    setDate((d) => (d && b.max && d > b.max ? '' : d));
+  }, [hasEmail]);
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [anchor, setAnchor] = useState(null);
   const openPicker = useCallback((e) => {
-    // with an email, the date can only be as far as the reminder can reach (30 days)
-    setBounds(dateBounds(new Date(), Boolean(email.current.trim())));
+    // bounds already track the email (see the hasEmail effect), so the calendar is capped before it opens
     const el = e?.currentTarget || [...document.querySelectorAll('.capopt')].pop();
     setAnchor(el ? el.getBoundingClientRect() : null); // the screen re-renders on pick, so keep where it was, not the node
     setPickerOpen(true);
@@ -162,7 +170,7 @@ export default function CapsulePage() {
   const slots = useMemo(
     () => ({
       capText: (node) => <CapText node={node} store={text} />,
-      capEmail: (node) => <CapEmail node={node} store={email} />
+      capEmail: (node) => <CapEmail node={node} store={email} onHas={setHasEmail} />
     }),
     []
   );

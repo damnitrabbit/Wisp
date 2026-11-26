@@ -269,16 +269,11 @@ function Thread() {
       replyVoice: (node) => <ReplyVoice node={node} recStore={recStore} />,
       playTime: (node) => <PlayTime node={node} store={playStore} dur={note.duration} />,
       tally: () => <Tally n={note.heardCount ?? 0} phone={phone} />,
-      yoursBody: (node) =>
-        note.mode === 'voice' ? (
-          <div style={styleOf(node)}>
-            <button type="button" onClick={togglePlay} className="ul" style={{ fontFamily: "'Nothing You Could Do', 'Caveat', cursive", fontSize: phone ? 22 : 28, color: INK }}>
-              {playing ? '❚❚ listening…' : `▶ your voice · ${clock(note.duration)}`}
-            </button>
-          </div>
-        ) : (
-          <div style={{ ...styleOf(node), whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{note.kind === 'unsent' && note.to ? `to ${note.to}, ` : ''}{note.text}</div>
-        )
+      // voice is now a baked player in the design (play button + waveform + running time, via playTime/
+      // togglePlay/rootClass); this slot only carries a text echo's body.
+      yoursBody: (node) => (
+        <div style={{ ...styleOf(node), whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{note.kind === 'unsent' && note.to ? `to ${note.to}, ` : ''}{note.text}</div>
+      )
     };
   }, [note, replies, phone, now, player.playing, id, playReply, reportReply, removeReply, mineHere, textStore, recStore, playStore, togglePlay, playing]);
 

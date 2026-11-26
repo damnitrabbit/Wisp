@@ -249,9 +249,22 @@ YOURS = "I keep rehearsing conversations that will never happen."
 def yours_note(w, h, phone=False):
     fs, pad = (24, '34px 40px') if not phone else (19.5, '24px 24px')
     lr = 40 if not phone else 24
+    # a voice echo gets the same hand-drawn player the wall and the replies use — play button, waveform,
+    # running time — not a bare "your voice" line; a text echo keeps its body slot.
+    if not phone:
+        voice = (f'<div style="display:flex;align-items:center;gap:22px;margin-top:24px">'
+                 f'<button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(64, "eypb", True)}</button>'
+                 f'{wave(340, 70, 71, "eywe", 0, main=True)}'
+                 f'<span data-slot="playTime" style="{TYPE};font-size:12px;letter-spacing:.1em;color:{INK};white-space:nowrap">0:00 / 0:28</span></div>')
+    else:
+        voice = (f'<div style="display:flex;align-items:center;gap:14px;margin-top:18px">'
+                 f'<button type="button" class="pbtn" onClick="{{{{togglePlay}}}}" aria-label="{{{{playLabel}}}}">{play_btn(54, "meypb", True)}</button>'
+                 f'{wave(214, 58, 71, "meywe", 0, main=True, sw=2)}</div>'
+                 f'<div data-slot="playTime" style="{TYPE};font-size:10.5px;letter-spacing:.1em;color:{INK};text-align:right;margin-top:8px">0:00 / 0:28</div>')
     inner = (f'<div style="display:flex;justify-content:space-between;align-items:center;{TYPE};font-size:{11 if not phone else 9.5}px;letter-spacing:.16em;color:{PENCIL}">'
              f'<span>YOURS · FADES IN {{{{fadesShort}}}}</span><span>{{{{kindLabel}}}} · {{{{modeLabel}}}}</span></div>'
-             f'<div data-slot="yoursBody" style="{SERIF};font-size:{fs}px;line-height:1.55;color:{INK};margin-top:{20 if not phone else 14}px">{YOURS}</div>'
+             f'<sc-if value="{{{{isVoice}}}}" hint-placeholder-val="{{{{ true }}}}">{voice}</sc-if>'
+             f'<sc-if value="{{{{isText}}}}" hint-placeholder-val="{{{{ false }}}}"><div data-slot="yoursBody" style="{SERIF};font-size:{fs}px;line-height:1.55;color:{INK};margin-top:{20 if not phone else 14}px">{YOURS}</div></sc-if>'
              f'<div style="position:absolute;left:{lr}px;right:{lr}px;bottom:{28 if not phone else 20}px;border-top:1px dashed {RULE};padding-top:{16 if not phone else 14}px;display:flex;justify-content:space-between;align-items:center;gap:12px">'
              f'<span style="display:flex;align-items:center;gap:12px"><span data-slot="tally">{tally(6, 24 if not phone else 20, color=PENCIL, seed=7)}</span>'
              f'<span style="{MARK};font-size:{23 if not phone else 20}px;color:{PENCIL}">{{{{heardBy}}}}</span></span>'
@@ -286,7 +299,7 @@ def reply_slip(i, phone=False, wslip=560):
 eyours = f'''
 {atmos()}
 {topbar(crumb='echoes')}
-<main style="position:relative;z-index:10;flex-grow:1;padding:0 56px;display:flex;gap:64px">
+<main class="{{{{rootClass}}}}" style="position:relative;z-index:10;flex-grow:1;padding:0 56px;display:flex;gap:64px">
 <div style="width:640px;display:flex;flex-direction:column;gap:18px;padding-top:2px">
 <div class="rise" style="--w:.1s">{link('← the wall', 'V5Echoes.dc.html', BOARDTXT, 12)}</div>
 {h_hand('Yours. Still up there.', 48, wait='.2s')}
@@ -302,14 +315,14 @@ eyours = f'''
 </div>
 </main>
 {footer()}'''
-YOURS_VALS = "fadesShort: '19H', kindLabel: 'AN ECHO', modeLabel: 'TEXT', heardBy: 'heard by 6', takeDownLabel: 'take it down now', repliesTitle: '2 replies'"
+YOURS_VALS = "fadesShort: '19H', kindLabel: 'AN ECHO', modeLabel: 'VOICE', heardBy: 'heard by 6', takeDownLabel: 'take it down now', repliesTitle: '2 replies', rootClass: ''"
 page('V5EchoYours', 'Your echo', eyours, css=ECHO_CSS, script="renderVals() { return { %s, cardH: 250 }; }" % YOURS_VALS)
 board('V5EchoYours', 'L14 — Your echo (owner view)', 1440, 900, 'edge_leave')
 
 meyours = f'''
 {matmos()}
 {mtopbar(crumb='the wall', back='V5MEchoes.dc.html')}
-<main class="mbody" style="position:relative;z-index:10;flex:1 1 auto;min-height:0;padding:0 {MPAD}px 20px;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;scrollbar-width:none">
+<main class="mbody {{{{rootClass}}}}" style="position:relative;z-index:10;flex:1 1 auto;min-height:0;padding:0 {MPAD}px 20px;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;scrollbar-width:none">
 {h_hand('Yours. Still up there.', 32, wait='.2s')}
 <div class="rise" style="--w:.5s;margin:26px 0 0 2px">{yours_note(340, 204, True)}</div>
 <div class="rise" style="--w:2s;margin:18px 0 0 8px">{t_mark("there's no way to see who heard it.", 20, PINK, 'transform:rotate(-1.5deg)')}</div>
