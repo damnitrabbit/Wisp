@@ -11,6 +11,7 @@ import '@/v5/base.css';
 import './v5.css';
 import Script from 'next/script';
 import Shell from '@/components/Shell';
+import { Analytics } from '@vercel/analytics/next';
 import { SITE_URL, SITE_NAME, TITLE, ALT_NAMES, DESCRIPTION, KEYWORDS } from '@/lib/site';
 
 export const metadata = {
@@ -62,6 +63,8 @@ export default function RootLayout({ children }) {
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Shell>{children}</Shell>
+        {/* Vercel Web Analytics: cookieless, aggregate page views only — no personal data, no cross-site tracking */}
+        <Analytics />
         {/* the paper sounds: synthesised in the browser, nothing fetched; muted with the pill or M */}
         <Script src="/sound.js" strategy="afterInteractive" />
       </body>
