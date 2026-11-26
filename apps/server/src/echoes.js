@@ -16,14 +16,27 @@ const clean = (t) => t.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '').replac
 // 24 hours after they were posted, when enough people report them, when their poster deletes
 // them, or when the server restarts. Nothing is ever written to disk.
 export class Echoes {
-  constructor(hub) {
+  constructor(hub, store = null) {
     this.hub = hub;
+    this.store = store; // optional durable 24h backup (Redis); null = memory only, as before
     this.notes = new Map(); // id -> note; Map keeps insertion order, so the first entry is the oldest
     this.lastPost = new Map(); // person key -> when they last posted
     this.lastReply = new Map();
     this.ipPosts = new Map(); // ip -> recent post times
     this.sweeper = setInterval(() => this.sweep(), 60_000);
     this.sweeper.unref?.();
+  }
+
+  // On boot, repopulate the wall from the durable store so a restart doesn't wipe it. No-op without a store.
+  // Rate-limit maps (cooldowns) are deliberately not restored — they are best-effort and short-lived.
+  async load() {
+    if (!this.store) return;
+    const notes = await this.store.load();
+    const now = Date.now();
+    for (const note of notes) {
+      if (note.expiresAt > now && this.notes.size < L.ECHO_MAX_NOTES) this.notes.set(note.id, note);
+    }
+    if (this.notes.size) this.hub.echoesChanged();
   }
 
   // Who counts as "one person" depends on what's at stake:
@@ -174,7 +187,11 @@ export class Echoes {
     const recent = user.ip ? (this.ipPosts.get(user.ip) || []).filter((t) => t + L.ECHO_POST_COOLDOWN_MS > now) : [];
     if (recent.length >= L.ECHO_IP_POSTS) return { error: ERRORS.COOLDOWN, retryInMs: recent[0] + L.ECHO_POST_COOLDOWN_MS - now };
 
-    while (this.notes.size >= L.ECHO_MAX_NOTES) this.notes.delete(this.notes.keys().next().value);
+    while (this.notes.size >= L.ECHO_MAX_NOTES) {
+      const oldest = this.notes.keys().next().value;
+      this.notes.delete(oldest);
+      this.store?.removeId(oldest);
+    }
     const note = {
       id: randomUUID(),
       kind,
@@ -192,6 +209,7 @@ export class Echoes {
     this.notes.set(note.id, note);
     this.lastPost.set(this.session(user), now);
     if (user.ip) this.ipPosts.set(user.ip, [...recent, now]);
+    this.store?.save(note, true); // metadata + the audio blob
     this.hub.echoesChanged();
     return { ok: true, id: note.id, expiresAt: note.expiresAt };
   }
@@ -204,7 +222,10 @@ export class Echoes {
     const had = note.heard.has(k);
     if (on && !had) note.heard.add(k);
     if (!on && had) note.heard.delete(k);
-    if (had !== note.heard.has(k)) this.hub.echoesChanged();
+    if (had !== note.heard.has(k)) {
+      this.store?.save(note);
+      this.hub.echoesChanged();
+    }
     return { ok: true, heard: note.heard.has(k), heardCount: note.heard.size };
   }
 
@@ -232,6 +253,7 @@ export class Echoes {
     Object.assign(r, { id: randomUUID(), createdAt: Date.now(), reports: new Set() });
     note.replies.push(r);
     this.lastReply.set(this.session(user), r.createdAt);
+    this.store?.save(note, r.kind === 'voice'); // a voice reply carries a new blob to persist
     this.hub.echoesChanged();
     return { ok: true, id: r.id };
   }
@@ -247,9 +269,16 @@ export class Echoes {
     target.reports.add(k);
     let removed = false;
     if (target.reports.size >= L.ECHO_REPORT_HIDE) {
-      if (replyId) note.replies.splice(note.replies.indexOf(target), 1);
-      else this.notes.delete(note.id);
+      if (replyId) {
+        note.replies.splice(note.replies.indexOf(target), 1);
+        this.store?.save(note); // the reply is gone; the note stays
+      } else {
+        this.notes.delete(note.id);
+        this.store?.remove(note);
+      }
       removed = true;
+    } else {
+      this.store?.save(note); // just the new report count
     }
     this.hub.echoesChanged();
     return { ok: true, removed };
@@ -261,6 +290,7 @@ export class Echoes {
     if (!note) return { error: ERRORS.NOT_FOUND };
     if (typeof ticket !== 'string' || ticket !== note.ticket) return { error: ERRORS.NOT_ALLOWED };
     this.notes.delete(note.id);
+    this.store?.remove(note);
     this.hub.echoesChanged();
     return { ok: true };
   }
@@ -273,6 +303,7 @@ export class Echoes {
     const i = note.replies.findIndex((r) => r.id === replyId);
     if (i === -1) return { error: ERRORS.NOT_FOUND };
     note.replies.splice(i, 1);
+    this.store?.save(note); // the removed reply's audio key, if any, expires on its own TTL
     this.hub.echoesChanged();
     return { ok: true };
   }
