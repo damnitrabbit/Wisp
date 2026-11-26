@@ -82,18 +82,22 @@ export function makeEchoStore(url, warn = () => {}) {
     await p.exec();
   }
 
+  // Boot load in a handful of round trips regardless of wall size (so it stays fast on a remote Redis):
+  // SCAN for keys, one MGET for all metadata, one pipeline for all audio blobs.
   async function loadAll() {
     const keys = [];
     let cursor = '0';
     do {
-      const [next, batch] = await redis.scan(cursor, 'MATCH', NOTE('*'), 'COUNT', 200);
+      const [next, batch] = await redis.scan(cursor, 'MATCH', NOTE('*'), 'COUNT', 500);
       cursor = next;
       keys.push(...batch);
     } while (cursor !== '0');
+    if (!keys.length) return [];
 
-    const out = [];
-    for (const key of keys) {
-      const raw = await redis.get(key);
+    const now = Date.now();
+    const raws = await redis.mget(keys); // all metadata at once
+    const metas = [];
+    for (const raw of raws) {
       if (!raw) continue;
       let m;
       try {
@@ -101,40 +105,52 @@ export function makeEchoStore(url, warn = () => {}) {
       } catch {
         continue;
       }
-      if (!m || m.expiresAt <= Date.now()) continue;
-      const audio = m.hasAudio ? await redis.getBuffer(AUDIO(m.id)) : null;
-      const replies = [];
-      for (const r of m.replies || []) {
-        const audioR = r.kind === 'voice' ? await redis.getBuffer(RAUDIO(m.id, r.id)) : null;
-        replies.push({
-          id: r.id,
-          kind: r.kind,
-          text: r.kind === 'text' ? (r.text ?? '') : undefined,
-          mime: r.kind === 'voice' ? (r.mime ?? undefined) : undefined,
-          duration: r.duration,
-          audio: audioR ?? undefined,
-          createdAt: r.createdAt,
-          reports: new Set(r.reports || [])
-        });
-      }
-      out.push({
-        id: m.id,
-        kind: m.kind,
-        tag: m.tag,
-        to: m.to,
-        createdAt: m.createdAt,
-        expiresAt: m.expiresAt,
-        text: m.text ?? null,
-        duration: m.duration,
-        mime: m.mime ?? null,
-        audio: audio ?? null,
-        ticket: m.ticket,
-        listenOnly: m.listenOnly,
-        replies,
-        heard: new Set(m.heard || []),
-        reports: new Set(m.reports || [])
+      if (m && m.expiresAt > now) metas.push(m);
+    }
+    if (!metas.length) return [];
+
+    // every audio blob (note + voice replies) in one pipeline
+    const audioKeys = [];
+    for (const m of metas) {
+      if (m.hasAudio) audioKeys.push(AUDIO(m.id));
+      for (const r of m.replies || []) if (r.kind === 'voice') audioKeys.push(RAUDIO(m.id, r.id));
+    }
+    const blobs = new Map();
+    if (audioKeys.length) {
+      const pipe = redis.pipeline();
+      for (const k of audioKeys) pipe.getBuffer(k);
+      const res = await pipe.exec();
+      (res || []).forEach(([err, buf], i) => {
+        if (!err && buf) blobs.set(audioKeys[i], buf);
       });
     }
+
+    const out = metas.map((m) => ({
+      id: m.id,
+      kind: m.kind,
+      tag: m.tag,
+      to: m.to,
+      createdAt: m.createdAt,
+      expiresAt: m.expiresAt,
+      text: m.text ?? null,
+      duration: m.duration,
+      mime: m.mime ?? null,
+      audio: m.hasAudio ? (blobs.get(AUDIO(m.id)) ?? null) : null,
+      ticket: m.ticket,
+      listenOnly: m.listenOnly,
+      replies: (m.replies || []).map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        text: r.kind === 'text' ? (r.text ?? '') : undefined,
+        mime: r.kind === 'voice' ? (r.mime ?? undefined) : undefined,
+        duration: r.duration,
+        audio: r.kind === 'voice' ? (blobs.get(RAUDIO(m.id, r.id)) ?? undefined) : undefined,
+        createdAt: r.createdAt,
+        reports: new Set(r.reports || [])
+      })),
+      heard: new Set(m.heard || []),
+      reports: new Set(m.reports || [])
+    }));
     // oldest first: the Map relies on insertion order for "oldest drops off" and newest-first display
     out.sort((a, b) => a.createdAt - b.createdAt);
     return out;
