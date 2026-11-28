@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CHANNELS } from '@wisp/shared';
-import TopBar from '@/components/TopBar';
-import Footer from '@/components/Footer';
+import Rabbit from '@/components/Rabbit';
 import { LANDING, LANDING_BY_SLUG } from '@/lib/landing';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
+import './landing.css';
 
 // Only these pages exist; any other top-level path is a 404.
 export const dynamicParams = false;
@@ -46,35 +46,42 @@ export default async function Landing({ params }) {
   };
 
   return (
-    <div className="page">
+    <div className="lp">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([faqLd, crumbsLd]) }} />
-      <TopBar crumb={`/${p.slug.toUpperCase()}`} back={{ label: '← LOBBY', href: '/' }} />
-      <main className="main landing">
-        <div className="lead">
-          <h1>{p.h1}</h1>
-          <p className="intro">{p.lead}</p>
-          <div className="ctas">
-            <Link href="/chat" className="btn solid tall spread">
-              <span>[ START A 1:1 CHAT ]</span>
-              <span>→</span>
-            </Link>
-            <Link href="/rooms" className="btn tall spread">
-              <span>[ BROWSE VOICE ROOMS ]</span>
-              <span>→</span>
-            </Link>
+
+      <header className="lp-top">
+        <Link href="/" className="lp-brand" aria-label="N0TRACE home">
+          <Rabbit className="lp-rab" />
+          <span className="lp-word">N0TRACE</span>
+        </Link>
+        <Link href="/help" className="lp-help">need help now?</Link>
+      </header>
+
+      <main className="lp-main">
+        <section className="lp-hero">
+          <div className="lp-crumb rise" style={{ '--w': '.1s' }}>{p.slug.replace(/-/g, ' ')}</div>
+          <h1 className="lp-h1 rise" style={{ '--w': '.2s' }}>{p.h1}</h1>
+          <p className="lp-lead rise" style={{ '--w': '.35s' }}>{p.lead}</p>
+          <div className="lp-cta rise" style={{ '--w': '.5s' }}>
+            <Link href="/talk" className="lp-btn">talk to someone <span className="arr">→</span></Link>
+            <Link href="/rooms" className="lp-btn ghost">browse voice rooms <span className="arr">→</span></Link>
           </div>
-          <p className="dim3" style={{ fontSize: 11 }}>FREE · NO SIGN-UP · 18+ ONLY</p>
-        </div>
-        <div className="body">
+          <p className="lp-meta rise" style={{ '--w': '.6s' }}>
+            free · no sign-up · 18+ · <span className="hrs">pods open 10pm–2am</span>
+          </p>
+        </section>
+
+        <div className="lp-body">
           {p.sections.map((s) => (
             <section key={s.h}>
-              <h2>{s.h}</h2>
-              <p>{s.body}</p>
+              <h2 className="lp-h2">{s.h}</h2>
+              <p className="lp-p">{s.body}</p>
             </section>
           ))}
-          <section>
-            <h2>Questions</h2>
-            <dl className="faq">
+
+          <div className="lp-faq paper hi">
+            <h2 className="lp-faq-h">Questions</h2>
+            <dl>
               {p.faq.map((f) => (
                 <div key={f.q}>
                   <dt>{f.q}</dt>
@@ -82,34 +89,44 @@ export default async function Landing({ params }) {
                 </div>
               ))}
             </dl>
-          </section>
-          <section>
-            <h2>Rooms right now</h2>
+          </div>
+
+          <section className="lp-links">
+            <h2 className="lp-h2">Rooms open tonight</h2>
             <p>
               {CHANNELS.slice(0, 12).map((c, i) => (
                 <span key={c.id}>
-                  {i > 0 && ' · '}
-                  <Link href={`/rooms/${c.id}`} className="inline">{c.name}</Link>
+                  {i > 0 && <span className="lp-sep">·</span>}
+                  <Link href={`/rooms/${c.id}`} className="lp-ln">{c.name}</Link>
                 </span>
               ))}
-              {' · '}
-              <Link href="/rooms" className="inline">all 25 rooms →</Link>
+              <span className="lp-sep">·</span>
+              <Link href="/rooms" className="lp-ln">all 25 rooms →</Link>
             </p>
           </section>
-          <section>
-            <h2>More</h2>
+
+          <section className="lp-links">
+            <h2 className="lp-h2">More ways in</h2>
             <p>
               {LANDING.filter((o) => o.slug !== p.slug).map((o, i) => (
                 <span key={o.slug}>
-                  {i > 0 && ' · '}
-                  <Link href={`/${o.slug}`} className="inline">{o.title}</Link>
+                  {i > 0 && <span className="lp-sep">·</span>}
+                  <Link href={`/${o.slug}`} className="lp-ln">{o.slug.replace(/-/g, ' ')}</Link>
                 </span>
               ))}
             </p>
           </section>
         </div>
       </main>
-      <Footer />
+
+      <footer className="lp-foot">
+        <nav aria-label="N0TRACE">
+          <Link href="/privacy">what we keep</Link>
+          <Link href="/terms">terms</Link>
+          <Link href="/help">need help</Link>
+        </nav>
+        <span>dug up by <span className="nc">Damn_It_Rabbit</span> · 18+</span>
+      </footer>
     </div>
   );
 }

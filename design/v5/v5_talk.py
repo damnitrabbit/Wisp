@@ -430,7 +430,7 @@ privacy = f'''
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;align-items:center;justify-content:center;gap:110px;padding-bottom:20px">
 <div style="width:440px;display:flex;flex-direction:column;gap:22px">
 {h_hand('Almost nothing, and never for long.', 56, d='2s')}
-<div class="rise" style="--w:1.3s;{SERIF};font-size:20px;line-height:1.6;color:{BOARDTXT}">No accounts. No trackers. No ads. If the server restarts, everything in memory is gone. Nothing was saved, so nothing is lost.</div>
+<div class="rise" style="--w:1.3s;{SERIF};font-size:20px;line-height:1.6;color:{BOARDTXT}">No accounts. No ads. No cookies and no cross-site tracking — only an anonymous, cookieless count of page views. Chats and pods are never stored; echoes fade within 24 hours. Nothing here is tied to you.</div>
 <div class="rise" style="--w:1.6s">{link('← back home', 'V5Home.dc.html')}</div></div>
 <div class="printout">{receipt}</div>
 </main>'''

@@ -23,7 +23,14 @@ export const metadata = {
   creator: 'Damn_It_Rabbit',
   alternates: { canonical: '/' },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
-  icons: { icon: '/icon.svg' },
+  // Modern browsers take the crisp SVG; older browsers and bookmark/feed tools fall back to the .ico.
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }
+    ],
+    shortcut: '/favicon.ico'
+  },
   // Search Console / Bing ownership, if you verify by meta tag instead of DNS.
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || undefined,

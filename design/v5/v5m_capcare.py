@@ -263,7 +263,7 @@ mprivacy = f'''
 {mtopbar(crumb='what we keep', back='V5MHome.dc.html')}
 <main style="position:relative;z-index:10;flex-grow:1;display:flex;flex-direction:column">
 {mhead('Almost nothing, and never for long.', 32, d='2s')}
-<div class="rise" style="--w:1.2s;padding:6px {MPAD}px 0;{SERIF};font-size:15.5px;line-height:1.5;color:{BOARDTXT}">No accounts. No trackers. No ads. If the server restarts, what's in memory is gone.</div>
+<div class="rise" style="--w:1.2s;padding:6px {MPAD}px 0;{SERIF};font-size:15.5px;line-height:1.5;color:{BOARDTXT}">No accounts. No ads. No cookies — only an anonymous, cookieless count of page views. Chats and pods are never stored; echoes fade within 24 hours.</div>
 <div class="printout" style="display:flex;justify-content:center;margin-top:20px">{mreceipt}</div>
 <div class="rise" style="--w:2s;display:flex;justify-content:space-between;padding:20px {MPAD}px 0">{link('the rules →', 'V5MTerms.dc.html', size=11)}{link('home', 'V5MHome.dc.html', size=11)}</div>
 </main>
